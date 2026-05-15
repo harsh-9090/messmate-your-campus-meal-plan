@@ -13,7 +13,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MemberIndexRouteImport } from './routes/member/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as StaffScannerRouteImport } from './routes/staff/scanner'
+import { Route as AdminScanLogsRouteImport } from './routes/admin.scan-logs'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminPlanConfigRouteImport } from './routes/admin.plan-config'
+import { Route as AdminMembersRouteImport } from './routes/admin.members'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -35,45 +40,114 @@ const MemberIndexRoute = MemberIndexRouteImport.update({
   path: '/member/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const StaffScannerRoute = StaffScannerRouteImport.update({
   id: '/staff/scanner',
   path: '/staff/scanner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminScanLogsRoute = AdminScanLogsRouteImport.update({
+  id: '/scan-logs',
+  path: '/scan-logs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlanConfigRoute = AdminPlanConfigRouteImport.update({
+  id: '/plan-config',
+  path: '/plan-config',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMembersRoute = AdminMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/members': typeof AdminMembersRoute
+  '/admin/plan-config': typeof AdminPlanConfigRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/scan-logs': typeof AdminScanLogsRoute
   '/staff/scanner': typeof StaffScannerRoute
+  '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
   '/login': typeof LoginRoute
+  '/admin/members': typeof AdminMembersRoute
+  '/admin/plan-config': typeof AdminPlanConfigRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/scan-logs': typeof AdminScanLogsRoute
   '/staff/scanner': typeof StaffScannerRoute
+  '/admin': typeof AdminIndexRoute
   '/member': typeof MemberIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/members': typeof AdminMembersRoute
+  '/admin/plan-config': typeof AdminPlanConfigRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/scan-logs': typeof AdminScanLogsRoute
   '/staff/scanner': typeof StaffScannerRoute
+  '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/login' | '/staff/scanner' | '/member/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/login'
+    | '/admin/members'
+    | '/admin/plan-config'
+    | '/admin/reports'
+    | '/admin/scan-logs'
+    | '/staff/scanner'
+    | '/admin/'
+    | '/member/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/login' | '/staff/scanner' | '/member'
-  id: '__root__' | '/' | '/admin' | '/login' | '/staff/scanner' | '/member/'
+  to:
+    | '/'
+    | '/login'
+    | '/admin/members'
+    | '/admin/plan-config'
+    | '/admin/reports'
+    | '/admin/scan-logs'
+    | '/staff/scanner'
+    | '/admin'
+    | '/member'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/login'
+    | '/admin/members'
+    | '/admin/plan-config'
+    | '/admin/reports'
+    | '/admin/scan-logs'
+    | '/staff/scanner'
+    | '/admin/'
+    | '/member/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
   StaffScannerRoute: typeof StaffScannerRoute
   MemberIndexRoute: typeof MemberIndexRoute
@@ -109,6 +183,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MemberIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/staff/scanner': {
       id: '/staff/scanner'
       path: '/staff/scanner'
@@ -116,12 +197,58 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffScannerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/scan-logs': {
+      id: '/admin/scan-logs'
+      path: '/scan-logs'
+      fullPath: '/admin/scan-logs'
+      preLoaderRoute: typeof AdminScanLogsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/plan-config': {
+      id: '/admin/plan-config'
+      path: '/plan-config'
+      fullPath: '/admin/plan-config'
+      preLoaderRoute: typeof AdminPlanConfigRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/members': {
+      id: '/admin/members'
+      path: '/members'
+      fullPath: '/admin/members'
+      preLoaderRoute: typeof AdminMembersRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminMembersRoute: typeof AdminMembersRoute
+  AdminPlanConfigRoute: typeof AdminPlanConfigRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminScanLogsRoute: typeof AdminScanLogsRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminMembersRoute: AdminMembersRoute,
+  AdminPlanConfigRoute: AdminPlanConfigRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminScanLogsRoute: AdminScanLogsRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
   StaffScannerRoute: StaffScannerRoute,
   MemberIndexRoute: MemberIndexRoute,
