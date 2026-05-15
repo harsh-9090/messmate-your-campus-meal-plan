@@ -160,8 +160,8 @@ function MembersPage() {
           member={editing}
           onClose={() => setEditing(null)}
           plans={plans}
-          onUpdate={(patch) => { updateMember(editing.memberId, patch); }}
-          onChangePlan={(planId, customMeals, price) => changePlan(editing.memberId, planId, customMeals, price)}
+          onUpdate={(patch: Partial<Member>) => { updateMember(editing.memberId, patch); }}
+          onChangePlan={(planId: string, customMeals?: Meal[], price?: number) => changePlan(editing.memberId, planId, customMeals, price)}
           onTogglePaid={() => togglePaid(editing.memberId)}
         />
       )}
