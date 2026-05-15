@@ -1,0 +1,187 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useMess } from "@/lib/messmate/store";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { QRCanvas } from "@/components/messmate/QRCanvas";
+import { SubscriptionBar } from "@/components/messmate/SubscriptionBar";
+import { MealChip } from "@/components/messmate/MealChip";
+import { PlanBadge } from "@/components/messmate/PlanBadge";
+import { Lock, AlertTriangle, History, LogOut, UtensilsCrossed } from "lucide-react";
+import { todayISO, daysRemaining, formatINR, formatTimestamp, isWithinWindow } from "@/lib/messmate/dateHelpers";
+import { MEALS } from "@/lib/messmate/constants";
+import type { Meal } from "@/lib/messmate/types";
+
+export const Route = createFileRoute("/member/")({
+  head: () => ({
+    meta: [
+      { title: "My Meals — MessMate" },
+      { name: "description", content: "Your dynamic QR code, today's meal status, and 30-day plan progress." },
+    ],
+  }),
+  component: MemberPortal,
+});
+
+function MemberPortal() {
+  const me = useMess((s) => s.currentUser());
+  const windows = useMess((s) => s.windows);
+  const usage = useMess((s) => s.usage);
+  const logs = useMess((s) => s.logs);
+  const logout = useMess((s) => s.logout);
+  const navigate = useNavigate();
+
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((x) => x + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (!me) {
+    return (
+      <div className="grid min-h-screen place-items-center">
+        <Button onClick={() => navigate({ to: "/login" })}>Sign in</Button>
+      </div>
+    );
+  }
+
+  const sub = me.subscription;
+  const left = daysRemaining(sub.endDate);
+  const expired = left < 0;
+  const locked = !sub.isPaid || expired;
+  const today = todayISO();
+  const todaysUsage = usage.find((u) => u.memberId === me.memberId && u.date === today);
+  const myLogs = logs.filter((l) => l.memberId === me.memberId).slice(0, 14);
+
+  const stateOf = (meal: Meal) => {
+    if (!sub.meals.includes(meal)) return "not-in-plan" as const;
+    if (todaysUsage?.usedMeals[meal]) return "used" as const;
+    const w = windows.find((x) => x.meal === meal);
+    if (!w || !isWithinWindow(new Date(), w)) return "window-closed" as const;
+    return "available" as const;
+  };
+
+  return (
+    <div className="min-h-screen bg-background pb-12">
+      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-primary text-sm font-bold text-white">
+              {me.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+            </div>
+            <div>
+              <div className="text-sm font-semibold">{me.name}</div>
+              <div className="text-xs text-muted-foreground">{me.memberId} · Room {me.room}</div>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/login" onClick={logout}><LogOut className="h-4 w-4" /></Link>
+          </Button>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-2xl space-y-4 p-4">
+        {/* Subscription card */}
+        <Card className="overflow-hidden p-0">
+          <div className="bg-gradient-primary p-5 text-white">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-xs uppercase tracking-wider opacity-70">Current Plan</div>
+                <div className="font-display text-2xl font-bold">{sub.planLabel}</div>
+                <div className="mt-1 text-sm opacity-80">{formatINR(sub.pricePerMonth)} / month</div>
+              </div>
+              <Badge className={sub.isPaid ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
+                {sub.isPaid ? "Paid" : "Unpaid"}
+              </Badge>
+            </div>
+            <div className="mt-3 flex gap-2 text-2xl">
+              {sub.meals.includes("Breakfast") && <span>🌅</span>}
+              {sub.meals.includes("Lunch") && <span>🍱</span>}
+              {sub.meals.includes("Dinner") && <span>🌙</span>}
+            </div>
+          </div>
+          <div className="p-5">
+            <SubscriptionBar sub={sub} />
+          </div>
+        </Card>
+
+        {/* Expiry warning */}
+        {!expired && left <= 3 && sub.isPaid && (
+          <Card className="border-warning/40 bg-warning/10 p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 text-warning" />
+              <div>
+                <div className="font-semibold">Plan expires in {left} day{left === 1 ? "" : "s"}</div>
+                <div className="text-sm text-muted-foreground">Contact admin to renew before it expires.</div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* QR */}
+        <Card className="p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Your Pass</div>
+              <div className="font-display text-xl font-bold">Scan at counter</div>
+            </div>
+            <UtensilsCrossed className="h-5 w-5 text-primary" />
+          </div>
+          <div className="grid place-items-center py-6">
+            {locked ? (
+              <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-destructive/40 bg-destructive/5 p-10 text-center">
+                <Lock className="h-10 w-10 text-destructive" />
+                <div className="font-display text-xl font-bold text-destructive">
+                  {expired ? "Plan Expired" : "Payment Pending"}
+                </div>
+                <p className="max-w-xs text-sm text-muted-foreground">
+                  {expired
+                    ? "Your 30-day plan has ended. Contact admin to renew."
+                    : "Your subscription payment is pending. Contact admin."}
+                </p>
+              </div>
+            ) : (
+              <QRCanvas payload={me.memberId} />
+            )}
+          </div>
+        </Card>
+
+        {/* Today's meals */}
+        <Card className="p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="font-display text-lg font-bold">Today's Meals</div>
+            <PlanBadge planId={sub.planId} label={sub.planLabel} />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {MEALS.map((m) => <MealChip key={m} meal={m} state={stateOf(m)} />)}
+          </div>
+        </Card>
+
+        {/* History */}
+        <Card className="p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <History className="h-4 w-4 text-muted-foreground" />
+            <div className="font-display text-lg font-bold">Recent Scans</div>
+          </div>
+          {myLogs.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">No scans yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {myLogs.map((l) => (
+                <div key={l.id} className="flex items-center justify-between rounded-lg border p-3 text-sm">
+                  <div>
+                    <div className="font-medium">{l.meal} <span className="text-xs text-muted-foreground">· {formatTimestamp(l.timestamp)}</span></div>
+                    {l.status === "denied" && <div className="text-xs text-destructive">{l.denialReason}</div>}
+                  </div>
+                  <Badge variant={l.status === "allowed" ? "default" : "destructive"} className={l.status === "allowed" ? "bg-success text-success-foreground" : ""}>
+                    {l.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </main>
+    </div>
+  );
+}
