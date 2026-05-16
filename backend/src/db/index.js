@@ -36,14 +36,14 @@ export async function withTx(fn) {
 export function rowToMember(r) {
   if (!r) return null;
   const {
-    member_id, name, email, room, photo_url, role, is_active,
+    member_id, name, email, mobile, photo_url, role, is_active,
     sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
-    sub_is_paid, sub_paid_at, sub_price_per_month, sub_renewed_at, sub_renewal_count,
+    sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewed_at, sub_renewal_count,
     password_hash, created_at, updated_at,
   } = r;
   return {
     memberId: member_id,
-    name, email, room,
+    name, email, mobile: mobile || null,
     photoUrl: photo_url,
     role,
     isActive: is_active,
@@ -55,6 +55,8 @@ export function rowToMember(r) {
       startDate: sub_start_date,
       endDate: sub_end_date,
       isPaid: sub_is_paid,
+      amountPaid: sub_amount_paid || 0,
+      dueAmount: Math.max(0, (sub_price_per_month || 0) - (sub_amount_paid || 0)),
       paidAt: sub_paid_at,
       pricePerMonth: sub_price_per_month,
       renewedAt: sub_renewed_at,

@@ -7,6 +7,8 @@ import { verifyQRToken } from "../services/qrService.js";
 import { query, rowToMember } from "../db/index.js";
 import { validateAndRecord } from "../services/scanValidator.js";
 
+import { getCache, setCache } from "../db/redis.js";
+
 const router = Router();
 router.use(verifyToken);
 
@@ -21,7 +23,7 @@ router.post("/validate",
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
       const { qrToken, meal } = req.body;
-      const decoded = verifyQRToken(qrToken);
+      const decoded = await verifyQRToken(qrToken);
       if (!decoded) {
         await query(
           `INSERT INTO scan_logs (meal, date, ts, status, denial_code, denial_reason, scanned_by)
@@ -31,11 +33,25 @@ router.post("/validate",
         return res.status(200).json({ status: "denied", code: "INVALID_TOKEN", reason: "Invalid or expired QR code", meal });
       }
 
-      const { rows } = await query(
-        `SELECT * FROM members WHERE member_id = $1 AND is_active = TRUE`,
-        [decoded.userId]
-      );
-      const member = rowToMember(rows[0]);
+      const memberId = decoded.userId;
+      let member = await getCache(`messmate:member:${memberId}`);
+      let subscription = await getCache(`messmate:member:${memberId}:subscription`);
+      
+      if (!member || !subscription) {
+        const { rows } = await query(
+          `SELECT * FROM members WHERE member_id = $1 AND is_active = TRUE`,
+          [memberId]
+        );
+        member = rowToMember(rows[0]);
+        if (member) {
+          subscription = member.subscription;
+          await setCache(`messmate:member:${memberId}`, member, 600); // 10 min
+          await setCache(`messmate:member:${memberId}:subscription`, subscription, 300); // 5 min
+        }
+      } else {
+        member.subscription = subscription;
+      }
+
       const result = await validateAndRecord({
         member, meal, scannedBy: req.user.sub, deviceInfo: req.headers["user-agent"],
       });
@@ -48,6 +64,19 @@ router.post("/validate",
 router.get("/logs", async (req, res, next) => {
   try {
     const { date, memberId, status, code, limit = 100, page = 1 } = req.query;
+    
+    // Only cache simple requests (first page, no filters other than date and memberId)
+    const isCacheable = parseInt(page, 10) === 1 && parseInt(limit, 10) === 100 && !status && !code && date;
+    let cacheKey = null;
+    if (isCacheable) {
+      if (req.user.role === "member") cacheKey = `messmate:scan:log:${date}:${req.user.sub}`;
+      else if (memberId) cacheKey = `messmate:scan:log:${date}:${memberId}`;
+      else cacheKey = `messmate:scan:log:${date}`;
+      
+      const cached = await getCache(cacheKey);
+      if (cached) return res.json(cached);
+    }
+
     const where = [];
     const params = [];
     const role = req.user.role;
@@ -69,7 +98,8 @@ router.get("/logs", async (req, res, next) => {
          LIMIT $${params.length - 1} OFFSET $${params.length}`,
       params
     );
-    res.json(rows.map((l) => ({
+    
+    const result = rows.map((l) => ({
       id: String(l.id),
       memberId: l.member_id ?? "",
       memberName: l.member_name ?? "Unknown",
@@ -80,7 +110,13 @@ router.get("/logs", async (req, res, next) => {
       denialCode: l.denial_code ?? undefined,
       denialReason: l.denial_reason ?? undefined,
       scannedBy: l.scanned_by ?? "",
-    })));
+    }));
+    
+    if (isCacheable && cacheKey) {
+      await setCache(cacheKey, result, 120); // 2 min
+    }
+    
+    res.json(result);
   } catch (e) { next(e); }
 });
 

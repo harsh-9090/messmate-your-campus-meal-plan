@@ -20,13 +20,13 @@ const WINDOWS = [
 ];
 
 const MEMBERS = [
-  ["ADMIN01", "Priya Sharma",   "admin@messmate.app", "admin123", "Office",  "admin",  "full"],
-  ["STAFF01", "Ramesh Kumar",   "staff@messmate.app", "staff123", "Kitchen", "staff",  "full"],
-  ["STU001",  "Arjun Mehta",    "stu001@messmate.app","pass123",  "A-101",   "member", "lunch-dinner"],
-  ["STU002",  "Ananya Iyer",    "stu002@messmate.app","pass123",  "A-102",   "member", "full"],
-  ["STU003",  "Karthik Reddy",  "stu003@messmate.app","pass123",  "B-204",   "member", "breakfast-lunch"],
-  ["STU004",  "Sneha Patil",    "stu004@messmate.app","pass123",  "B-210",   "member", "lunch-only"],
-  ["STU005",  "Vikram Singh",   "stu005@messmate.app","pass123",  "C-305",   "member", "dinner-only"],
+  ["ADMIN01", "Priya Sharma",   "admin@messmate.app", "admin123", "admin",  "full"],
+  ["STAFF01", "Ramesh Kumar",   "staff@messmate.app", "staff123", "staff",  "full"],
+  ["STU001",  "Arjun Mehta",    "stu001@messmate.app","pass123",  "member", "lunch-dinner"],
+  ["STU002",  "Ananya Iyer",    "stu002@messmate.app","pass123",  "member", "full"],
+  ["STU003",  "Karthik Reddy",  "stu003@messmate.app","pass123",  "member", "breakfast-lunch"],
+  ["STU004",  "Sneha Patil",    "stu004@messmate.app","pass123",  "member", "lunch-only"],
+  ["STU005",  "Vikram Singh",   "stu005@messmate.app","pass123",  "member", "dinner-only"],
 ];
 
 const fmt = (d) => format(d, "yyyy-MM-dd");
@@ -51,18 +51,18 @@ const fmt = (d) => format(d, "yyyy-MM-dd");
   }
 
   const today = new Date();
-  for (const [memberId, name, email, password, room, role, planId] of MEMBERS) {
+  for (const [memberId, name, email, password, role, planId] of MEMBERS) {
     const plan = PLANS.find((p) => p.planId === planId);
     const isPaid = memberId !== "STU005";
     await query(
       `INSERT INTO members
-        (member_id, name, email, password_hash, room, role, is_active,
+        (member_id, name, email, password_hash, role, is_active,
          sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
-         sub_is_paid, sub_paid_at, sub_price_per_month, sub_renewal_count)
-       VALUES ($1,$2,$3,$4,$5,$6,TRUE,$7,$8,$9,$10,$11,$12,$13,$14,0)`,
-      [memberId, name, email, await bcrypt.hash(password, 12), room, role,
+         sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewal_count)
+       VALUES ($1,$2,$3,$4,$5,TRUE,$6,$7,$8,$9,$10,$11,$12,$13,$14,0)`,
+      [memberId, name, email, await bcrypt.hash(password, 12), role,
         planId, plan.label, plan.meals, fmt(today), fmt(addDays(today, 30)),
-        isPaid, isPaid ? new Date() : null, plan.pricePerMonth]
+        isPaid, isPaid ? new Date() : null, plan.pricePerMonth, isPaid ? plan.pricePerMonth : 0]
     );
   }
   console.log(`✓ Seeded ${PLANS.length} plans, ${WINDOWS.length} windows, ${MEMBERS.length} members`);

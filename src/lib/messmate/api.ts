@@ -11,9 +11,15 @@ const BASE_URL =
   "http://localhost:4000/api/v1";
 
 let getToken: () => string | null = () => null;
+let setToken: (token: string) => void = () => {};
 let onUnauthorized: () => void = () => {};
-export function configureApi(opts: { getToken: () => string | null; onUnauthorized: () => void }) {
+export function configureApi(opts: {
+  getToken: () => string | null;
+  setToken: (token: string) => void;
+  onUnauthorized: () => void;
+}) {
   getToken = opts.getToken;
+  setToken = opts.setToken;
   onUnauthorized = opts.onUnauthorized;
 }
 
@@ -29,9 +35,9 @@ export class ApiError extends Error {
 
 async function request<T>(
   path: string,
-  init: RequestInit & { auth?: boolean; raw?: boolean } = {}
+  init: RequestInit & { auth?: boolean; raw?: boolean; _retry?: boolean } = {}
 ): Promise<T> {
-  const { auth = true, raw = false, headers, ...rest } = init;
+  const { auth = true, raw = false, _retry = false, headers, ...rest } = init;
   const h: Record<string, string> = { "Content-Type": "application/json", ...(headers as any) };
   if (auth) {
     const tok = getToken();
@@ -43,7 +49,25 @@ async function request<T>(
   } catch (e: any) {
     throw new ApiError(`Cannot reach API at ${BASE_URL}. Is the backend running?`, 0);
   }
-  if (res.status === 401 && auth) onUnauthorized();
+
+  // Silent token refresh on 401 (only once to avoid infinite loop)
+  if (res.status === 401 && auth && !_retry) {
+    try {
+      const refreshRes = await fetch(`${BASE_URL}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (refreshRes.ok) {
+        const { accessToken } = await refreshRes.json();
+        setToken(accessToken);
+        // Retry the original request with the new token
+        return request<T>(path, { ...init, _retry: true });
+      }
+    } catch {}
+    // Refresh failed — log out
+    onUnauthorized();
+  }
+
   if (!res.ok) {
     let body: any = null;
     try { body = await res.json(); } catch {}
@@ -77,16 +101,17 @@ export const membersApi = {
   },
   get: (id: string) => request<Member>(`/members/${id}`),
   create: (data: {
-    name: string; email: string; password: string; room?: string;
-    planId: string; meals: Meal[]; startDate: string; isPaid?: boolean; role?: string;
+    name: string; email: string; password: string; mobile?: string;
+    planId: string; meals: Meal[]; startDate: string; amountPaid?: number; paymentMethod?: string; role?: string;
   }) => request<Member>("/members", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: string, patch: Partial<{ name: string; email: string; room: string; password: string; photoUrl: string }>) =>
+  update: (id: string, patch: Partial<{ name: string; email: string; password: string; photoUrl: string }>) =>
     request<Member>(`/members/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   remove: (id: string) => request<{ ok: true }>(`/members/${id}`, { method: "DELETE" }),
-  renew: (id: string) => request(`/members/${id}/renew`, { method: "PUT" }),
-  setPaid: (id: string, isPaid: boolean) =>
-    request(`/members/${id}/payment`, { method: "PUT", body: JSON.stringify({ isPaid }) }),
-  changePlan: (id: string, data: { planId: string; meals?: Meal[]; startDate?: string; isPaid?: boolean }) =>
+  renew: (id: string, data: { planId?: string; amountPaid?: number; paymentMethod?: string }) => 
+    request(`/members/${id}/renew`, { method: "PUT", body: JSON.stringify(data) }),
+  addPayment: (id: string, amountPaid: number, paymentMethod = "Cash") => 
+    request(`/members/${id}/payment`, { method: "PUT", body: JSON.stringify({ amountPaid, paymentMethod }) }),
+  changePlan: (id: string, data: { planId: string; meals: Meal[]; startDate?: string }) =>
     request(`/members/${id}/plan`, { method: "PUT", body: JSON.stringify(data) }),
 };
 
@@ -131,6 +156,12 @@ export const usageApi = {
 };
 
 export const reportsApi = {
+  getDailyStats: () => request<{
+    new_members: number;
+    renewed_members: number;
+    expired_members: number;
+    collection: number;
+  }>("/reports/stats"),
   daily: (date?: string) => request<{
     date: string; meals: Record<Meal, number>; allowed: number; denied: number; total: number;
     denialBreakdown: Record<string, number>;

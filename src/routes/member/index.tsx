@@ -97,7 +97,9 @@ function MemberPortal() {
             </div>
             <div>
               <div className="text-sm font-semibold">{me.name}</div>
-              <div className="text-xs text-muted-foreground">{me.memberId} · Room {me.room}</div>
+              <div className="text-xs text-muted-foreground">
+                {me.memberId}{me.mobile && <> · 📞 {me.mobile}</>}
+              </div>
             </div>
           </div>
           <Button variant="ghost" size="sm" asChild>
@@ -115,9 +117,12 @@ function MemberPortal() {
                 <div className="font-display text-2xl font-bold">{sub.planLabel}</div>
                 <div className="mt-1 text-sm opacity-80">{formatINR(sub.pricePerMonth)} / month</div>
               </div>
-              <Badge className={sub.isPaid ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
-                {sub.isPaid ? "Paid" : "Unpaid"}
-              </Badge>
+              <div className="text-right">
+                <Badge className={sub.isPaid ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
+                  {sub.isPaid ? "Paid" : "Unpaid"}
+                </Badge>
+                {sub.dueAmount > 0 && <div className="mt-1 text-[10px] font-bold text-white">Due: {formatINR(sub.dueAmount)}</div>}
+              </div>
             </div>
             <div className="mt-3 flex gap-2 text-2xl">
               {sub.meals.includes("Breakfast") && <span>🌅</span>}
@@ -157,7 +162,7 @@ function MemberPortal() {
                 </div>
                 <p className="max-w-xs text-sm text-muted-foreground">
                   {expired ? "Your 30-day plan has ended. Contact admin to renew."
-                           : "Your subscription payment is pending. Contact admin."}
+                           : `Your subscription payment is pending (Due: ${formatINR(sub.dueAmount)}). Contact admin.`}
                 </p>
               </div>
             ) : (

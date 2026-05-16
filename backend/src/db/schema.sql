@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS plans (
   label             TEXT NOT NULL,
   meals             TEXT[] NOT NULL,
   price_per_month   INTEGER NOT NULL,
+  duration_months   INTEGER NOT NULL DEFAULT 1,
   is_active         BOOLEAN NOT NULL DEFAULT TRUE,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -22,8 +23,8 @@ CREATE TABLE IF NOT EXISTS members (
   member_id           TEXT PRIMARY KEY,
   name                TEXT NOT NULL,
   email               TEXT NOT NULL UNIQUE,
+  mobile              TEXT,
   password_hash       TEXT NOT NULL,
-  room                TEXT,
   photo_url           TEXT,
   role                TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin','staff','member')),
   is_active           BOOLEAN NOT NULL DEFAULT TRUE,
@@ -36,6 +37,7 @@ CREATE TABLE IF NOT EXISTS members (
   sub_is_paid         BOOLEAN NOT NULL DEFAULT FALSE,
   sub_paid_at         TIMESTAMPTZ,
   sub_price_per_month INTEGER DEFAULT 0,
+  sub_amount_paid     INTEGER NOT NULL DEFAULT 0,
   sub_renewed_at      TIMESTAMPTZ,
   sub_renewal_count   INTEGER NOT NULL DEFAULT 0,
 

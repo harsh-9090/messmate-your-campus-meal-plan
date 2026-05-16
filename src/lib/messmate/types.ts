@@ -14,6 +14,7 @@ export interface Plan {
   label: string;
   meals: Meal[];
   pricePerMonth: number;
+  durationMonths: number;
 }
 
 export interface Subscription {
@@ -23,6 +24,8 @@ export interface Subscription {
   startDate: string; // ISO date YYYY-MM-DD
   endDate: string;
   isPaid: boolean;
+  amountPaid: number;
+  dueAmount: number;
   pricePerMonth: number;
   renewedAt?: string;
   renewalCount: number;
@@ -32,8 +35,8 @@ export interface Member {
   memberId: string;
   name: string;
   email: string;
+  mobile: string | null;
   password?: string;
-  room: string;
   photoUrl?: string;
   role: Role;
   isActive: boolean;
@@ -67,7 +70,7 @@ export interface MealWindow {
 
 export interface ScanResult {
   status: "allowed" | "denied";
-  member?: { memberId: string; name: string; room: string; photoUrl?: string };
+  member?: { memberId: string; name: string; photoUrl?: string };
   meal: Meal;
   code?: DenialCode;
   reason?: string;

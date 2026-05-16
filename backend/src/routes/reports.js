@@ -3,13 +3,36 @@ import { format, addDays } from "date-fns";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { query } from "../db/index.js";
 import { toCsv } from "../services/reportService.js";
+import { getCache, setCache } from "../db/redis.js";
 
 const router = Router();
 router.use(verifyToken, requireRole("admin"));
 
+router.get("/stats", async (_req, res, next) => {
+  try {
+    const { rows } = await query(`
+      WITH ist_today AS (
+        SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today
+      )
+      SELECT 
+        (SELECT COUNT(*)::int FROM members WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as new_members,
+        (SELECT COUNT(*)::int FROM members WHERE (sub_renewed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today) AND sub_renewal_count > 0) as renewed_members,
+        (SELECT COUNT(*)::int FROM members WHERE sub_end_date = (SELECT today FROM ist_today)) as expired_members,
+        (SELECT COALESCE(SUM(amount), 0)::int FROM payments WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as collection
+    `);
+    res.json(rows[0]);
+  } catch (e) { next(e); }
+});
+
 router.get("/daily", async (req, res, next) => {
   try {
-    const date = req.query.date || format(new Date(), "yyyy-MM-dd");
+    const today = format(new Date(), "yyyy-MM-dd");
+    const date = req.query.date || today;
+    
+    const cacheKey = `messmate:report:daily:${date}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const [usage, logs] = await Promise.all([
       query(
         `SELECT
@@ -32,16 +55,26 @@ router.get("/daily", async (req, res, next) => {
       if (r.status === "allowed") allowed += r.c;
       else { denied += r.c; if (r.denial_code) denialBreakdown[r.denial_code] = (denialBreakdown[r.denial_code] || 0) + r.c; }
     }
-    res.json({
+    const result = {
       date,
       meals: { Breakfast: u.b, Lunch: u.l, Dinner: u.d },
       allowed, denied, total: allowed + denied, denialBreakdown,
-    });
+    };
+    
+    // Cache for 5 mins if today, else 24 hours for past dates
+    const ttl = date === today ? 300 : 86400;
+    await setCache(cacheKey, result, ttl);
+    
+    res.json(result);
   } catch (e) { next(e); }
 });
 
 router.get("/weekly", async (_req, res, next) => {
   try {
+    const cacheKey = "messmate:report:weekly";
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const days = Array.from({ length: 7 }, (_, i) => format(addDays(new Date(), -6 + i), "yyyy-MM-dd"));
     const { rows: usage } = await query(
       `SELECT date,
@@ -59,25 +92,37 @@ router.get("/weekly", async (_req, res, next) => {
          WHERE role = 'member' AND is_active = TRUE AND sub_is_paid = TRUE
            AND sub_end_date >= CURRENT_DATE`
     );
-    res.json({ days: byDate, estimatedMonthlyRevenue: rev[0].r });
+    const result = { days: byDate, estimatedMonthlyRevenue: rev[0].r };
+    await setCache(cacheKey, result, 600); // 10 min
+    res.json(result);
   } catch (e) { next(e); }
 });
 
 router.get("/monthly", async (req, res, next) => {
   try {
     const month = req.query.month || format(new Date(), "yyyy-MM");
+    const cacheKey = `messmate:report:monthly:${month}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const { rows } = await query(
       `SELECT COUNT(*)::int AS days, COALESCE(SUM(used_count),0)::int AS total
          FROM meal_usage WHERE to_char(date, 'YYYY-MM') = $1`,
       [month]
     );
-    res.json({ month, totalMeals: rows[0].total, days: rows[0].days });
+    const result = { month, totalMeals: rows[0].total, days: rows[0].days };
+    await setCache(cacheKey, result, 86400); // 24 hours
+    res.json(result);
   } catch (e) { next(e); }
 });
 
 router.get("/expiring", async (req, res, next) => {
   try {
     const days = parseInt(req.query.days || "7", 10);
+    const cacheKey = `messmate:report:expiring:${days}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const { rows } = await query(
       `SELECT * FROM members
          WHERE role = 'member' AND is_active = TRUE
@@ -86,13 +131,19 @@ router.get("/expiring", async (req, res, next) => {
       [days]
     );
     const { rowToMember, stripPassword } = await import("../db/index.js");
-    res.json(rows.map((r) => stripPassword(rowToMember(r))));
+    const result = rows.map((r) => stripPassword(rowToMember(r)));
+    await setCache(cacheKey, result, 600, "report:expiring"); // 10 min, tracked in group
+    res.json(result);
   } catch (e) { next(e); }
 });
 
 router.get("/denials", async (req, res, next) => {
   try {
     const date = req.query.date || format(new Date(), "yyyy-MM-dd");
+    const cacheKey = `messmate:scan:denials:${date}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const { rows } = await query(
       `SELECT denial_code, COUNT(*)::int AS c
          FROM scan_logs WHERE date = $1 AND status = 'denied'
@@ -102,7 +153,9 @@ router.get("/denials", async (req, res, next) => {
     const grouped = {};
     let total = 0;
     for (const r of rows) { grouped[r.denial_code || "UNKNOWN"] = r.c; total += r.c; }
-    res.json({ date, total, breakdown: grouped });
+    const result = { date, total, breakdown: grouped };
+    await setCache(cacheKey, result, 120); // 2 min
+    res.json(result);
   } catch (e) { next(e); }
 });
 

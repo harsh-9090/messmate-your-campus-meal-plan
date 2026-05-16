@@ -41,5 +41,6 @@ export const useAuth = create<AuthState>()(
 // Wire the api client to the store
 configureApi({
   getToken: () => useAuth.getState().accessToken,
+  setToken: (token: string) => useAuth.getState().setAuth(token, useAuth.getState().user!),
   onUnauthorized: () => useAuth.getState().clear(),
 });

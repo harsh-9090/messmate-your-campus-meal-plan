@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { query } from "../db/index.js";
+import { getCache, setCache, delCache } from "../db/redis.js";
 
 const router = Router();
 router.use(verifyToken);
@@ -8,29 +9,37 @@ router.use(verifyToken);
 // --- Plans ---
 router.get("/plans", async (_req, res, next) => {
   try {
+    const cached = await getCache("messmate:plan:list");
+    if (cached) return res.json(cached);
+
     const { rows } = await query(`SELECT * FROM plans WHERE is_active = TRUE ORDER BY price_per_month DESC`);
-    res.json(rows.map((p) => ({
-      planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, isActive: p.is_active,
-    })));
+    const result = rows.map((p) => ({
+      planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active,
+    }));
+    await setCache("messmate:plan:list", result, 1800); // 30 min
+    res.json(result);
   } catch (e) { next(e); }
 });
 
 router.post("/plans", requireRole("admin"), async (req, res, next) => {
   try {
-    const { planId, label, meals, pricePerMonth, isActive = true } = req.body;
+    const { planId, label, meals, pricePerMonth, durationMonths = 1, isActive = true } = req.body;
     const { rows } = await query(
-      `INSERT INTO plans (plan_id, label, meals, price_per_month, is_active)
-       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [planId, label, meals, pricePerMonth, isActive]
+      `INSERT INTO plans (plan_id, label, meals, price_per_month, duration_months, is_active)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [planId, label, meals, pricePerMonth, durationMonths, isActive]
     );
+    
+    await delCache(["messmate:plan:list", `messmate:plan:${planId}`]);
+    
     const p = rows[0];
-    res.status(201).json({ planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, isActive: p.is_active });
+    res.status(201).json({ planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active });
   } catch (e) { next(e); }
 });
 
 router.put("/plans/:planId", requireRole("admin"), async (req, res, next) => {
   try {
-    const allowed = { label: "label", meals: "meals", pricePerMonth: "price_per_month", isActive: "is_active" };
+    const allowed = { label: "label", meals: "meals", pricePerMonth: "price_per_month", durationMonths: "duration_months", isActive: "is_active" };
     const sets = []; const params = [];
     for (const [k, col] of Object.entries(allowed)) {
       if (k in req.body) { params.push(req.body[k]); sets.push(`${col} = $${params.length}`); }
@@ -43,16 +52,24 @@ router.put("/plans/:planId", requireRole("admin"), async (req, res, next) => {
       params
     );
     if (!rows[0]) return res.status(404).json({ error: "Not found" });
+    
+    await delCache(["messmate:plan:list", `messmate:plan:${req.params.planId}`]);
+    
     const p = rows[0];
-    res.json({ planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, isActive: p.is_active });
+    res.json({ planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active });
   } catch (e) { next(e); }
 });
 
 // --- Meal windows ---
 router.get("/windows", async (_req, res, next) => {
   try {
+    const cached = await getCache("messmate:window:list");
+    if (cached) return res.json(cached);
+
     const { rows } = await query(`SELECT * FROM meal_windows ORDER BY start_time ASC`);
-    res.json(rows.map((w) => ({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active })));
+    const result = rows.map((w) => ({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active }));
+    await setCache("messmate:window:list", result, 1800); // 30 min
+    res.json(result);
   } catch (e) { next(e); }
 });
 
@@ -66,6 +83,9 @@ router.put("/windows/:meal", requireRole("admin"), async (req, res, next) => {
        RETURNING *`,
       [req.params.meal, startTime, endTime]
     );
+    
+    await delCache(["messmate:window:list", `messmate:window:${req.params.meal}`]);
+    
     const w = rows[0];
     res.json({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active });
   } catch (e) { next(e); }

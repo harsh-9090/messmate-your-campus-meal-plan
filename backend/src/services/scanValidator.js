@@ -1,5 +1,6 @@
 import { format, differenceInCalendarDays } from "date-fns";
 import { query, withTx } from "../db/index.js";
+import { getCache, setCache, delCache } from "../db/redis.js";
 
 const todayStr = () => format(new Date(), "yyyy-MM-dd");
 const fmt12 = (hhmm) => {
@@ -15,17 +16,28 @@ const inWindow = (now, w) => {
 };
 
 async function logScan({ memberId, memberName, meal, status, code, reason, scannedBy, deviceInfo }) {
+  const date = todayStr();
   await query(
     `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by, device_info)
      VALUES ($1,$2,$3,$4,NOW(),$5,$6,$7,$8,$9)`,
-    [memberId || null, memberName || null, meal, todayStr(), status, code || null, reason || null, scannedBy || null, deviceInfo || null]
+    [memberId || null, memberName || null, meal, date, status, code || null, reason || null, scannedBy || null, deviceInfo || null]
   );
+  
+  // Invalidate scan logs caches
+  const invalidateKeys = [
+    `messmate:scan:log:${date}`,
+    ...(memberId ? [`messmate:scan:log:${date}:${memberId}`] : [])
+  ];
+  if (status === "denied") {
+    invalidateKeys.push(`messmate:scan:denials:${date}`);
+  }
+  await delCache(invalidateKeys);
 }
 
 /** Strict 5-step validation. */
 export async function validateAndRecord({ member, meal, scannedBy, deviceInfo }) {
   const date = todayStr();
-  const memberInfo = member && { memberId: member.memberId, name: member.name, room: member.room };
+  const memberInfo = member && { memberId: member.memberId, name: member.name };
 
   if (!member) {
     await logScan({ meal, status: "denied", code: "NOT_FOUND", reason: "Member not registered", scannedBy, deviceInfo });
@@ -60,11 +72,17 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
     return { status: "denied", code: "NOT_IN_PLAN", reason, member: memberInfo, meal };
   }
 
-  const { rows: wRows } = await query(
-    `SELECT meal, start_time, end_time FROM meal_windows WHERE meal = $1 AND is_active = TRUE`,
-    [meal]
-  );
-  const w = wRows[0];
+  const windowCacheKey = `messmate:window:${meal}`;
+  let w = await getCache(windowCacheKey);
+  if (!w) {
+    const { rows: wRows } = await query(
+      `SELECT meal, start_time, end_time FROM meal_windows WHERE meal = $1 AND is_active = TRUE`,
+      [meal]
+    );
+    w = wRows[0] || null;
+    if (w) await setCache(windowCacheKey, w, 1800); // 30 min
+  }
+  
   if (!w || !inWindow(now, w)) {
     const win = w ? `${fmt12(w.start_time)} – ${fmt12(w.end_time)}` : "not configured";
     const reason = `${meal} window is ${win}`;
@@ -97,6 +115,14 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
   }
 
   await logScan({ ...base, status: "allowed" });
+  
+  // Invalidate usage and reports on allowed scan
+  await delCache([
+    `messmate:usage:${member.memberId}:${date}`,
+    `messmate:usage:summary:${date}`,
+    `messmate:report:daily:${date}`
+  ]);
+
   const totalToday = sub.meals.length;
   const used = (usage.used_breakfast ? 1 : 0) + (usage.used_lunch ? 1 : 0) + (usage.used_dinner ? 1 : 0);
   const daysLeft = Math.max(0, differenceInCalendarDays(end, now));

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { format } from "date-fns";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { query } from "../db/index.js";
+import { getCache, setCache } from "../db/redis.js";
 
 const router = Router();
 router.use(verifyToken);
@@ -21,6 +22,10 @@ router.get("/today", requireRole("admin"), async (_req, res, next) => {
 router.get("/summary/today", requireRole("admin", "staff"), async (_req, res, next) => {
   try {
     const date = format(new Date(), "yyyy-MM-dd");
+    const cacheKey = `messmate:usage:summary:${date}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
     const { rows } = await query(
       `SELECT
          COALESCE(SUM(CASE WHEN used_breakfast THEN 1 ELSE 0 END),0)::int AS b,
@@ -30,7 +35,11 @@ router.get("/summary/today", requireRole("admin", "staff"), async (_req, res, ne
       [date]
     );
     const r = rows[0];
-    res.json({ Breakfast: r.b, Lunch: r.l, Dinner: r.d, total: r.b + r.l + r.d });
+    const result = { Breakfast: r.b, Lunch: r.l, Dinner: r.d, total: r.b + r.l + r.d };
+    
+    await setCache(cacheKey, result, 60); // 1 min
+    
+    res.json(result);
   } catch (e) { next(e); }
 });
 

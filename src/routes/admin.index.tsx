@@ -5,7 +5,7 @@ import { StatCard } from "@/components/messmate/StatCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, CreditCard, AlertTriangle, IndianRupee, UtensilsCrossed, RefreshCw } from "lucide-react";
+import { Users, CreditCard, AlertTriangle, IndianRupee, UtensilsCrossed, RefreshCw, UserPlus, Repeat, Clock, Coins } from "lucide-react";
 import { todayISO, daysRemaining, formatINR, formatDate, isWithinWindow, formatTime12h } from "@/lib/messmate/dateHelpers";
 import { PlanBadge } from "@/components/messmate/PlanBadge";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
@@ -22,6 +22,7 @@ function AdminDashboard() {
   const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
   const summaryQ = useQuery({ queryKey: ["usage", "summary"], queryFn: () => usageApi.summaryToday(), refetchInterval: 30_000 });
   const expiringQ = useQuery({ queryKey: ["reports", "expiring", 3], queryFn: () => reportsApi.expiring(3) });
+  const statsQ = useQuery({ queryKey: ["reports", "daily-stats"], queryFn: () => reportsApi.getDailyStats(), refetchInterval: 60_000 });
 
   const renewM = useMutation({
     mutationFn: (id: string) => membersApi.renew(id),
@@ -35,6 +36,7 @@ function AdminDashboard() {
   const members = membersQ.data?.items ?? [];
   const windows = windowsQ.data ?? [];
   const summary = summaryQ.data ?? { Breakfast: 0, Lunch: 0, Dinner: 0, total: 0 };
+  const stats = statsQ.data ?? { new_members: 0, renewed_members: 0, expired_members: 0, collection: 0 };
   const expiringSoon = (expiringQ.data ?? []).sort(
     (a, b) => daysRemaining(a.subscription.endDate) - daysRemaining(b.subscription.endDate)
   );
@@ -58,12 +60,25 @@ function AdminDashboard() {
         </div>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <StatCard icon={Users} label="Total Members" value={members.length} accent="primary" />
-        <StatCard icon={CreditCard} label="Active Plans" value={active.length} accent="success" />
-        <StatCard icon={AlertTriangle} label="Expired" value={expired.length} accent="destructive" />
-        <StatCard icon={UtensilsCrossed} label="Meals Today" value={summary.total} accent="primary" hint={`${summary.Breakfast}B · ${summary.Lunch}L · ${summary.Dinner}D`} />
-        <StatCard icon={IndianRupee} label="Monthly Revenue" value={formatINR(revenue)} accent="success" />
+      <div className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Today's Summary (IST)</h3>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard icon={UserPlus} label="New Joins" value={stats.new_members} accent="primary" />
+          <StatCard icon={Repeat} label="Renewals" value={stats.renewed_members} accent="success" />
+          <StatCard icon={Clock} label="Expired Today" value={stats.expired_members} accent="destructive" />
+          <StatCard icon={Coins} label="Today's Collection" value={formatINR(stats.collection)} accent="success" />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Overall Metrics</h3>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <StatCard icon={Users} label="Total Members" value={members.length} accent="primary" />
+          <StatCard icon={CreditCard} label="Active Plans" value={active.length} accent="success" />
+          <StatCard icon={AlertTriangle} label="Expired" value={expired.length} accent="destructive" />
+          <StatCard icon={UtensilsCrossed} label="Meals Today" value={summary.total} accent="primary" hint={`${summary.Breakfast}B · ${summary.Lunch}L · ${summary.Dinner}D`} />
+          <StatCard icon={IndianRupee} label="Monthly Revenue" value={formatINR(revenue)} accent="success" />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

@@ -1,11 +1,21 @@
 import cron from "node-cron";
-import { differenceInCalendarDays } from "date-fns";
+import { differenceInCalendarDays, format } from "date-fns";
 import { query, rowToMember } from "../db/index.js";
 import { notifyExpiringSoon, notifyExpired } from "../services/notificationService.js";
+import { delCache, delByPattern } from "../db/redis.js";
 
 export function startCron() {
   cron.schedule("1 0 * * *", async () => {
     console.log("[CRON] Running daily jobs…");
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+
+    await delCache([
+      `messmate:usage:summary:${todayStr}`,
+      `messmate:scan:log:${todayStr}`,
+      `messmate:scan:denials:${todayStr}`,
+      "messmate:report:weekly"
+    ]);
+    await delByPattern("report:expiring");
 
     const { rows: soon } = await query(
       `SELECT * FROM members

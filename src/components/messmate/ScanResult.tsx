@@ -102,7 +102,7 @@ export function ScanResultScreen({
           <div className="w-full max-w-md space-y-1 rounded-2xl bg-white/10 p-4 backdrop-blur">
             <div className="text-xl font-semibold">{result.member.name}</div>
             <div className="text-xs opacity-70">
-              {result.member.memberId} · Room {result.member.room}
+              {result.member.memberId}{result.member.mobile && <> · 📞 {result.member.mobile}</>}
             </div>
             {allowed ? (
               <div className="mt-3 grid grid-cols-3 gap-3 border-t border-white/20 pt-3 text-left text-xs">
