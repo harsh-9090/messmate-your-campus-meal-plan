@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMess } from "@/lib/messmate/store";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { membersApi, configApi, reportsApi, usageApi } from "@/lib/messmate/api";
 import { StatCard } from "@/components/messmate/StatCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,30 +17,33 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminDashboard() {
-  const members = useMess((s) => s.members.filter((m) => m.role === "member" && m.isActive));
-  const windows = useMess((s) => s.windows);
-  const usage = useMess((s) => s.usage);
-  const logs = useMess((s) => s.logs);
-  const renew = useMess((s) => s.renewMember);
+  const qc = useQueryClient();
+  const membersQ = useQuery({ queryKey: ["members", "all"], queryFn: () => membersApi.list({ limit: 500 }) });
+  const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
+  const summaryQ = useQuery({ queryKey: ["usage", "summary"], queryFn: () => usageApi.summaryToday(), refetchInterval: 30_000 });
+  const expiringQ = useQuery({ queryKey: ["reports", "expiring", 3], queryFn: () => reportsApi.expiring(3) });
+
+  const renewM = useMutation({
+    mutationFn: (id: string) => membersApi.renew(id),
+    onSuccess: () => {
+      toast.success("Plan renewed");
+      qc.invalidateQueries({ queryKey: ["members"] });
+      qc.invalidateQueries({ queryKey: ["reports", "expiring", 3] });
+    },
+  });
+
+  const members = membersQ.data?.items ?? [];
+  const windows = windowsQ.data ?? [];
+  const summary = summaryQ.data ?? { Breakfast: 0, Lunch: 0, Dinner: 0, total: 0 };
+  const expiringSoon = (expiringQ.data ?? []).sort(
+    (a, b) => daysRemaining(a.subscription.endDate) - daysRemaining(b.subscription.endDate)
+  );
 
   const today = todayISO();
   const active = members.filter((m) => m.subscription.isPaid && daysRemaining(m.subscription.endDate) >= 0);
   const expired = members.filter((m) => daysRemaining(m.subscription.endDate) < 0);
-  const expiringSoon = members
-    .filter((m) => { const d = daysRemaining(m.subscription.endDate); return d >= 0 && d <= 3; })
-    .sort((a, b) => daysRemaining(a.subscription.endDate) - daysRemaining(b.subscription.endDate));
-
-  const todaysLogs = logs.filter((l) => l.date === today);
-  const allowedToday = todaysLogs.filter((l) => l.status === "allowed").length;
   const revenue = active.reduce((s, m) => s + m.subscription.pricePerMonth, 0);
-  const todaysUsage = usage.filter((u) => u.date === today);
-  const mealsByType = {
-    Breakfast: todaysUsage.filter((u) => u.usedMeals.Breakfast).length,
-    Lunch: todaysUsage.filter((u) => u.usedMeals.Lunch).length,
-    Dinner: todaysUsage.filter((u) => u.usedMeals.Dinner).length,
-  };
 
-  // Plan distribution
   const planCounts: Record<string, number> = {};
   members.forEach((m) => { planCounts[m.subscription.planLabel] = (planCounts[m.subscription.planLabel] || 0) + 1; });
   const planChart = Object.entries(planCounts).map(([name, value]) => ({ name, value }));
@@ -58,12 +62,11 @@ function AdminDashboard() {
         <StatCard icon={Users} label="Total Members" value={members.length} accent="primary" />
         <StatCard icon={CreditCard} label="Active Plans" value={active.length} accent="success" />
         <StatCard icon={AlertTriangle} label="Expired" value={expired.length} accent="destructive" />
-        <StatCard icon={UtensilsCrossed} label="Meals Today" value={allowedToday} accent="primary" hint={`${mealsByType.Breakfast}B · ${mealsByType.Lunch}L · ${mealsByType.Dinner}D`} />
+        <StatCard icon={UtensilsCrossed} label="Meals Today" value={summary.total} accent="primary" hint={`${summary.Breakfast}B · ${summary.Lunch}L · ${summary.Dinner}D`} />
         <StatCard icon={IndianRupee} label="Monthly Revenue" value={formatINR(revenue)} accent="success" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Plan distribution */}
         <Card className="p-5 lg:col-span-2">
           <h3 className="mb-4 font-display text-lg font-bold">Members by Plan</h3>
           <div className="h-64">
@@ -80,13 +83,12 @@ function AdminDashboard() {
           </div>
         </Card>
 
-        {/* Meal windows */}
         <Card className="p-5">
           <h3 className="mb-4 font-display text-lg font-bold">Meal Windows</h3>
           <div className="space-y-2">
             {windows.map((w) => {
               const open = isWithinWindow(new Date(), w);
-              const served = mealsByType[w.meal];
+              const served = summary[w.meal];
               return (
                 <div key={w.meal} className="flex items-center justify-between rounded-lg border p-3">
                   <div>
@@ -106,7 +108,6 @@ function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Expiry alerts */}
       <Card className="p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-lg font-bold">Expiring Soon</h3>
@@ -132,7 +133,7 @@ function AdminDashboard() {
                       </div>
                     </div>
                   </div>
-                  <Button size="sm" onClick={() => { renew(m.memberId); toast.success(`${m.name} renewed for 30 days`); }}>
+                  <Button size="sm" disabled={renewM.isPending} onClick={() => renewM.mutate(m.memberId)}>
                     <RefreshCw className="mr-1 h-3 w-3" /> Renew
                   </Button>
                 </div>

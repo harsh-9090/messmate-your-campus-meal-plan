@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useMess } from "@/lib/messmate/store";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/messmate/auth";
+import { membersApi, scanApi, configApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,8 +9,8 @@ import { QRCanvas } from "@/components/messmate/QRCanvas";
 import { SubscriptionBar } from "@/components/messmate/SubscriptionBar";
 import { MealChip } from "@/components/messmate/MealChip";
 import { PlanBadge } from "@/components/messmate/PlanBadge";
-import { Lock, AlertTriangle, History, LogOut, UtensilsCrossed } from "lucide-react";
-import { todayISO, daysRemaining, formatINR, formatTimestamp, isWithinWindow } from "@/lib/messmate/dateHelpers";
+import { Lock, AlertTriangle, History, LogOut, UtensilsCrossed, Loader2 } from "lucide-react";
+import { daysRemaining, formatINR, formatTimestamp, isWithinWindow } from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
 import type { Meal } from "@/lib/messmate/types";
 
@@ -24,38 +25,63 @@ export const Route = createFileRoute("/member/")({
 });
 
 function MemberPortal() {
-  const me = useMess((s) => s.currentUser());
-  const windows = useMess((s) => s.windows);
-  const usage = useMess((s) => s.usage);
-  const logs = useMess((s) => s.logs);
-  const logout = useMess((s) => s.logout);
+  const authUser = useAuth((s) => s.user);
+  const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
 
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setTick((x) => x + 1), 30_000);
-    return () => clearInterval(t);
-  }, []);
+  const meQ = useQuery({
+    queryKey: ["member", authUser?.id],
+    queryFn: () => membersApi.get(authUser!.id),
+    enabled: !!authUser,
+  });
+  const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
+  const logsQ = useQuery({
+    queryKey: ["my-logs"],
+    queryFn: () => scanApi.logs({ limit: 14 }),
+    enabled: !!authUser,
+    refetchInterval: 15_000,
+  });
 
-  if (!me) {
+  if (!authUser) {
     return (
       <div className="grid min-h-screen place-items-center">
         <Button onClick={() => navigate({ to: "/login" })}>Sign in</Button>
       </div>
     );
   }
+  if (meQ.isLoading) {
+    return <div className="grid min-h-screen place-items-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+  if (meQ.isError || !meQ.data) {
+    return (
+      <div className="grid min-h-screen place-items-center p-6 text-center">
+        <div>
+          <p className="text-destructive">Couldn't load your profile.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Make sure the backend is running.</p>
+          <Button className="mt-4" onClick={() => meQ.refetch()}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
+  const me = meQ.data;
   const sub = me.subscription;
   const left = daysRemaining(sub.endDate);
   const expired = left < 0;
   const locked = !sub.isPaid || expired;
-  const today = todayISO();
-  const todaysUsage = usage.find((u) => u.memberId === me.memberId && u.date === today);
-  const myLogs = logs.filter((l) => l.memberId === me.memberId).slice(0, 14);
+  const windows = windowsQ.data ?? [];
+  const myLogs = logsQ.data ?? [];
+
+  // Build today's usage from logs
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todaysUsed: Record<Meal, boolean> = { Breakfast: false, Lunch: false, Dinner: false };
+  myLogs.forEach((l) => {
+    if (l.date === todayStr && l.status === "allowed") todaysUsed[l.meal] = true;
+  });
 
   const stateOf = (meal: Meal) => {
     if (!sub.meals.includes(meal)) return "not-in-plan" as const;
-    if (todaysUsage?.usedMeals[meal]) return "used" as const;
+    if (todaysUsed[meal]) return "used" as const;
     const w = windows.find((x) => x.meal === meal);
     if (!w || !isWithinWindow(new Date(), w)) return "window-closed" as const;
     return "available" as const;
@@ -75,13 +101,12 @@ function MemberPortal() {
             </div>
           </div>
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/login" onClick={logout}><LogOut className="h-4 w-4" /></Link>
+            <Link to="/login" onClick={() => logout()}><LogOut className="h-4 w-4" /></Link>
           </Button>
         </div>
       </header>
 
       <main className="mx-auto max-w-2xl space-y-4 p-4">
-        {/* Subscription card */}
         <Card className="overflow-hidden p-0">
           <div className="bg-gradient-primary p-5 text-white">
             <div className="flex items-start justify-between">
@@ -100,12 +125,9 @@ function MemberPortal() {
               {sub.meals.includes("Dinner") && <span>🌙</span>}
             </div>
           </div>
-          <div className="p-5">
-            <SubscriptionBar sub={sub} />
-          </div>
+          <div className="p-5"><SubscriptionBar sub={sub} /></div>
         </Card>
 
-        {/* Expiry warning */}
         {!expired && left <= 3 && sub.isPaid && (
           <Card className="border-warning/40 bg-warning/10 p-4">
             <div className="flex items-start gap-3">
@@ -118,7 +140,6 @@ function MemberPortal() {
           </Card>
         )}
 
-        {/* QR */}
         <Card className="p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -135,18 +156,16 @@ function MemberPortal() {
                   {expired ? "Plan Expired" : "Payment Pending"}
                 </div>
                 <p className="max-w-xs text-sm text-muted-foreground">
-                  {expired
-                    ? "Your 30-day plan has ended. Contact admin to renew."
-                    : "Your subscription payment is pending. Contact admin."}
+                  {expired ? "Your 30-day plan has ended. Contact admin to renew."
+                           : "Your subscription payment is pending. Contact admin."}
                 </p>
               </div>
             ) : (
-              <QRCanvas payload={me.memberId} />
+              <QRCanvas />
             )}
           </div>
         </Card>
 
-        {/* Today's meals */}
         <Card className="p-5">
           <div className="mb-3 flex items-center justify-between">
             <div className="font-display text-lg font-bold">Today's Meals</div>
@@ -157,7 +176,6 @@ function MemberPortal() {
           </div>
         </Card>
 
-        {/* History */}
         <Card className="p-5">
           <div className="mb-3 flex items-center gap-2">
             <History className="h-4 w-4 text-muted-foreground" />

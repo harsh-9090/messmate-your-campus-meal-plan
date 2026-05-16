@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useMess } from "@/lib/messmate/store";
+import { useAuth } from "@/lib/messmate/auth";
 import { AdminSidebar } from "@/components/messmate/AdminSidebar";
 
 export const Route = createFileRoute("/admin")({
@@ -8,11 +8,11 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
-  const me = useMess((s) => s.currentUser());
+  const user = useAuth((s) => s.user);
   const navigate = useNavigate();
   useEffect(() => {
-    if (!me || me.role !== "admin") navigate({ to: "/login" });
-  }, [me, navigate]);
+    if (!user || user.role !== "admin") navigate({ to: "/login" });
+  }, [user, navigate]);
 
   return (
     <div className="flex min-h-screen w-full">
