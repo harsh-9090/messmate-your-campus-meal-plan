@@ -1,12 +1,11 @@
 import { Router } from "express";
 import { body, validationResult } from "express-validator";
+import { format } from "date-fns";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { scanLimiter } from "../middleware/rateLimiter.js";
 import { verifyQRToken } from "../services/qrService.js";
-import { Member } from "../models/Member.js";
-import { ScanLog } from "../models/ScanLog.js";
+import { query, rowToMember } from "../db/index.js";
 import { validateAndRecord } from "../services/scanValidator.js";
-import { format } from "date-fns";
 
 const router = Router();
 router.use(verifyToken, requireRole("staff", "admin"), scanLimiter);
@@ -21,16 +20,19 @@ router.post("/validate",
       const { qrToken, meal } = req.body;
       const decoded = verifyQRToken(qrToken);
       if (!decoded) {
-        await ScanLog.create({
-          status: "denied", denialCode: "INVALID_TOKEN",
-          denialReason: "Invalid or expired QR code", meal,
-          date: format(new Date(), "yyyy-MM-dd"), timestamp: new Date(),
-          scannedBy: req.user.sub,
-        });
+        await query(
+          `INSERT INTO scan_logs (meal, date, ts, status, denial_code, denial_reason, scanned_by)
+           VALUES ($1, $2, NOW(), 'denied', 'INVALID_TOKEN', 'Invalid or expired QR code', $3)`,
+          [meal, format(new Date(), "yyyy-MM-dd"), req.user.sub]
+        );
         return res.status(200).json({ status: "denied", code: "INVALID_TOKEN", reason: "Invalid or expired QR code", meal });
       }
 
-      const member = await Member.findOne({ memberId: decoded.userId, isActive: true });
+      const { rows } = await query(
+        `SELECT * FROM members WHERE member_id = $1 AND is_active = TRUE`,
+        [decoded.userId]
+      );
+      const member = rowToMember(rows[0]);
       const result = await validateAndRecord({
         member, meal, scannedBy: req.user.sub, deviceInfo: req.headers["user-agent"],
       });
