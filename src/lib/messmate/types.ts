@@ -32,7 +32,7 @@ export interface Member {
   memberId: string;
   name: string;
   email: string;
-  password: string; // demo only
+  password?: string;
   room: string;
   photoUrl?: string;
   role: Role;
