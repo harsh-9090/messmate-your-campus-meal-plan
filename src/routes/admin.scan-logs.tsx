@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useMess } from "@/lib/messmate/store";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { scanApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { todayISO, formatTimestamp } from "@/lib/messmate/dateHelpers";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/scan-logs")({
@@ -14,21 +15,32 @@ export const Route = createFileRoute("/admin/scan-logs")({
   component: ScanLogsPage,
 });
 
-const REASONS = ["all", "UNPAID", "EXPIRED", "NOT_IN_PLAN", "WRONG_TIME", "ALREADY_USED"];
+const REASONS = ["all", "UNPAID", "EXPIRED", "NOT_IN_PLAN", "WRONG_TIME", "ALREADY_USED", "INVALID_TOKEN"];
 
 function ScanLogsPage() {
-  const logs = useMess((s) => s.logs);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const today = todayISO();
-  const todayLogs = logs.filter((l) => l.date === today);
 
-  const filtered = logs.filter((l) => {
+  const allQ = useQuery({
+    queryKey: ["logs", "recent"],
+    queryFn: () => scanApi.logs({ limit: 500 }),
+    refetchInterval: 10_000,
+  });
+  const todayQ = useQuery({
+    queryKey: ["logs", "today"],
+    queryFn: () => scanApi.logs({ date: todayISO(), limit: 500 }),
+    refetchInterval: 10_000,
+  });
+
+  const logs = allQ.data ?? [];
+  const todayLogs = todayQ.data ?? [];
+
+  const filtered = useMemo(() => logs.filter((l) => {
     if (search && !l.memberName.toLowerCase().includes(search.toLowerCase()) && !l.memberId.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === "all") return true;
     if (filter === "allowed") return l.status === "allowed";
     return l.denialCode === filter;
-  });
+  }), [logs, search, filter]);
 
   const byCode: Record<string, number> = {};
   todayLogs.filter((l) => l.status === "denied").forEach((l) => {
@@ -96,6 +108,7 @@ function ScanLogsPage() {
               </tr>
             </thead>
             <tbody>
+              {allQ.isLoading && <tr><td colSpan={5} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>}
               {filtered.map((l) => (
                 <tr key={l.id} className="border-t">
                   <td className="px-4 py-2 text-xs text-muted-foreground">{formatTimestamp(l.timestamp)}</td>
@@ -114,7 +127,7 @@ function ScanLogsPage() {
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-sm text-muted-foreground">No scan logs yet</td></tr>}
+              {!allQ.isLoading && filtered.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-sm text-muted-foreground">No scan logs yet</td></tr>}
             </tbody>
           </table>
         </div>

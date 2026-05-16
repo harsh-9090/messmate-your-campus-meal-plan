@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Users, ScanLine, BarChart3, Settings, LogOut, UtensilsCrossed } from "lucide-react";
-import { useMess } from "@/lib/messmate/store";
+import { useAuth } from "@/lib/messmate/auth";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -13,8 +13,8 @@ const items = [
 
 export function AdminSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
-  const me = useMess((s) => s.currentUser());
-  const logout = useMess((s) => s.logout);
+  const user = useAuth((s) => s.user);
+  const logout = useAuth((s) => s.logout);
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
@@ -50,13 +50,13 @@ export function AdminSidebar() {
       <div className="border-t border-sidebar-border p-3">
         <div className="flex items-center gap-3 rounded-lg p-2">
           <div className="grid h-9 w-9 place-items-center rounded-full bg-sidebar-accent text-sm font-semibold">
-            {me?.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+            {user?.name?.split(" ").map((n) => n[0]).slice(0, 2).join("")}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">{me?.name}</div>
-            <div className="truncate text-xs text-sidebar-foreground/50">{me?.email}</div>
+            <div className="truncate text-sm font-medium">{user?.name}</div>
+            <div className="truncate text-xs text-sidebar-foreground/50">{user?.id}</div>
           </div>
-          <Link to="/login" onClick={logout} className="rounded-md p-2 hover:bg-sidebar-accent" aria-label="Logout">
+          <Link to="/login" onClick={() => logout()} className="rounded-md p-2 hover:bg-sidebar-accent" aria-label="Logout">
             <LogOut className="h-4 w-4" />
           </Link>
         </div>
