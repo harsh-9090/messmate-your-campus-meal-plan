@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMess } from "@/lib/messmate/store";
+import { useQuery } from "@tanstack/react-query";
+import { membersApi, reportsApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { addDaysISO, todayISO, daysRemaining, formatINR } from "@/lib/messmate/dateHelpers";
+import { todayISO, daysRemaining, formatINR } from "@/lib/messmate/dateHelpers";
 import { format, parseISO } from "date-fns";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { toast } from "sonner";
@@ -14,36 +15,29 @@ export const Route = createFileRoute("/admin/reports")({
 });
 
 function ReportsPage() {
-  const usage = useMess((s) => s.usage);
-  const members = useMess((s) => s.members.filter((m) => m.role === "member" && m.isActive));
-  const logs = useMess((s) => s.logs);
+  const weeklyQ = useQuery({ queryKey: ["reports", "weekly"], queryFn: () => reportsApi.weekly() });
+  const membersQ = useQuery({ queryKey: ["members", "all"], queryFn: () => membersApi.list({ limit: 500 }) });
 
-  const today = todayISO();
-  const days = Array.from({ length: 7 }, (_, i) => addDaysISO(today, -6 + i));
-  const weekly = days.map((d) => {
-    const dayUsage = usage.filter((u) => u.date === d);
-    const meals = dayUsage.reduce((s, u) => s + (u.usedMeals.Breakfast ? 1 : 0) + (u.usedMeals.Lunch ? 1 : 0) + (u.usedMeals.Dinner ? 1 : 0), 0);
-    return { date: format(parseISO(d), "EEE"), meals };
-  });
+  const members = membersQ.data?.items ?? [];
+  const weekly = (weeklyQ.data?.days ?? []).map((d) => ({ date: format(parseISO(d.date), "EEE"), meals: d.meals }));
 
   const active = members.filter((m) => m.subscription.isPaid && daysRemaining(m.subscription.endDate) >= 0);
-  const totalRev = active.reduce((s, m) => s + m.subscription.pricePerMonth, 0);
+  const totalRev = weeklyQ.data?.estimatedMonthlyRevenue ?? active.reduce((s, m) => s + m.subscription.pricePerMonth, 0);
   const unpaidDues = members.filter((m) => !m.subscription.isPaid).reduce((s, m) => s + m.subscription.pricePerMonth, 0);
   const totalMealsWeek = weekly.reduce((s, d) => s + d.meals, 0);
   const avgPerDay = (totalMealsWeek / 7).toFixed(1);
 
-  const exportCsv = () => {
-    const rows = [
-      ["Date", "Member ID", "Member", "Meal", "Status", "Reason"],
-      ...logs.map((l) => [l.date, l.memberId, l.memberName, l.meal, l.status, l.denialReason || ""]),
-    ];
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `messmate-scans-${today}.csv`;
-    a.click();
-    toast.success("CSV exported");
+  const exportCsv = async () => {
+    try {
+      const blob = await reportsApi.exportDailyCsv(todayISO());
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `messmate-scans-${todayISO()}.csv`;
+      a.click();
+      toast.success("CSV exported");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Export failed");
+    }
   };
 
   return (

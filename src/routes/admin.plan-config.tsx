@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMess } from "@/lib/messmate/store";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { configApi, membersApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlanIcons } from "@/components/messmate/PlanBadge";
 import { formatINR, formatTime12h } from "@/lib/messmate/dateHelpers";
 import { toast } from "sonner";
+import type { Meal } from "@/lib/messmate/types";
 
 export const Route = createFileRoute("/admin/plan-config")({
   head: () => ({ meta: [{ title: "Plan Config — MessMate Admin" }] }),
@@ -14,11 +16,34 @@ export const Route = createFileRoute("/admin/plan-config")({
 });
 
 function PlanConfigPage() {
-  const plans = useMess((s) => s.plans);
-  const windows = useMess((s) => s.windows);
-  const members = useMess((s) => s.members);
-  const updateWindow = useMess((s) => s.updateWindow);
-  const updatePlan = useMess((s) => s.updatePlan);
+  const qc = useQueryClient();
+  const plansQ = useQuery({ queryKey: ["plans"], queryFn: () => configApi.listPlans() });
+  const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
+  const membersQ = useQuery({ queryKey: ["members", "all"], queryFn: () => membersApi.list({ limit: 500 }) });
+
+  const plans = plansQ.data ?? [];
+  const windows = windowsQ.data ?? [];
+  const members = membersQ.data?.items ?? [];
+
+  const updatePlanM = useMutation({
+    mutationFn: ({ planId, price }: { planId: string; price: number }) =>
+      configApi.updatePlan(planId, { pricePerMonth: price }),
+    onSuccess: (_, v) => {
+      toast.success(`${plans.find((p) => p.planId === v.planId)?.label ?? "Plan"} updated`);
+      qc.invalidateQueries({ queryKey: ["plans"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+  });
+
+  const updateWindowM = useMutation({
+    mutationFn: ({ meal, startTime, endTime }: { meal: Meal; startTime: string; endTime: string }) =>
+      configApi.updateWindow(meal, startTime, endTime),
+    onSuccess: (_, v) => {
+      toast.success(`${v.meal} window updated`);
+      qc.invalidateQueries({ queryKey: ["windows"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+  });
 
   return (
     <div className="space-y-6 p-6 md:p-8">
@@ -31,7 +56,7 @@ function PlanConfigPage() {
         <h3 className="mb-4 font-display text-lg font-bold">Subscription Plans</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {plans.map((p) => {
-            const count = members.filter((m) => m.role === "member" && m.isActive && m.subscription.planId === p.planId).length;
+            const count = members.filter((m) => m.subscription.planId === p.planId).length;
             return (
               <div key={p.planId} className="rounded-xl border p-4">
                 <div className="flex items-start justify-between">
@@ -43,19 +68,14 @@ function PlanConfigPage() {
                 </div>
                 <div className="mt-3">
                   <Label className="text-xs text-muted-foreground">Price / month</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      defaultValue={p.pricePerMonth}
-                      onBlur={(e) => {
-                        const v = parseInt(e.target.value);
-                        if (v && v !== p.pricePerMonth) {
-                          updatePlan(p.planId, { pricePerMonth: v });
-                          toast.success(`${p.label} updated`);
-                        }
-                      }}
-                    />
-                  </div>
+                  <Input
+                    type="number"
+                    defaultValue={p.pricePerMonth}
+                    onBlur={(e) => {
+                      const v = parseInt(e.target.value);
+                      if (v && v !== p.pricePerMonth) updatePlanM.mutate({ planId: p.planId, price: v });
+                    }}
+                  />
                   <div className="mt-1 text-xs text-muted-foreground">Currently {formatINR(p.pricePerMonth)}</div>
                 </div>
               </div>
@@ -77,14 +97,12 @@ function PlanConfigPage() {
               <div>
                 <Label className="text-xs">Start</Label>
                 <Input type="time" defaultValue={w.startTime}
-                  onBlur={(e) => { if (e.target.value !== w.startTime) { updateWindow(w.meal, e.target.value, w.endTime); toast.success(`${w.meal} window updated`); } }}
-                />
+                  onBlur={(e) => { if (e.target.value !== w.startTime) updateWindowM.mutate({ meal: w.meal, startTime: e.target.value, endTime: w.endTime }); }} />
               </div>
               <div>
                 <Label className="text-xs">End</Label>
                 <Input type="time" defaultValue={w.endTime}
-                  onBlur={(e) => { if (e.target.value !== w.endTime) { updateWindow(w.meal, w.startTime, e.target.value); toast.success(`${w.meal} window updated`); } }}
-                />
+                  onBlur={(e) => { if (e.target.value !== w.endTime) updateWindowM.mutate({ meal: w.meal, startTime: w.startTime, endTime: e.target.value }); }} />
               </div>
             </div>
           ))}
