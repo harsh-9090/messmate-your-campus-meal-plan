@@ -1,12 +1,13 @@
 {
   "name": "messmate-server",
-  "version": "1.0.0",
-  "description": "MessMate hostel mess management — Express + MongoDB API",
+  "version": "1.1.0",
+  "description": "MessMate hostel mess management — Express + PostgreSQL API",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "migrate": "node src/db/migrate.js",
     "seed": "node seed.js"
   },
   "dependencies": {
@@ -20,8 +21,8 @@
     "express-validator": "^7.2.0",
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.8.0",
     "morgan": "^1.10.0",
-    "node-cron": "^3.0.3"
+    "node-cron": "^3.0.3",
+    "pg": "^8.13.1"
   }
 }
