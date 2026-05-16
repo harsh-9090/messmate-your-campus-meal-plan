@@ -66,9 +66,16 @@ function MemberPortal() {
 
   const me = meQ.data;
   const sub = me.subscription;
+  
+  // Calculate grace period: 3 days from start
+  const daysSinceStart = Math.max(0, daysRemaining(sub.startDate) * -1);
+  const gracePeriod = 3;
+  const inGracePeriod = !sub.isPaid && daysSinceStart <= gracePeriod;
+  
   const left = daysRemaining(sub.endDate);
   const expired = left < 0;
-  const locked = !sub.isPaid || expired;
+  const locked = (!sub.isPaid && !inGracePeriod) || expired;
+  
   const windows = windowsQ.data ?? [];
   const myLogs = logsQ.data ?? [];
 
@@ -166,7 +173,14 @@ function MemberPortal() {
                 </p>
               </div>
             ) : (
-              <QRCanvas />
+              <div className="flex flex-col items-center gap-4">
+                {inGracePeriod && (
+                  <Badge variant="outline" className="border-amber-500 bg-amber-50 text-amber-600">
+                    Grace Period: {gracePeriod - daysSinceStart} days left to pay
+                  </Badge>
+                )}
+                <QRCanvas />
+              </div>
             )}
           </div>
         </Card>

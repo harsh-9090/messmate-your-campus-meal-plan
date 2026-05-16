@@ -15,16 +15,29 @@ const fmtDate = (d) => format(d, "yyyy-MM-dd");
 // list (admin)
 router.get("/", requireRole("admin"), async (req, res, next) => {
   try {
-    const { search = "", status, page = 1, limit = 20 } = req.query;
-    const cacheKey = `messmate:member:list:${page}:${limit}:${search}:${status || "all"}`;
+    const { search = "", status, planId, page = 1, limit = 20 } = req.query;
+    const cacheKey = `messmate:member:list:${page}:${limit}:${search}:${status || "all"}:${planId || "all"}`;
     const cached = await getCache(cacheKey);
     if (cached) return res.json(cached);
 
-    const where = [`is_active = TRUE`, `role = 'member'`];
+    const where = [`role = 'member'`];
+    if (status === "pending") {
+      where.push(`is_active = FALSE`);
+    } else if (!status || status === "all") {
+      // Show all members (both active and pending)
+    } else {
+      // Default: show only active members for other filters (expired, unpaid, etc)
+      where.push(`is_active = TRUE`);
+    }
+
     const params = [];
     if (search) {
       params.push(`%${search}%`);
       where.push(`(name ILIKE $${params.length} OR member_id ILIKE $${params.length})`);
+    }
+    if (planId && planId !== "all") {
+      params.push(planId);
+      where.push(`sub_plan_id = $${params.length}`);
     }
     const today = fmtDate(new Date());
     if (status === "expired") where.push(`sub_end_date < DATE '${today}'`);
@@ -35,6 +48,8 @@ router.get("/", requireRole("admin"), async (req, res, next) => {
     const lim = parseInt(limit, 10), pg = parseInt(page, 10);
     const offset = (pg - 1) * lim;
     params.push(lim, offset);
+
+    console.log("[DEBUG] Members List Query:", { whereSql, params });
 
     const [items, total] = await Promise.all([
       query(`SELECT * FROM members ${whereSql} ORDER BY member_id ASC LIMIT $${params.length - 1} OFFSET $${params.length}`, params),
@@ -107,8 +122,8 @@ router.post("/",
       const m = rows[0];
       if (amountPaid > 0) {
         await query(
-          `INSERT INTO payments (member_id, amount, method, type, plan_id) VALUES ($1,$2,$3,'initial',$4)`,
-          [id, amountPaid, paymentMethod, planId]
+          `INSERT INTO payments (member_id, member_name, member_mobile, amount, method, type, plan_id) VALUES ($1,$2,$3,$4,$5,'initial',$6)`,
+          [id, name, mobile, amountPaid, paymentMethod, planId]
         );
       }
       res.status(201).json(stripPassword(rowToMember(m)));
@@ -175,6 +190,7 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
          sub_is_paid = $6, sub_price_per_month = $7, sub_amount_paid = $8,
          sub_renewed_at = NOW(), sub_renewal_count = sub_renewal_count + 1,
          sub_paid_at = CASE WHEN $6 THEN NOW() ELSE sub_paid_at END, 
+         is_active = TRUE,
          updated_at = NOW()
        WHERE member_id = $9 RETURNING *`,
       [plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(today), fmtDate(end), isPaid, price, amountPaid, req.params.id]
@@ -183,8 +199,8 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
 
     if (amountPaid > 0) {
       await query(
-        `INSERT INTO payments (member_id, amount, method, type, plan_id) VALUES ($1,$2,$3,'renewal',$4)`,
-        [req.params.id, amountPaid, paymentMethod, plan?.plan_id]
+        `INSERT INTO payments (member_id, member_name, member_mobile, amount, method, type, plan_id) VALUES ($1,$2,$3,$4,$5,'renewal',$6)`,
+        [req.params.id, rows[0].name, rows[0].mobile, amountPaid, paymentMethod, plan?.plan_id]
       );
     }
     
@@ -206,6 +222,7 @@ router.put("/:id/payment", requireRole("admin"),
            sub_amount_paid = sub_amount_paid + $1,
            sub_is_paid = (sub_amount_paid + $1) >= sub_price_per_month AND sub_price_per_month > 0,
            sub_paid_at = CASE WHEN (sub_amount_paid + $1) >= sub_price_per_month AND sub_price_per_month > 0 THEN NOW() ELSE sub_paid_at END,
+           is_active = TRUE,
            updated_at = NOW()
          WHERE member_id = $2 RETURNING *`,
         [amountPaid, req.params.id]
@@ -213,8 +230,8 @@ router.put("/:id/payment", requireRole("admin"),
       if (!rows[0]) return res.status(404).json({ error: "Not found" });
 
       await query(
-        `INSERT INTO payments (member_id, amount, method, type) VALUES ($1,$2,$3,'top-up')`,
-        [req.params.id, amountPaid, paymentMethod]
+        `INSERT INTO payments (member_id, member_name, member_mobile, amount, method, type, plan_id) VALUES ($1,$2,$3,$4,$5,'top-up',$6)`,
+        [req.params.id, rows[0].name, rows[0].mobile, amountPaid, paymentMethod, rows[0].sub_plan_id]
       );
       
       await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);

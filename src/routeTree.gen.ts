@@ -9,17 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MemberIndexRouteImport } from './routes/member/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as StaffScannerRouteImport } from './routes/staff/scanner'
+import { Route as AdminStaffRouteImport } from './routes/admin.staff'
 import { Route as AdminScanLogsRouteImport } from './routes/admin.scan-logs'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPlanConfigRouteImport } from './routes/admin.plan-config'
+import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
+import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -50,6 +59,11 @@ const StaffScannerRoute = StaffScannerRouteImport.update({
   path: '/staff/scanner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminStaffRoute = AdminStaffRouteImport.update({
+  id: '/staff',
+  path: '/staff',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminScanLogsRoute = AdminScanLogsRouteImport.update({
   id: '/scan-logs',
   path: '/scan-logs',
@@ -65,9 +79,19 @@ const AdminPlanConfigRoute = AdminPlanConfigRouteImport.update({
   path: '/plan-config',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMembersRoute = AdminMembersRouteImport.update({
   id: '/members',
   path: '/members',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminFinanceRoute = AdminFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
   getParentRoute: () => AdminRoute,
 } as any)
 
@@ -75,10 +99,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/payments': typeof AdminPaymentsRoute
   '/admin/plan-config': typeof AdminPlanConfigRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scan-logs': typeof AdminScanLogsRoute
+  '/admin/staff': typeof AdminStaffRoute
   '/staff/scanner': typeof StaffScannerRoute
   '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
@@ -86,10 +114,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/payments': typeof AdminPaymentsRoute
   '/admin/plan-config': typeof AdminPlanConfigRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scan-logs': typeof AdminScanLogsRoute
+  '/admin/staff': typeof AdminStaffRoute
   '/staff/scanner': typeof StaffScannerRoute
   '/admin': typeof AdminIndexRoute
   '/member': typeof MemberIndexRoute
@@ -99,10 +131,14 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/admin/finance': typeof AdminFinanceRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/payments': typeof AdminPaymentsRoute
   '/admin/plan-config': typeof AdminPlanConfigRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scan-logs': typeof AdminScanLogsRoute
+  '/admin/staff': typeof AdminStaffRoute
   '/staff/scanner': typeof StaffScannerRoute
   '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
@@ -113,10 +149,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/register'
+    | '/admin/finance'
     | '/admin/members'
+    | '/admin/payments'
     | '/admin/plan-config'
     | '/admin/reports'
     | '/admin/scan-logs'
+    | '/admin/staff'
     | '/staff/scanner'
     | '/admin/'
     | '/member/'
@@ -124,10 +164,14 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/register'
+    | '/admin/finance'
     | '/admin/members'
+    | '/admin/payments'
     | '/admin/plan-config'
     | '/admin/reports'
     | '/admin/scan-logs'
+    | '/admin/staff'
     | '/staff/scanner'
     | '/admin'
     | '/member'
@@ -136,10 +180,14 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/register'
+    | '/admin/finance'
     | '/admin/members'
+    | '/admin/payments'
     | '/admin/plan-config'
     | '/admin/reports'
     | '/admin/scan-logs'
+    | '/admin/staff'
     | '/staff/scanner'
     | '/admin/'
     | '/member/'
@@ -149,12 +197,20 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
   StaffScannerRoute: typeof StaffScannerRoute
   MemberIndexRoute: typeof MemberIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -197,6 +253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffScannerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/staff': {
+      id: '/admin/staff'
+      path: '/staff'
+      fullPath: '/admin/staff'
+      preLoaderRoute: typeof AdminStaffRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/scan-logs': {
       id: '/admin/scan-logs'
       path: '/scan-logs'
@@ -218,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPlanConfigRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/members': {
       id: '/admin/members'
       path: '/members'
@@ -225,22 +295,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMembersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/finance': {
+      id: '/admin/finance'
+      path: '/finance'
+      fullPath: '/admin/finance'
+      preLoaderRoute: typeof AdminFinanceRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminFinanceRoute: typeof AdminFinanceRoute
   AdminMembersRoute: typeof AdminMembersRoute
+  AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminPlanConfigRoute: typeof AdminPlanConfigRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminScanLogsRoute: typeof AdminScanLogsRoute
+  AdminStaffRoute: typeof AdminStaffRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminFinanceRoute: AdminFinanceRoute,
   AdminMembersRoute: AdminMembersRoute,
+  AdminPaymentsRoute: AdminPaymentsRoute,
   AdminPlanConfigRoute: AdminPlanConfigRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminScanLogsRoute: AdminScanLogsRoute,
+  AdminStaffRoute: AdminStaffRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -250,6 +333,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
   StaffScannerRoute: StaffScannerRoute,
   MemberIndexRoute: MemberIndexRoute,
 }

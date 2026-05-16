@@ -16,13 +16,25 @@ export function PlanBadge({ planId, label }: { planId: string; label: string }) 
   );
 }
 
-export function PlanIcons({ plan }: { plan: Plan | { meals: string[] } }) {
-  const meals = (plan as Plan).meals;
+export function PlanIcons({ plan }: { plan: Plan | { meals?: string[] } | null | undefined }) {
+  const meals = (plan as Plan)?.meals || [];
   return (
-    <div className="flex gap-1 text-sm">
-      {meals.includes("Breakfast") && <span title="Breakfast">🌅</span>}
-      {meals.includes("Lunch") && <span title="Lunch">🍱</span>}
-      {meals.includes("Dinner") && <span title="Dinner">🌙</span>}
+    <div className="flex gap-1.5">
+      {meals.includes("Breakfast") && (
+        <span title="Breakfast" className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-50 text-amber-600 shadow-sm ring-1 ring-inset ring-amber-500/20">
+          🌅
+        </span>
+      )}
+      {meals.includes("Lunch") && (
+        <span title="Lunch" className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-50 text-blue-600 shadow-sm ring-1 ring-inset ring-blue-500/20">
+          🍱
+        </span>
+      )}
+      {meals.includes("Dinner") && (
+        <span title="Dinner" className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50 text-indigo-600 shadow-sm ring-1 ring-inset ring-indigo-500/20">
+          🌙
+        </span>
+      )}
     </div>
   );
 }

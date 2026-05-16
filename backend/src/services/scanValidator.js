@@ -48,8 +48,19 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
   const base = { memberId: member.memberId, memberName: member.name, meal, scannedBy, deviceInfo };
 
   if (!sub.isPaid) {
-    await logScan({ ...base, status: "denied", code: "UNPAID", reason: "Subscription payment pending" });
-    return { status: "denied", code: "UNPAID", reason: "Subscription payment pending", member: memberInfo, meal };
+    const start = sub.startDate ? new Date(sub.startDate) : new Date(member.createdAt);
+    const daysSinceStart = differenceInCalendarDays(new Date(), start);
+    const gracePeriod = 3;
+
+    if (daysSinceStart > gracePeriod) {
+      const reason = sub.amountPaid > 0 
+        ? `Grace period (${gracePeriod} days) expired. Please pay the remaining ₹${sub.dueAmount}.`
+        : `Payment pending. Please pay at the mess office.`;
+      
+      await logScan({ ...base, status: "denied", code: "UNPAID", reason });
+      return { status: "denied", code: "UNPAID", reason, member: memberInfo, meal };
+    }
+    // Else: Allow during grace period, proceed to other checks
   }
 
   const now = new Date();

@@ -11,6 +11,8 @@ import scanRoutes from "./routes/scan.js";
 import usageRoutes from "./routes/usage.js";
 import reportRoutes from "./routes/reports.js";
 import configRoutes from "./routes/config.js";
+import paymentRoutes from "./routes/payments.js";
+import staffRoutes from "./routes/staff.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 export const app = express();
@@ -31,6 +33,8 @@ v1.use("/scan", scanRoutes);
 v1.use("/usage", usageRoutes);
 v1.use("/reports", reportRoutes);
 v1.use("/config", configRoutes);
+v1.use("/payments", paymentRoutes);
+v1.use("/staff", staffRoutes);
 app.use("/api/v1", v1);
 
 app.use(errorHandler);

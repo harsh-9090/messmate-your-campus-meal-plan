@@ -1,13 +1,16 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Users, ScanLine, BarChart3, Settings, LogOut, UtensilsCrossed } from "lucide-react";
+import { LayoutDashboard, Users, ScanLine, BarChart3, Settings, LogOut, UtensilsCrossed, IndianRupee, TrendingUp, UserCog } from "lucide-react";
 import { useAuth } from "@/lib/messmate/auth";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/members", label: "Members", icon: Users },
+  { to: "/admin/payments", label: "Payments", icon: IndianRupee },
+  { to: "/admin/finance", label: "Finance", icon: TrendingUp },
   { to: "/admin/scan-logs", label: "Scan Logs", icon: ScanLine },
   { to: "/admin/reports", label: "Reports", icon: BarChart3 },
+  { to: "/admin/staff", label: "Staff", icon: UserCog },
   { to: "/admin/plan-config", label: "Plan Config", icon: Settings },
 ];
 

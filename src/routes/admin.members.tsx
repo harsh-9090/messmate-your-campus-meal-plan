@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { membersApi, configApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2 } from "lucide-react";
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
-import { todayISO, daysRemaining, formatDate, formatINR } from "@/lib/messmate/dateHelpers";
+import { todayISO, daysRemaining, formatDate, formatINR, addDaysISO } from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
 import type { Meal, Member, Plan } from "@/lib/messmate/types";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -29,14 +29,15 @@ export const Route = createFileRoute("/admin/members")({
 function MembersPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<"all" | "active" | "expired" | "unpaid">("all");
+  const [status, setStatus] = useState<"all" | "active" | "expired" | "unpaid" | "pending">("all");
+  const [planFilter, setPlanFilter] = useState("all");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [renewing, setRenewing] = useState<Member | null>(null);
 
   const membersQ = useQuery({
-    queryKey: ["members", { search, status }],
-    queryFn: () => membersApi.list({ search, status, limit: 500 }),
+    queryKey: ["members", { search, status, planFilter }],
+    queryFn: () => membersApi.list({ search, status, planId: planFilter === "all" ? undefined : planFilter, limit: 500 }),
   });
   const plansQ = useQuery({ queryKey: ["plans"], queryFn: () => configApi.listPlans() });
 
@@ -50,6 +51,7 @@ function MembersPage() {
       if (status === "active") return m.isActive && daysRemaining(m.subscription.endDate) >= 0;
       if (status === "expired") return daysRemaining(m.subscription.endDate) < 0;
       if (status === "unpaid") return !m.subscription.isPaid;
+      if (status === "pending") return !m.isActive;
       return true;
     });
   }, [members, search, status]);
@@ -57,7 +59,7 @@ function MembersPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["members"] });
 
   const renewM = useMutation({
-    mutationFn: (id: string) => membersApi.renew(id),
+    mutationFn: (id: string) => membersApi.renew(id, {}),
     onSuccess: () => { toast.success("Plan renewed"); invalidate(); },
   });
   const deleteM = useMutation({
@@ -85,13 +87,28 @@ function MembersPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input className="pl-9" placeholder="Search name or ID…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <Select value={status} onValueChange={(v: typeof status) => setStatus(v)}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <Select value={status} onValueChange={(v: any) => setStatus(v)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="expired">Expired</SelectItem>
               <SelectItem value="unpaid">Unpaid</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={planFilter} onValueChange={setPlanFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Filter by Plan" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Plans</SelectItem>
+              {plansQ.data?.map((p) => (
+                <SelectItem key={p.planId} value={p.planId}>{p.label}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -115,7 +132,10 @@ function MembersPage() {
               {membersQ.isLoading && (
                 <tr><td colSpan={7} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
               )}
-              {!membersQ.isLoading && filtered.map((m) => {
+              {membersQ.isError && (
+                <tr><td colSpan={7} className="py-10 text-center text-destructive font-medium">Failed to load members. Please try again.</td></tr>
+              )}
+              {!membersQ.isLoading && !membersQ.isError && filtered.map((m) => {
                 const left = daysRemaining(m.subscription.endDate);
                 const expired = left < 0;
                 return (
@@ -123,7 +143,7 @@ function MembersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">
-                          {m.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                          {(m.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")}
                         </div>
                         <div>
                           <div className="font-medium leading-tight">{m.name}</div>
@@ -135,17 +155,23 @@ function MembersPage() {
                     </td>
                     <td className="px-4 py-3"><PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} /></td>
                     <td className="px-4 py-3"><PlanIcons plan={m.subscription} /></td>
-                    <td className="px-4 py-3 text-xs">{formatDate(m.subscription.startDate)}</td>
-                    <td className={cn("px-4 py-3 text-xs", expired && "text-destructive font-semibold", !expired && left <= 3 && "text-warning font-semibold")}>
-                      {formatDate(m.subscription.endDate)}
-                      <div className="text-[10px] text-muted-foreground">
-                        {expired ? `${-left}d ago` : `${left}d left`}
-                      </div>
+                    <td className="px-4 py-3 text-xs">{formatDate(m.subscription.startDate || m.createdAt)}</td>
+                    <td className={cn("px-4 py-3 text-xs", expired && "text-destructive font-semibold", !expired && left <= 3 && (m.subscription.endDate || m.createdAt) && "text-warning font-semibold")}>
+                      {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
+                      {(m.subscription.endDate || m.createdAt) && (
+                        <div className="text-[10px] text-muted-foreground">
+                          {expired ? `${-left}d ago` : `${left}d left`}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      {!m.subscription.isPaid ? (
+                      {!m.isActive ? (
+                        <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
+                      ) : !m.subscription.isPaid ? (
                         <div>
-                          <Badge variant="destructive">Unpaid</Badge>
+                          <Badge variant="destructive" className={cn(m.subscription.amountPaid > 0 && "bg-orange-500 hover:bg-orange-600 border-orange-500")}>
+                            {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                          </Badge>
                           {m.subscription.dueAmount > 0 && <div className="mt-1 text-[10px] font-medium text-destructive">Due: ₹{m.subscription.dueAmount}</div>}
                         </div>
                       ) : expired ? <Badge variant="destructive">Expired</Badge>

@@ -15,12 +15,27 @@ router.get("/stats", async (_req, res, next) => {
         SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today
       )
       SELECT 
-        (SELECT COUNT(*)::int FROM members WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as new_members,
-        (SELECT COUNT(*)::int FROM members WHERE (sub_renewed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today) AND sub_renewal_count > 0) as renewed_members,
-        (SELECT COUNT(*)::int FROM members WHERE sub_end_date = (SELECT today FROM ist_today)) as expired_members,
-        (SELECT COALESCE(SUM(amount), 0)::int FROM payments WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as collection
+        -- Counts
+        (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as new_members,
+        (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND (sub_renewed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today) AND sub_renewal_count > 0) as renewed_members,
+        (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND sub_end_date = (SELECT today FROM ist_today)) as expired_members,
+        (SELECT COALESCE(SUM(amount), 0)::int FROM payments WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as collection,
+        
+        -- Details (as JSON arrays)
+        (SELECT COALESCE(json_agg(m.*), '[]') FROM members m WHERE role = 'member' AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as new_list,
+        (SELECT COALESCE(json_agg(m.*), '[]') FROM members m WHERE role = 'member' AND (sub_renewed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today) AND sub_renewal_count > 0) as renewed_list,
+        (SELECT COALESCE(json_agg(m.*), '[]') FROM members m WHERE role = 'member' AND sub_end_date = (SELECT today FROM ist_today)) as expired_list
     `);
-    res.json(rows[0]);
+    
+    const { rowToMember, stripPassword } = await import("../db/index.js");
+    const data = rows[0];
+    
+    // Transform raw DB rows to Member objects
+    data.new_list = data.new_list.map(r => stripPassword(rowToMember(r)));
+    data.renewed_list = data.renewed_list.map(r => stripPassword(rowToMember(r)));
+    data.expired_list = data.expired_list.map(r => stripPassword(rowToMember(r)));
+    
+    res.json(data);
   } catch (e) { next(e); }
 });
 
@@ -187,6 +202,72 @@ router.get("/export", async (req, res, next) => {
       return res.send(toCsv(rowsOut));
     }
     res.json(rowsOut);
+  } catch (e) { next(e); }
+});
+
+router.get("/finance", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { period = "all", date = "" } = req.query; // period: day, month, year, all
+    let where = "";
+    const params = [];
+
+    if (period === "day" && date) {
+      params.push(date);
+      where = `WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = $${params.length}`;
+    } else if (period === "month" && date) {
+      params.push(date + "%"); // date: 2024-05
+      where = `WHERE TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM') LIKE $${params.length}`;
+    } else if (period === "year" && date) {
+      params.push(date + "%"); // date: 2024
+      where = `WHERE TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata', 'YYYY') LIKE $${params.length}`;
+    }
+
+    const { rows: summary } = await query(`
+      SELECT 
+        COALESCE(SUM(amount)::int, 0) as total_revenue,
+        (SELECT COALESCE(SUM(sub_price_per_month - sub_amount_paid)::int, 0) FROM members WHERE role = 'member' AND sub_price_per_month > sub_amount_paid) as total_dues,
+        COUNT(*)::int as tx_count
+      FROM payments
+      ${where}
+    `, params);
+
+    const { rows: monthly } = await query(`
+      SELECT 
+        TO_CHAR(date_trunc('month', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), 'Mon YYYY') as month,
+        SUM(amount)::int as revenue
+      FROM payments
+      ${where}
+      GROUP BY 1
+      ORDER BY MIN(created_at) DESC
+      LIMIT 12
+    `, params);
+
+    const { rows: methods } = await query(`
+      SELECT method as name, SUM(amount)::int as value
+      FROM payments
+      ${where}
+      GROUP BY 1
+      ORDER BY value DESC
+    `, params);
+
+    const { rows: plans } = await query(`
+      SELECT 
+        COALESCE(p.label, 'Custom') as name, 
+        SUM(pay.amount)::int as value,
+        (SELECT COUNT(*)::int FROM members m WHERE (m.sub_plan_id = pay.plan_id OR (m.sub_plan_id IS NULL AND pay.plan_id IS NULL)) AND m.is_active = TRUE) as members
+      FROM payments pay
+      LEFT JOIN plans p ON pay.plan_id = p.plan_id
+      ${where.replace('created_at', 'pay.created_at')}
+      GROUP BY 1, pay.plan_id
+      ORDER BY value DESC
+    `, params);
+
+    res.json({
+      summary: summary[0],
+      monthly: monthly.reverse(),
+      methods,
+      plans
+    });
   } catch (e) { next(e); }
 });
 

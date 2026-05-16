@@ -4,9 +4,8 @@ import { query } from "../db/index.js";
 import { getCache, setCache, delCache } from "../db/redis.js";
 
 const router = Router();
-router.use(verifyToken);
 
-// --- Plans ---
+// --- Plans (Public) ---
 router.get("/plans", async (_req, res, next) => {
   try {
     const cached = await getCache("messmate:plan:list");
@@ -20,6 +19,24 @@ router.get("/plans", async (_req, res, next) => {
     res.json(result);
   } catch (e) { next(e); }
 });
+
+// --- Meal windows (Public) ---
+router.get("/windows", async (_req, res, next) => {
+  try {
+    const cached = await getCache("messmate:window:list");
+    if (cached) return res.json(cached);
+
+    const { rows } = await query(`SELECT * FROM meal_windows WHERE is_active = TRUE ORDER BY start_time ASC`);
+    const result = rows.map((w) => ({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active }));
+    await setCache("messmate:window:list", result, 1800); // 30 min
+    res.json(result);
+  } catch (e) { next(e); }
+});
+
+// All following routes require authentication
+router.use(verifyToken);
+
+// --- Admin Plan Actions ---
 
 router.post("/plans", requireRole("admin"), async (req, res, next) => {
   try {
@@ -57,6 +74,15 @@ router.put("/plans/:planId", requireRole("admin"), async (req, res, next) => {
     
     const p = rows[0];
     res.json({ planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active });
+  } catch (e) { next(e); }
+});
+
+router.delete("/plans/:planId", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { planId } = req.params;
+    await query(`DELETE FROM plans WHERE plan_id = $1`, [planId]);
+    await delCache(["messmate:plan:list", `messmate:plan:${planId}`]);
+    res.json({ ok: true });
   } catch (e) { next(e); }
 });
 

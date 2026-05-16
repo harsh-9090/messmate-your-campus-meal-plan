@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlanIcons } from "@/components/messmate/PlanBadge";
 import { formatINR, formatTime12h } from "@/lib/messmate/dateHelpers";
 import { toast } from "sonner";
-import { Plus, Edit2, Loader2, Check, X } from "lucide-react";
+import { Plus, Edit2, Loader2, Check, X, Trash2, Power, PowerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MEALS } from "@/lib/messmate/constants";
@@ -50,13 +50,22 @@ function PlanConfigPage() {
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
 
-  const deletePlanM = useMutation({
-    mutationFn: (planId: string) => configApi.updatePlan(planId, { isActive: false } as any),
-    onSuccess: () => {
-      toast.success("Plan deleted");
+  const deactivatePlanM = useMutation({
+    mutationFn: ({ planId, isActive }: { planId: string; isActive: boolean }) => configApi.updatePlan(planId, { isActive } as any),
+    onSuccess: (_, v) => {
+      toast.success(v.isActive ? "Plan activated" : "Plan deactivated");
       qc.invalidateQueries({ queryKey: ["plans"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
+  });
+
+  const deletePlanM = useMutation({
+    mutationFn: (planId: string) => configApi.removePlan(planId),
+    onSuccess: () => {
+      toast.success("Plan deleted permanently");
+      qc.invalidateQueries({ queryKey: ["plans"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to delete"),
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["plans"] });
@@ -79,10 +88,13 @@ function PlanConfigPage() {
           {plans.map((p) => {
             const count = members.filter((m) => m.subscription.planId === p.planId).length;
             return (
-              <div key={p.planId} className="group relative rounded-xl border p-4 hover:border-primary/50 transition-colors">
+              <div key={p.planId} className={`group relative rounded-xl border p-4 transition-all ${p.isActive ? "hover:border-primary/50" : "bg-muted/30 opacity-60"}`}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="font-display text-lg font-bold">{p.label}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-display text-lg font-bold">{p.label}</div>
+                      {!p.isActive && <Badge variant="outline" className="text-[10px] h-4">Inactive</Badge>}
+                    </div>
                     <PlanIcons plan={p} />
                   </div>
                   <Badge variant="secondary">{count} members</Badge>
@@ -92,9 +104,17 @@ function PlanConfigPage() {
                     <div className="text-xs text-muted-foreground uppercase tracking-wider">Price / {p.durationMonths ?? 1}mo</div>
                     <div className="text-lg font-bold text-primary">{formatINR(p.pricePerMonth)}</div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => setEditing(p)}>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(p)}>
                       <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10" 
+                      onClick={() => { if(confirm("Permanently delete this plan?")) deletePlanM.mutate(p.planId); }}
+                    >
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -131,7 +151,14 @@ function PlanConfigPage() {
       </Card>
 
       <AddPlanDialog open={adding} onOpenChange={setAdding} onSaved={invalidate} />
-      {editing && <EditPlanDialog plan={editing} onClose={() => setEditing(null)} onSaved={invalidate} onDelete={() => deletePlanM.mutate(editing.planId)} />}
+      {editing && (
+        <EditPlanDialog 
+          plan={editing} 
+          onClose={() => setEditing(null)} 
+          onSaved={invalidate} 
+          onDeactivate={(isActive) => deactivatePlanM.mutate({ planId: editing.planId, isActive })} 
+        />
+      )}
     </div>
   );
 }
@@ -202,7 +229,7 @@ function AddPlanDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpenC
   );
 }
 
-function EditPlanDialog({ plan, onClose, onSaved, onDelete }: { plan: Plan; onClose: () => void; onSaved: () => void; onDelete: () => void; }) {
+function EditPlanDialog({ plan, onClose, onSaved, onDeactivate }: { plan: Plan; onClose: () => void; onSaved: () => void; onDeactivate: (isActive: boolean) => void; }) {
   const [label, setLabel] = useState(plan.label);
   const [price, setPrice] = useState(plan.pricePerMonth.toString());
   const [duration, setDuration] = useState((plan.durationMonths ?? 1).toString());
@@ -246,7 +273,14 @@ function EditPlanDialog({ plan, onClose, onSaved, onDelete }: { plan: Plan; onCl
           </div>
         </div>
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="destructive" className="sm:mr-auto" onClick={() => { if(confirm("Are you sure? This will deactivate the plan.")) { onDelete(); onClose(); } }}>Deactivate</Button>
+          <Button 
+            variant="outline" 
+            className="sm:mr-auto gap-2" 
+            onClick={() => { onDeactivate(!plan.isActive); onClose(); }}
+          >
+            {plan.isActive ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+            {plan.isActive ? "Deactivate Plan" : "Activate Plan"}
+          </Button>
           <div className="flex gap-2">
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
             <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>

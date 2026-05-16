@@ -3,7 +3,7 @@
 // Attaches the JWT access token stored in the auth store.
 
 import type {
-  Member, Plan, MealWindow, Meal, ScanResult, ScanLog, MealUsageDay,
+  Member, Plan, MealWindow, Meal, ScanResult, ScanLog, MealUsageDay, Payment,
 } from "./types";
 
 const BASE_URL =
@@ -35,17 +35,25 @@ export class ApiError extends Error {
 
 async function request<T>(
   path: string,
-  init: RequestInit & { auth?: boolean; raw?: boolean; _retry?: boolean } = {}
+  init: RequestInit & { auth?: boolean; raw?: boolean; _retry?: boolean; query?: Record<string, any> } = {}
 ): Promise<T> {
-  const { auth = true, raw = false, _retry = false, headers, ...rest } = init;
+  const { auth = true, raw = false, _retry = false, headers, query, ...rest } = init;
   const h: Record<string, string> = { "Content-Type": "application/json", ...(headers as any) };
   if (auth) {
     const tok = getToken();
     if (tok) h.Authorization = `Bearer ${tok}`;
   }
+
+  let fullPath = path;
+  if (query) {
+    const q = new URLSearchParams();
+    Object.entries(query).forEach(([k, v]) => { if (v != null) q.set(k, String(v)); });
+    fullPath += (path.includes("?") ? "&" : "?") + q.toString();
+  }
+
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}${path}`, { ...rest, headers: h, credentials: "include" });
+    res = await fetch(`${BASE_URL}${fullPath}`, { ...rest, headers: h, credentials: "include" });
   } catch (e: any) {
     throw new ApiError(`Cannot reach API at ${BASE_URL}. Is the backend running?`, 0);
   }
@@ -86,15 +94,17 @@ export const authApi = {
     ),
   me: () => request<Member>("/auth/me"),
   logout: () => request<{ ok: true }>("/auth/logout", { method: "POST", auth: false }),
+  register: (data: any) => request<{ ok: true; message: string }>("/auth/register", { method: "POST", auth: false, body: JSON.stringify(data) }),
 };
 
 // ---------- Members ----------
 export interface MemberListResponse { items: Member[]; total: number; page: number; limit: number; }
 export const membersApi = {
-  list: (params: { search?: string; status?: string; page?: number; limit?: number } = {}) => {
+  list: (params: { search?: string; status?: string; planId?: string; page?: number; limit?: number } = {}) => {
     const q = new URLSearchParams();
     if (params.search) q.set("search", params.search);
     if (params.status && params.status !== "all") q.set("status", params.status);
+    if (params.planId && params.planId !== "all") q.set("planId", params.planId);
     q.set("page", String(params.page ?? 1));
     q.set("limit", String(params.limit ?? 100));
     return request<MemberListResponse>(`/members?${q.toString()}`);
@@ -104,7 +114,7 @@ export const membersApi = {
     name: string; email: string; password: string; mobile?: string;
     planId: string; meals: Meal[]; startDate: string; amountPaid?: number; paymentMethod?: string; role?: string;
   }) => request<Member>("/members", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: string, patch: Partial<{ name: string; email: string; password: string; photoUrl: string }>) =>
+  update: (id: string, patch: Partial<{ name: string; email: string; mobile: string; password: string; photoUrl: string }>) =>
     request<Member>(`/members/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   remove: (id: string) => request<{ ok: true }>(`/members/${id}`, { method: "DELETE" }),
   renew: (id: string, data: { planId?: string; amountPaid?: number; paymentMethod?: string }) => 
@@ -115,6 +125,14 @@ export const membersApi = {
     request(`/members/${id}/plan`, { method: "PUT", body: JSON.stringify(data) }),
 };
 
+// ---------- Payments ----------
+export const paymentsApi = {
+  list: (params: { limit?: number; offset?: number } = {}) =>
+    request<Payment[]>("/payments", { query: params }),
+  remove: (id: string) =>
+    request<{ ok: true }>(`/payments/${id}`, { method: "DELETE" }),
+};
+
 // ---------- Config ----------
 export const configApi = {
   listPlans: () => request<Plan[]>("/config/plans"),
@@ -122,6 +140,8 @@ export const configApi = {
     request<Plan>(`/config/plans/${planId}`, { method: "PUT", body: JSON.stringify(patch) }),
   createPlan: (plan: Plan & { isActive?: boolean }) =>
     request<Plan>("/config/plans", { method: "POST", body: JSON.stringify(plan) }),
+  removePlan: (planId: string) =>
+    request<{ ok: true }>(`/config/plans/${planId}`, { method: "DELETE" }),
   listWindows: () => request<MealWindow[]>("/config/windows"),
   updateWindow: (meal: Meal, startTime: string, endTime: string) =>
     request<MealWindow>(`/config/windows/${meal}`, { method: "PUT", body: JSON.stringify({ startTime, endTime }) }),
@@ -161,11 +181,21 @@ export const reportsApi = {
     renewed_members: number;
     expired_members: number;
     collection: number;
+    new_list: Member[];
+    renewed_list: Member[];
+    expired_list: Member[];
   }>("/reports/stats"),
+  getFinance: (params: { period?: 'day' | 'month' | 'year' | 'all'; date?: string } = {}) => 
+    request<{
+      summary: { total_revenue: number; total_dues: number; tx_count: number };
+      monthly: { month: string; revenue: number }[];
+      methods: { name: string; value: number }[];
+      plans: { name: string; value: number }[];
+    }>("/reports/finance", { query: params }),
   daily: (date?: string) => request<{
     date: string; meals: Record<Meal, number>; allowed: number; denied: number; total: number;
     denialBreakdown: Record<string, number>;
-  }>(`/reports/daily${date ? `?date=${date}` : ""}`),
+  }>("/reports/daily", { query: { date } }),
   weekly: () => request<{
     days: { date: string; meals: number }[];
     estimatedMonthlyRevenue: number;
@@ -183,4 +213,11 @@ export const reportsApi = {
     if (!res.ok) throw new ApiError("Export failed", res.status);
     return res.blob();
   },
+};
+
+export const staffApi = {
+  list: () => request<Member[]>("/staff"),
+  create: (data: Partial<Member> & { password?: string }) => request<Member>("/staff", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<Member> & { password?: string }) => request<Member>(`/staff/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: string) => request<{ ok: boolean }>(`/staff/${id}`, { method: "DELETE" }),
 };

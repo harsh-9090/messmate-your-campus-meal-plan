@@ -1,15 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { membersApi, configApi, reportsApi, usageApi } from "@/lib/messmate/api";
 import { StatCard } from "@/components/messmate/StatCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Users, CreditCard, AlertTriangle, IndianRupee, UtensilsCrossed, RefreshCw, UserPlus, Repeat, Clock, Coins } from "lucide-react";
 import { todayISO, daysRemaining, formatINR, formatDate, isWithinWindow, formatTime12h } from "@/lib/messmate/dateHelpers";
 import { PlanBadge } from "@/components/messmate/PlanBadge";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { toast } from "sonner";
+import type { Member } from "@/lib/messmate/types";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Dashboard — MessMate Admin" }] }),
@@ -24,8 +27,10 @@ function AdminDashboard() {
   const expiringQ = useQuery({ queryKey: ["reports", "expiring", 3], queryFn: () => reportsApi.expiring(3) });
   const statsQ = useQuery({ queryKey: ["reports", "daily-stats"], queryFn: () => reportsApi.getDailyStats(), refetchInterval: 60_000 });
 
+  const [viewingList, setViewingList] = useState<{ title: string; members: Member[] } | null>(null);
+
   const renewM = useMutation({
-    mutationFn: (id: string) => membersApi.renew(id),
+    mutationFn: (id: string) => membersApi.renew(id, {}),
     onSuccess: () => {
       toast.success("Plan renewed");
       qc.invalidateQueries({ queryKey: ["members"] });
@@ -36,7 +41,10 @@ function AdminDashboard() {
   const members = membersQ.data?.items ?? [];
   const windows = windowsQ.data ?? [];
   const summary = summaryQ.data ?? { Breakfast: 0, Lunch: 0, Dinner: 0, total: 0 };
-  const stats = statsQ.data ?? { new_members: 0, renewed_members: 0, expired_members: 0, collection: 0 };
+  const stats = statsQ.data ?? { 
+    new_members: 0, renewed_members: 0, expired_members: 0, collection: 0,
+    new_list: [], renewed_list: [], expired_list: []
+  };
   const expiringSoon = (expiringQ.data ?? []).sort(
     (a, b) => daysRemaining(a.subscription.endDate) - daysRemaining(b.subscription.endDate)
   );
@@ -63,9 +71,15 @@ function AdminDashboard() {
       <div className="space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Today's Summary (IST)</h3>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard icon={UserPlus} label="New Joins" value={stats.new_members} accent="primary" />
-          <StatCard icon={Repeat} label="Renewals" value={stats.renewed_members} accent="success" />
-          <StatCard icon={Clock} label="Expired Today" value={stats.expired_members} accent="destructive" />
+          <div className="cursor-pointer transition-transform hover:scale-[1.02]" onClick={() => setViewingList({ title: "New Joins Today", members: stats.new_list })}>
+            <StatCard icon={UserPlus} label="New Joins" value={stats.new_members} accent="primary" />
+          </div>
+          <div className="cursor-pointer transition-transform hover:scale-[1.02]" onClick={() => setViewingList({ title: "Renewals Today", members: stats.renewed_list })}>
+            <StatCard icon={Repeat} label="Renewals" value={stats.renewed_members} accent="success" />
+          </div>
+          <div className="cursor-pointer transition-transform hover:scale-[1.02]" onClick={() => setViewingList({ title: "Expired Today", members: stats.expired_list })}>
+            <StatCard icon={Clock} label="Expired Today" value={stats.expired_members} accent="destructive" />
+          </div>
           <StatCard icon={Coins} label="Today's Collection" value={formatINR(stats.collection)} accent="success" />
         </div>
       </div>
@@ -157,6 +171,57 @@ function AdminDashboard() {
           </div>
         )}
       </Card>
+
+      {viewingList && (
+        <StatsDetailDialog
+          title={viewingList.title}
+          members={viewingList.members}
+          onClose={() => setViewingList(null)}
+        />
+      )}
     </div>
+  );
+}
+
+function StatsDetailDialog({ title, members, onClose }: { title: string; members: Member[]; onClose: () => void; }) {
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <p className="text-sm text-muted-foreground">{members.length} member{members.length === 1 ? "" : "s"}</p>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto pr-2">
+          {members.length === 0 ? (
+            <div className="py-10 text-center text-sm text-muted-foreground">No members found.</div>
+          ) : (
+            <div className="divide-y">
+              {members.map((m) => (
+                <div key={m.memberId} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
+                      {m.name.split(" ").map((n) => n[0]).join("")}
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">{m.name}</div>
+                      <div className="text-xs text-muted-foreground">{m.memberId} · {m.mobile || "No mobile"}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} />
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      Ends: {formatDate(m.subscription.endDate)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

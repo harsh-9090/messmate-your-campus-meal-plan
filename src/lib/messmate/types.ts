@@ -15,6 +15,7 @@ export interface Plan {
   meals: Meal[];
   pricePerMonth: number;
   durationMonths: number;
+  isActive?: boolean;
 }
 
 export interface Subscription {
@@ -41,6 +42,7 @@ export interface Member {
   role: Role;
   isActive: boolean;
   subscription: Subscription;
+  createdAt: string;
 }
 
 export interface MealUsageDay {
@@ -70,7 +72,7 @@ export interface MealWindow {
 
 export interface ScanResult {
   status: "allowed" | "denied";
-  member?: { memberId: string; name: string; photoUrl?: string };
+  member?: { memberId: string; name: string; mobile?: string | null; photoUrl?: string };
   meal: Meal;
   code?: DenialCode;
   reason?: string;
@@ -78,4 +80,17 @@ export interface ScanResult {
   mealsRemainingToday?: number;
   daysRemainingInPlan?: number;
   planLabel?: string;
+}
+
+export interface Payment {
+  id: string;
+  memberId: string;
+  memberName: string;
+  memberMobile: string | null;
+  planId: string | null;
+  planLabel: string;
+  amount: number;
+  method: string;
+  type: 'initial' | 'renewal' | 'topup';
+  createdAt: string;
 }

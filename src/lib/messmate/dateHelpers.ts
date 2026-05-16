@@ -3,13 +3,14 @@ import type { Meal, MealWindow } from "./types";
 
 export const todayISO = () => format(new Date(), "yyyy-MM-dd");
 
-export const formatDate = (iso: string) => format(parseISO(iso), "dd MMM yyyy");
+export const formatDate = (iso: string | null | undefined) => 
+  iso ? format(parseISO(iso), "dd MMM yyyy") : "-";
 
-export const daysRemaining = (endDateISO: string) =>
-  differenceInCalendarDays(parseISO(endDateISO), new Date());
+export const daysRemaining = (endDateISO: string | null | undefined) =>
+  endDateISO ? differenceInCalendarDays(parseISO(endDateISO), new Date()) : 0;
 
-export const daysElapsed = (startDateISO: string) =>
-  Math.max(0, differenceInCalendarDays(new Date(), parseISO(startDateISO)));
+export const daysElapsed = (startDateISO: string | null | undefined) =>
+  startDateISO ? Math.max(0, differenceInCalendarDays(new Date(), parseISO(startDateISO))) : 0;
 
 export const addDaysISO = (startISO: string, days: number) =>
   format(addDays(parseISO(startISO), days), "yyyy-MM-dd");

@@ -81,3 +81,28 @@ CREATE TABLE IF NOT EXISTS scan_logs (
 CREATE INDEX IF NOT EXISTS scan_logs_member_date_idx ON scan_logs(member_id, date);
 CREATE INDEX IF NOT EXISTS scan_logs_date_status_idx ON scan_logs(date, status);
 CREATE INDEX IF NOT EXISTS scan_logs_ts_idx          ON scan_logs(ts);
+
+CREATE TABLE IF NOT EXISTS payments (
+  id             BIGSERIAL PRIMARY KEY,
+  member_id      TEXT REFERENCES members(member_id) ON DELETE SET NULL,
+  member_name    TEXT,
+  member_mobile  TEXT,
+  plan_id        TEXT,
+  amount         INTEGER NOT NULL,
+  method         TEXT NOT NULL, -- 'Cash', 'Online', 'UPI', 'Card'
+  type           TEXT NOT NULL, -- 'initial', 'renewal', 'topup'
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS payments_member_idx ON payments(member_id);
+CREATE INDEX IF NOT EXISTS payments_created_at_idx ON payments(created_at);
+
+-- Migrations for existing payments table
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS member_name TEXT;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS member_mobile TEXT;
+ALTER TABLE payments ALTER COLUMN member_id DROP NOT NULL;
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_member_id_fkey;
+ALTER TABLE payments ADD CONSTRAINT payments_member_id_fkey FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE scan_logs DROP CONSTRAINT IF EXISTS scan_logs_member_id_fkey;
+ALTER TABLE scan_logs ADD CONSTRAINT scan_logs_member_id_fkey FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE SET NULL ON UPDATE CASCADE;
