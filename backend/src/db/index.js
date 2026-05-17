@@ -14,6 +14,11 @@ export const pool = new Pool(
 );
 
 pool.on("error", (err) => console.error("[pg] idle client error:", err));
+pool.on("connect", (client) => {
+  client.query("SET timezone = 'Asia/Kolkata'").catch((err) => {
+    console.error("[pg] Failed to set session timezone:", err);
+  });
+});
 
 export const query = (text, params) => pool.query(text, params);
 

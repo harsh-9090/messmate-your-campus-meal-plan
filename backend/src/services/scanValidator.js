@@ -2,7 +2,13 @@ import { format, differenceInCalendarDays } from "date-fns";
 import { query, withTx } from "../db/index.js";
 import { getCache, setCache, delCache } from "../db/redis.js";
 
-const todayStr = () => format(new Date(), "yyyy-MM-dd");
+const getISTDate = () => {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 5.5)); // Force UTC+5.30 (Indian Standard Time)
+};
+
+const todayStr = () => format(getISTDate(), "yyyy-MM-dd");
 const fmt12 = (hhmm) => {
   const [h, m] = hhmm.split(":").map(Number);
   const p = h >= 12 ? "PM" : "AM";
@@ -49,7 +55,7 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
 
   if (!sub.isPaid) {
     const start = sub.startDate ? new Date(sub.startDate) : new Date(member.createdAt);
-    const daysSinceStart = differenceInCalendarDays(new Date(), start);
+    const daysSinceStart = differenceInCalendarDays(getISTDate(), start);
     const gracePeriod = 3;
 
     if (daysSinceStart > gracePeriod) {
@@ -63,7 +69,7 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
     // Else: Allow during grace period, proceed to other checks
   }
 
-  const now = new Date();
+  const now = getISTDate();
   const start = sub.startDate ? new Date(sub.startDate) : null;
   const end = sub.endDate ? new Date(sub.endDate) : null;
   if (!start || !end || now < start) {

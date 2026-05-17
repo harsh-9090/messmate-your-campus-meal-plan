@@ -5,6 +5,12 @@ import { query } from "../db/index.js";
 import { toCsv } from "../services/reportService.js";
 import { getCache, setCache } from "../db/redis.js";
 
+const getISTDate = () => {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 5.5)); // Force UTC+5.30 (Indian Standard Time)
+};
+
 const router = Router();
 router.use(verifyToken, requireRole("admin"));
 
@@ -41,7 +47,7 @@ router.get("/stats", async (_req, res, next) => {
 
 router.get("/daily", async (req, res, next) => {
   try {
-    const today = format(new Date(), "yyyy-MM-dd");
+    const today = format(getISTDate(), "yyyy-MM-dd");
     const date = req.query.date || today;
     
     const cacheKey = `messmate:report:daily:${date}`;
@@ -90,7 +96,7 @@ router.get("/weekly", async (_req, res, next) => {
     const cached = await getCache(cacheKey);
     if (cached) return res.json(cached);
 
-    const days = Array.from({ length: 7 }, (_, i) => format(addDays(new Date(), -6 + i), "yyyy-MM-dd"));
+    const days = Array.from({ length: 7 }, (_, i) => format(addDays(getISTDate(), -6 + i), "yyyy-MM-dd"));
     const { rows: usage } = await query(
       `SELECT date,
               SUM(CASE WHEN used_breakfast THEN 1 ELSE 0 END +
@@ -115,7 +121,7 @@ router.get("/weekly", async (_req, res, next) => {
 
 router.get("/monthly", async (req, res, next) => {
   try {
-    const month = req.query.month || format(new Date(), "yyyy-MM");
+    const month = req.query.month || format(getISTDate(), "yyyy-MM");
     const cacheKey = `messmate:report:monthly:${month}`;
     const cached = await getCache(cacheKey);
     if (cached) return res.json(cached);
@@ -154,7 +160,7 @@ router.get("/expiring", async (req, res, next) => {
 
 router.get("/denials", async (req, res, next) => {
   try {
-    const date = req.query.date || format(new Date(), "yyyy-MM-dd");
+    const date = req.query.date || format(getISTDate(), "yyyy-MM-dd");
     const cacheKey = `messmate:scan:denials:${date}`;
     const cached = await getCache(cacheKey);
     if (cached) return res.json(cached);
@@ -179,7 +185,7 @@ router.get("/export", async (req, res, next) => {
     const { type = "daily", format: fmt = "csv" } = req.query;
     let rowsOut = [];
     if (type === "daily") {
-      const date = req.query.date || format(new Date(), "yyyy-MM-dd");
+      const date = req.query.date || format(getISTDate(), "yyyy-MM-dd");
       const { rows } = await query(
         `SELECT date, ts, member_id, member_name, meal, status, denial_code, denial_reason
            FROM scan_logs WHERE date = $1 ORDER BY ts ASC`,

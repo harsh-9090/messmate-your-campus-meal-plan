@@ -4,9 +4,15 @@ import { query, rowToMember } from "../db/index.js";
 import { notifyExpiringSoon, notifyExpired } from "../services/notificationService.js";
 import { delCache, delByPattern } from "../db/redis.js";
 
+const getISTDate = () => {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 5.5)); // Force UTC+5.30 (Indian Standard Time)
+};
+
 export async function runDailyTasks() {
   console.log("[CRON] Running daily jobs…");
-  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const todayStr = format(getISTDate(), "yyyy-MM-dd");
 
   await delCache([
     `messmate:usage:summary:${todayStr}`,
@@ -23,7 +29,7 @@ export async function runDailyTasks() {
   );
   for (const r of soon) {
     const m = rowToMember(r);
-    await notifyExpiringSoon(m, differenceInCalendarDays(new Date(m.subscription.endDate), new Date()));
+    await notifyExpiringSoon(m, differenceInCalendarDays(new Date(m.subscription.endDate), getISTDate()));
   }
 
   const { rows: gone } = await query(
