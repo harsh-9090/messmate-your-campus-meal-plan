@@ -112,7 +112,7 @@ router.post("/",
       const plan = (await query(`SELECT * FROM plans WHERE plan_id = $1`, [planId])).rows[0];
       const start = new Date(startDate);
       const duration = plan?.duration_months ?? 1;
-      const end = addDays(start, duration * 30);
+      const end = addDays(start, duration * 30 - 1);
       const id = await nextMemberId();
       const hash = await bcrypt.hash(password, 12);
 
@@ -201,7 +201,7 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
       credits = calc.totalCreditDays;
     }
 
-    const end = addDays(today, (duration * 30) + credits);
+    const end = addDays(today, (duration * 30 - 1) + credits);
     const isPaid = amountPaid >= price && price > 0;
 
     const { rows } = await query(
@@ -304,7 +304,7 @@ router.put("/:id/plan", requireRole("admin"), async (req, res, next) => {
 
     const newMeals = meals ?? plan?.meals ?? current.sub_meals;
     const newStart = startDate ? new Date(startDate) : current.sub_start_date;
-    const newEnd = startDate ? addDays(new Date(startDate), (plan?.duration_months ?? 1) * 30) : current.sub_end_date;
+    const newEnd = startDate ? addDays(new Date(startDate), (plan?.duration_months ?? 1) * 30 - 1) : current.sub_end_date;
     const newPrice = plan?.price_per_month ?? current.sub_price_per_month;
     const newPaid = current.sub_amount_paid >= newPrice && newPrice > 0;
 

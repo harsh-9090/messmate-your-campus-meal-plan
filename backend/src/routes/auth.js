@@ -90,7 +90,7 @@ router.post("/register",
       const p = planRows[0];
 
       const start = new Date();
-      const end = addDays(start, (p.duration_months || 1) * 30);
+      const end = addDays(start, (p.duration_months || 1) * 30 - 1);
       const hash = await bcrypt.hash(password, 10);
       
       await query(

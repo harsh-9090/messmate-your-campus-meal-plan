@@ -89,5 +89,34 @@ export async function calculateAbsenceCredits(memberId, startDate, endDate) {
     });
   }
 
+  // Fetch member's plan duration to enforce strict capping
+  const { rows: memberRows } = await query(
+    `SELECT sub_plan_id FROM members WHERE member_id = $1`,
+    [memberId]
+  );
+  let durationMonths = 1;
+  if (memberRows[0]?.sub_plan_id) {
+    const { rows: planRows } = await query(
+      `SELECT duration_months FROM plans WHERE plan_id = $1`,
+      [memberRows[0].sub_plan_id]
+    );
+    if (planRows[0]) {
+      durationMonths = planRows[0].duration_months;
+    }
+  }
+  const maxCredits = durationMonths * 30;
+
+  // Cap streaks and adjust end dates if they exceed plan duration
+  for (const s of streaks) {
+    if (s.length > maxCredits) {
+      s.length = maxCredits;
+      s.credit = maxCredits;
+      const sStart = parseISO(s.start);
+      s.end = fmtDate(addDays(sStart, maxCredits - 1));
+    }
+  }
+
+  totalCreditDays = Math.min(totalCreditDays, maxCredits);
+
   return { totalCreditDays, streaks };
 }
