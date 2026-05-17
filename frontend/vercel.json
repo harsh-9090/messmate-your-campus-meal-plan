@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/assets/:path*",
+      "destination": "/dist/client/assets/:path*"
+    },
+    {
+      "source": "/images/:path*",
+      "destination": "/dist/client/images/:path*"
+    },
+    {
+      "source": "/((?!assets|images|favicon.ico).*)",
+      "destination": "/api/index"
+    }
+  ]
+}
