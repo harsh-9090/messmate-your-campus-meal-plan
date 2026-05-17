@@ -10,7 +10,7 @@
       "destination": "/dist/client/images/:path*"
     },
     {
-      "source": "/((?!assets|images|favicon.ico).*)",
+      "source": "/(.*)",
       "destination": "/api/index"
     }
   ]
