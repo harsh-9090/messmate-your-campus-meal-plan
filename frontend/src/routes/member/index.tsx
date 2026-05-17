@@ -191,12 +191,12 @@ function MemberPortal() {
           </div>
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-4 sm:p-5">
           <div className="mb-3 flex items-center justify-between">
-            <div className="font-display text-lg font-bold">Today's Meals</div>
+            <div className="font-display text-base sm:text-lg font-bold">Today's Meals</div>
             <PlanBadge planId={sub.planId} label={sub.planLabel} />
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {MEALS.map((m) => <MealChip key={m} meal={m} state={stateOf(m)} />)}
           </div>
         </Card>
