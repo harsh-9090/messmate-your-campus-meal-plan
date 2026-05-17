@@ -6,6 +6,7 @@ const createTransporter = () => {
   }
   
   const config = {
+    family: 4, // Force IPv4 to bypass Render's outbound IPv6 network constraints (prevents ENETUNREACH errors)
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
