@@ -95,6 +95,18 @@ export const authApi = {
   me: () => request<Member>("/auth/me"),
   logout: () => request<{ ok: true }>("/auth/logout", { method: "POST", auth: false }),
   register: (data: any) => request<{ ok: true; message: string }>("/auth/register", { method: "POST", auth: false, body: JSON.stringify(data) }),
+  forgotPassword: (memberId: string) =>
+    request<{ ok: boolean; message: string }>("/auth/forgot-password", {
+      method: "POST",
+      auth: false,
+      body: JSON.stringify({ memberId }),
+    }),
+  resetPassword: (memberId: string, token: string, newPassword: string) =>
+    request<{ ok: boolean; message: string }>("/auth/reset-password", {
+      method: "POST",
+      auth: false,
+      body: JSON.stringify({ memberId, token, newPassword }),
+    }),
 };
 
 // ---------- Members ----------

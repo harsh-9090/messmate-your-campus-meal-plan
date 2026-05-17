@@ -8,6 +8,8 @@ import { authLimiter } from "../middleware/rateLimiter.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { delByPattern } from "../db/redis.js";
 import { addMonths, format } from "date-fns";
+import crypto from "node:crypto";
+import { sendPasswordResetEmail, sendRegistrationReceivedEmail } from "../services/notificationService.js";
 
 const fmtDate = (d) => format(d, "yyyy-MM-dd");
 
@@ -103,6 +105,11 @@ router.post("/register",
       
       await delByPattern("member:list");
       
+      // Dispatch welcome email asynchronously
+      sendRegistrationReceivedEmail({ memberId: mid, name, email }).catch((err) => {
+        console.error("[NOTIFY-ERROR] Failed to send registration email background:", err.message);
+      });
+      
       res.status(201).json({ ok: true, message: "Registration successful. Please visit the mess office for activation." });
     } catch (e) { next(e); }
   });
@@ -125,5 +132,84 @@ router.get("/me", verifyToken, async (req, res) => {
   if (!m) return res.status(404).json({ error: "Not found" });
   res.json(stripPassword(m));
 });
+
+router.post("/forgot-password",
+  authLimiter,
+  body("memberId").isString().trim().notEmpty(),
+  async (req, res, next) => {
+    try {
+      const errs = validationResult(req);
+      if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input" });
+      const { memberId } = req.body;
+
+      // Try finding the user
+      let m = await findUser(memberId);
+      if (!m) m = await findUser(memberId.toUpperCase());
+
+      // If user not found, return a specific error message
+      if (!m) {
+        return res.status(404).json({ error: "No account found with this Member ID or Email." });
+      }
+
+      // Generate a secure 32-byte token
+      const token = crypto.randomBytes(32).toString("hex");
+      // Set expiration to 15 minutes from now
+      const expires = new Date(Date.now() + 15 * 60 * 1000);
+
+      // Save token in DB
+      await query(
+        `UPDATE members 
+         SET reset_password_token = $1, reset_password_expires = $2 
+         WHERE member_id = $3`,
+        [token, expires, m.memberId]
+      );
+
+      // Construct reset link using env variable if available, fallback to origin or localhost
+      const origin = process.env.FRONTEND_URL || req.headers.origin || "http://localhost:5173";
+      const resetLink = `${origin}/reset-password?token=${token}&memberId=${m.memberId}`;
+
+      // Dispatch password reset email
+      await sendPasswordResetEmail(m, resetLink);
+
+      res.json({ ok: true, message: "If an account exists, a reset link was sent." });
+    } catch (e) { next(e); }
+  }
+);
+
+router.post("/reset-password",
+  authLimiter,
+  body("memberId").isString().trim().notEmpty(),
+  body("token").isString().trim().notEmpty(),
+  body("newPassword").isString().isLength({ min: 6 }),
+  async (req, res, next) => {
+    try {
+      const errs = validationResult(req);
+      if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
+      
+      const { memberId, token, newPassword } = req.body;
+
+      const { rows } = await query(
+        `SELECT * FROM members 
+         WHERE member_id = $1 AND reset_password_token = $2 AND reset_password_expires > NOW()`,
+        [memberId, token]
+      );
+
+      if (rows.length === 0) {
+        return res.status(400).json({ error: "Invalid or expired reset token" });
+      }
+
+      const hash = await bcrypt.hash(newPassword, 10);
+
+      await query(
+        `UPDATE members 
+         SET password_hash = $1, reset_password_token = NULL, reset_password_expires = NULL 
+         WHERE member_id = $2`,
+        [hash, memberId]
+      );
+
+      res.json({ ok: true, message: "Password updated successfully!" });
+    } catch (e) { next(e); }
+  }
+);
 
 export default router;

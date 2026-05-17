@@ -6,6 +6,7 @@ import { query, rowToMember, stripPassword } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { getCache, setCache, delCache, delByPattern } from "../db/redis.js";
 import { nextMemberId } from "../services/memberIdService.js";
+import { sendPlanActivatedEmail } from "../services/notificationService.js";
 
 const router = Router();
 router.use(verifyToken);
@@ -207,6 +208,21 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
     await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`, `messmate:report:weekly`]);
     await delByPattern("member:list");
     await delByPattern("report:expiring");
+
+    // Dispatch plan activation email asynchronously
+    const updatedMember = rows[0];
+    sendPlanActivatedEmail(
+      { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
+      {
+        label: updatedMember.sub_plan_label,
+        meals: updatedMember.sub_meals,
+        startDate: updatedMember.sub_start_date ? fmtDate(new Date(updatedMember.sub_start_date)) : "",
+        endDate: updatedMember.sub_end_date ? fmtDate(new Date(updatedMember.sub_end_date)) : "",
+        price: updatedMember.sub_price_per_month,
+        amountPaid: updatedMember.sub_amount_paid,
+        dueAmount: Math.max(0, updatedMember.sub_price_per_month - updatedMember.sub_amount_paid)
+      }
+    ).catch(err => console.error("[NOTIFY-ERROR] Failed to send activation email background:", err.message));
     
     res.json(rowToMember(rows[0]).subscription);
   } catch (e) { next(e); }
@@ -229,13 +245,31 @@ router.put("/:id/payment", requireRole("admin"),
       );
       if (!rows[0]) return res.status(404).json({ error: "Not found" });
 
+      const oldAmountPaid = rows[0].sub_amount_paid - amountPaid;
+      const paymentType = (oldAmountPaid <= 0 && rows[0].sub_renewal_count === 0) ? "initial" : "top-up";
+
       await query(
-        `INSERT INTO payments (member_id, member_name, member_mobile, amount, method, type, plan_id) VALUES ($1,$2,$3,$4,$5,'top-up',$6)`,
-        [req.params.id, rows[0].name, rows[0].mobile, amountPaid, paymentMethod, rows[0].sub_plan_id]
+        `INSERT INTO payments (member_id, member_name, member_mobile, amount, method, type, plan_id) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [req.params.id, rows[0].name, rows[0].mobile, amountPaid, paymentMethod, paymentType, rows[0].sub_plan_id]
       );
       
       await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
       await delByPattern("member:list");
+
+      // Dispatch plan activation email asynchronously
+      const updatedMember = rows[0];
+      sendPlanActivatedEmail(
+        { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
+        {
+          label: updatedMember.sub_plan_label,
+          meals: updatedMember.sub_meals,
+          startDate: updatedMember.sub_start_date ? fmtDate(new Date(updatedMember.sub_start_date)) : "",
+          endDate: updatedMember.sub_end_date ? fmtDate(new Date(updatedMember.sub_end_date)) : "",
+          price: updatedMember.sub_price_per_month,
+          amountPaid: updatedMember.sub_amount_paid,
+          dueAmount: Math.max(0, updatedMember.sub_price_per_month - updatedMember.sub_amount_paid)
+        }
+      ).catch(err => console.error("[NOTIFY-ERROR] Failed to send activation email background:", err.message));
       
       res.json(rowToMember(rows[0]).subscription);
     } catch (e) { next(e); }

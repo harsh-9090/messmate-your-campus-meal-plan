@@ -151,6 +151,7 @@ function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between px-1">
                   <Label htmlFor="pw" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80">Password</Label>
+                  <Link to="/forgot-password" className="text-[11px] font-bold text-primary hover:underline transition-colors">Forgot Password?</Link>
                 </div>
                 <Input
                   id="pw"

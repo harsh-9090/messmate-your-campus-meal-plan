@@ -20,7 +20,7 @@ import { GhostLoader } from "@/components/messmate/GhostLoader";
 export const Route = createFileRoute("/member/")({
   head: () => ({
     meta: [
-      { title: "My Meals — MessMate" },
+      { title: "My Meals - Mom's Kitchen" },
       { name: "description", content: "Your dynamic QR code, today's meal status, and 30-day plan progress." },
     ],
   }),
@@ -69,16 +69,16 @@ function MemberPortal() {
 
   const me = meQ.data;
   const sub = me.subscription;
-  
+
   // Calculate grace period: 3 days from start
   const daysSinceStart = Math.max(0, daysRemaining(sub.startDate) * -1);
   const gracePeriod = 3;
   const inGracePeriod = !sub.isPaid && daysSinceStart <= gracePeriod;
-  
+
   const left = daysRemaining(sub.endDate);
   const expired = left < 0;
   const locked = (!sub.isPaid && !inGracePeriod) || expired;
-  
+
   const windows = windowsQ.data ?? [];
   const myLogs = logsQ.data ?? [];
 
@@ -175,7 +175,7 @@ function MemberPortal() {
                 </div>
                 <p className="max-w-xs text-sm text-muted-foreground">
                   {expired ? "Your 30-day plan has ended. Contact admin to renew."
-                           : `Your subscription payment is pending (Due: ${formatINR(sub.dueAmount)}). Contact admin.`}
+                    : `Your subscription payment is pending (Due: ${formatINR(sub.dueAmount)}). Contact admin.`}
                 </p>
               </div>
             ) : (

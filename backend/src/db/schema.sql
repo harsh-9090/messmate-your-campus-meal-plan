@@ -106,3 +106,7 @@ ALTER TABLE payments ADD CONSTRAINT payments_member_id_fkey FOREIGN KEY (member_
 
 ALTER TABLE scan_logs DROP CONSTRAINT IF EXISTS scan_logs_member_id_fkey;
 ALTER TABLE scan_logs ADD CONSTRAINT scan_logs_member_id_fkey FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Migrations for forgot/reset password
+ALTER TABLE members ADD COLUMN IF NOT EXISTS reset_password_token TEXT;
+ALTER TABLE members ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMPTZ;
