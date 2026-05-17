@@ -1,39 +1,38 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const createTransporter = () => {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Mom's Kitchen <onboarding@resend.dev>";
+
+const getResend = () => {
+  if (!process.env.RESEND_API_KEY) {
     return null;
   }
-  
-  const config = {
-    family: 4, // Force IPv4 to bypass Render's outbound IPv6 network constraints (prevents ENETUNREACH errors)
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  };
+  return new Resend(process.env.RESEND_API_KEY);
+};
 
-  // If using Gmail, bypass custom host/port config and leverage Nodemailer's native
-  // optimized Gmail service configuration to prevent TLS/STARTTLS handshaking failures in cloud envs.
-  if (process.env.SMTP_HOST.includes("gmail.com")) {
-    config.service = "gmail";
-  } else {
-    config.host = process.env.SMTP_HOST;
-    config.port = parseInt(process.env.SMTP_PORT || "587");
-    config.secure = process.env.SMTP_PORT === "465";
+async function sendEmail({ to, subject, html }) {
+  const resend = getResend();
+  if (!resend) {
+    console.warn("[NOTIFY] RESEND_API_KEY not found. Skipping email sending.");
+    return;
   }
 
-  return nodemailer.createTransport(config);
-};
+  const { data, error } = await resend.emails.send({
+    from: FROM_EMAIL,
+    to: [to],
+    subject,
+    html,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  console.log(`[NOTIFY] Email sent to ${to} (id: ${data?.id})`);
+  return data;
+}
 
 export async function notifyExpiringSoon(member, daysLeft) {
   console.log(`[NOTIFY] Preparing to email ${member.memberId} (${member.email}) - expires in ${daysLeft} days`);
-  
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.warn("[NOTIFY] SMTP credentials not found. Skipping email sending.");
-    return;
-  }
 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
@@ -48,8 +47,7 @@ export async function notifyExpiringSoon(member, daysLeft) {
   `;
 
   try {
-    await transporter.sendMail({
-      from: `"Mom's Kitchen" <${process.env.SMTP_USER}>`,
+    await sendEmail({
       to: member.email,
       subject: `Your meal plan expires in ${daysLeft} days!`,
       html,
@@ -62,12 +60,6 @@ export async function notifyExpiringSoon(member, daysLeft) {
 
 export async function notifyExpired(member) {
   console.log(`[NOTIFY] Preparing to email ${member.memberId} (${member.email}) - plan EXPIRED`);
-
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.warn("[NOTIFY] SMTP credentials not found. Skipping email sending.");
-    return;
-  }
 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #fee2e2; border-radius: 8px; background-color: #fffafb;">
@@ -83,8 +75,7 @@ export async function notifyExpired(member) {
   `;
 
   try {
-    await transporter.sendMail({
-      from: `"Mom's Kitchen" <${process.env.SMTP_USER}>`,
+    await sendEmail({
       to: member.email,
       subject: `Action Required: Your meal plan has expired`,
       html,
@@ -97,12 +88,6 @@ export async function notifyExpired(member) {
 
 export async function sendPasswordResetEmail(member, resetLink) {
   console.log(`[NOTIFY] Preparing password reset email for ${member.memberId} (${member.email})`);
-
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.warn("[NOTIFY] SMTP credentials not found. Skipping email sending.");
-    return;
-  }
 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e0e7ff; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
@@ -127,8 +112,7 @@ export async function sendPasswordResetEmail(member, resetLink) {
   `;
 
   try {
-    await transporter.sendMail({
-      from: `"Mom's Kitchen" <${process.env.SMTP_USER}>`,
+    await sendEmail({
       to: member.email,
       subject: "Reset your Mom's Kitchen password",
       html,
@@ -142,12 +126,6 @@ export async function sendPasswordResetEmail(member, resetLink) {
 
 export async function sendRegistrationReceivedEmail(member) {
   console.log(`[NOTIFY] Preparing registration received email for ${member.memberId} (${member.email})`);
-
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.warn("[NOTIFY] SMTP credentials not found. Skipping email sending.");
-    return;
-  }
 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e0e7ff; border-radius: 12px; background-color: #ffffff;">
@@ -184,8 +162,7 @@ export async function sendRegistrationReceivedEmail(member) {
   `;
 
   try {
-    await transporter.sendMail({
-      from: `"Mom's Kitchen" <${process.env.SMTP_USER}>`,
+    await sendEmail({
       to: member.email,
       subject: "Welcome to Mom's Kitchen - Registration Pending Activation",
       html,
@@ -198,12 +175,6 @@ export async function sendRegistrationReceivedEmail(member) {
 
 export async function sendPlanActivatedEmail(member, planDetails) {
   console.log(`[NOTIFY] Preparing plan activation email for ${member.memberId} (${member.email})`);
-
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.warn("[NOTIFY] SMTP credentials not found. Skipping email sending.");
-    return;
-  }
 
   const mealChips = (planDetails.meals || [])
     .map(m => `<span style="background-color: #e0e7ff; color: #4338ca; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-right: 5px; display: inline-block;">${m}</span>`)
@@ -272,8 +243,7 @@ export async function sendPlanActivatedEmail(member, planDetails) {
   `;
 
   try {
-    await transporter.sendMail({
-      from: `"Mom's Kitchen" <${process.env.SMTP_USER}>`,
+    await sendEmail({
       to: member.email,
       subject: "Subscription Activated! Welcome to Mom's Kitchen 🎉",
       html,
