@@ -18,6 +18,7 @@ import type { Meal, Member, Plan } from "@/lib/messmate/types";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const PAYMENT_METHODS = ["Cash", "Online", "UPI", "Card"];
 
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/admin/members")({
 });
 
 function MembersPage() {
+  const isMobile = useIsMobile();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "expired" | "unpaid" | "pending">("all");
@@ -34,6 +36,7 @@ function MembersPage() {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [renewing, setRenewing] = useState<Member | null>(null);
+  const [displayLimit, setDisplayLimit] = useState(50);
 
   const membersQ = useQuery({
     queryKey: ["members", { search, status, planFilter }],
@@ -44,7 +47,7 @@ function MembersPage() {
   const members = membersQ.data?.items ?? [];
   const plans = plansQ.data ?? [];
 
-  const filtered = useMemo(() => {
+  const filteredRaw = useMemo(() => {
     return members.filter((m) => {
       const matchSearch = m.name.toLowerCase().includes(search.toLowerCase()) || m.memberId.toLowerCase().includes(search.toLowerCase());
       if (!matchSearch) return false;
@@ -55,6 +58,9 @@ function MembersPage() {
       return true;
     });
   }, [members, search, status]);
+
+  const filtered = useMemo(() => filteredRaw.slice(0, displayLimit), [filteredRaw, displayLimit]);
+  const hasMore = filteredRaw.length > displayLimit;
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["members"] });
 
@@ -115,60 +121,40 @@ function MembersPage() {
       </Card>
 
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
-              <tr>
-                <th className="px-4 py-3 text-left">Member</th>
-                <th className="px-4 py-3 text-left">Plan</th>
-                <th className="px-4 py-3 text-left">Meals</th>
-                <th className="px-4 py-3 text-left">Start</th>
-                <th className="px-4 py-3 text-left">Expiry</th>
-                <th className="px-4 py-3 text-left">Status</th>
-                <th className="px-4 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {membersQ.isLoading && (
-                <tr><td colSpan={7} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
-              )}
-              {membersQ.isError && (
-                <tr><td colSpan={7} className="py-10 text-center text-destructive font-medium">Failed to load members. Please try again.</td></tr>
-              )}
-              {!membersQ.isLoading && !membersQ.isError && filtered.map((m) => {
-                const left = daysRemaining(m.subscription.endDate);
-                const expired = left < 0;
-                return (
-                  <tr key={m.memberId} className="border-t">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">
-                          {(m.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")}
-                        </div>
-                        <div>
-                          <div className="font-medium leading-tight">{m.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {m.memberId}{m.mobile && <> · 📞 {m.mobile}</>}
-                          </div>
+        {isMobile ? (
+          /* Mobile Card View */
+          <div className="grid grid-cols-1 gap-4 p-4">
+            {membersQ.isLoading && (
+              <div className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
+            )}
+            {membersQ.isError && (
+              <div className="py-10 text-center text-destructive font-medium">Failed to load members. Please try again.</div>
+            )}
+            {!membersQ.isLoading && !membersQ.isError && filtered.length === 0 && (
+              <div className="py-8 text-center text-sm text-muted-foreground">No members found</div>
+            )}
+            {!membersQ.isLoading && !membersQ.isError && filtered.map((m) => {
+              const left = daysRemaining(m.subscription.endDate);
+              const expired = left < 0;
+              return (
+                <div key={m.memberId} className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-2 border-b pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
+                        {(m.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                      </div>
+                      <div>
+                        <div className="font-semibold leading-tight">{m.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {m.memberId}{m.mobile && <> · 📞 {m.mobile}</>}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-3"><PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} /></td>
-                    <td className="px-4 py-3"><PlanIcons plan={m.subscription} /></td>
-                    <td className="px-4 py-3 text-xs">{formatDate(m.subscription.startDate || m.createdAt)}</td>
-                    <td className={cn("px-4 py-3 text-xs", expired && "text-destructive font-semibold", !expired && left <= 3 && (m.subscription.endDate || m.createdAt) && "text-warning font-semibold")}>
-                      {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
-                      {(m.subscription.endDate || m.createdAt) && (
-                        <div className="text-[10px] text-muted-foreground">
-                          {expired ? `${-left}d ago` : `${left}d left`}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
+                    </div>
+                    <div>
                       {!m.isActive ? (
                         <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
                       ) : !m.subscription.isPaid ? (
-                        <div>
+                        <div className="text-right">
                           <Badge variant="destructive" className={cn(m.subscription.amountPaid > 0 && "bg-orange-500 hover:bg-orange-600 border-orange-500")}>
                             {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
                           </Badge>
@@ -176,23 +162,137 @@ function MembersPage() {
                         </div>
                       ) : expired ? <Badge variant="destructive">Expired</Badge>
                         : <Badge className="bg-success text-success-foreground">Active</Badge>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-1">
-                        <Button size="sm" variant="ghost" onClick={() => setEditing(m)}><Edit3 className="h-3.5 w-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => setRenewing(m)}><RefreshCw className="h-3.5 w-3.5" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Plan</div>
+                      <div className="mt-1"><PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} /></div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Meals</div>
+                      <div className="mt-1"><PlanIcons plan={m.subscription} /></div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Start Date</div>
+                      <div className="font-medium">{formatDate(m.subscription.startDate || m.createdAt)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Expiry Date</div>
+                      <div className={cn("font-medium", expired && "text-destructive", !expired && left <= 3 && (m.subscription.endDate || m.createdAt) && "text-warning")}>
+                        {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
+                        {(m.subscription.endDate || m.createdAt) && (
+                          <div className="text-[10px] text-muted-foreground">
+                            {expired ? `${-left}d ago` : `${left}d left`}
+                          </div>
+                        )}
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {!membersQ.isLoading && filtered.length === 0 && (
-                <tr><td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No members found</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex justify-end gap-2 pt-2 border-t">
+                    <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => setEditing(m)}><Edit3 className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => setRenewing(m)}><RefreshCw className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="outline" className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10" onClick={() => { if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId); }}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+              );
+            })}
+            {hasMore && (
+              <Button variant="outline" className="w-full mt-2" onClick={() => setDisplayLimit(d => d + 50)}>
+                Load More Members ({filteredRaw.length - displayLimit} remaining)
+              </Button>
+            )}
+          </div>
+        ) : (
+          /* Desktop Table View */
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 text-left">Member</th>
+                  <th className="px-4 py-3 text-left">Plan</th>
+                  <th className="px-4 py-3 text-left">Meals</th>
+                  <th className="px-4 py-3 text-left">Start</th>
+                  <th className="px-4 py-3 text-left">Expiry</th>
+                  <th className="px-4 py-3 text-left">Status</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {membersQ.isLoading && (
+                  <tr><td colSpan={7} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
+                )}
+                {membersQ.isError && (
+                  <tr><td colSpan={7} className="py-10 text-center text-destructive font-medium">Failed to load members. Please try again.</td></tr>
+                )}
+                {!membersQ.isLoading && !membersQ.isError && filtered.map((m) => {
+                  const left = daysRemaining(m.subscription.endDate);
+                  const expired = left < 0;
+                  return (
+                    <tr key={m.memberId} className="border-t hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">
+                            {(m.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                          </div>
+                          <div>
+                            <div className="font-medium leading-tight">{m.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {m.memberId}{m.mobile && <> · 📞 {m.mobile}</>}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3"><PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} /></td>
+                      <td className="px-4 py-3"><PlanIcons plan={m.subscription} /></td>
+                      <td className="px-4 py-3 text-xs">{formatDate(m.subscription.startDate || m.createdAt)}</td>
+                      <td className={cn("px-4 py-3 text-xs", expired && "text-destructive font-semibold", !expired && left <= 3 && (m.subscription.endDate || m.createdAt) && "text-warning font-semibold")}>
+                        {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
+                        {(m.subscription.endDate || m.createdAt) && (
+                          <div className="text-[10px] text-muted-foreground">
+                {expired ? `${-left}d ago` : `${left}d left`}
+              </div>
+            )}
+          </td>
+          <td className="px-4 py-3">
+            {!m.isActive ? (
+              <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
+            ) : !m.subscription.isPaid ? (
+              <div>
+                <Badge variant="destructive" className={cn(m.subscription.amountPaid > 0 && "bg-orange-500 hover:bg-orange-600 border-orange-500")}>
+                  {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                </Badge>
+                {m.subscription.dueAmount > 0 && <div className="mt-1 text-[10px] font-medium text-destructive">Due: ₹{m.subscription.dueAmount}</div>}
+              </div>
+            ) : expired ? <Badge variant="destructive">Expired</Badge>
+              : <Badge className="bg-success text-success-foreground">Active</Badge>}
+          </td>
+          <td className="px-4 py-3">
+            <div className="flex justify-end gap-1">
+              <Button size="sm" variant="ghost" onClick={() => setEditing(m)}><Edit3 className="h-3.5 w-3.5" /></Button>
+              <Button size="sm" variant="ghost" onClick={() => setRenewing(m)}><RefreshCw className="h-3.5 w-3.5" /></Button>
+              <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+            </div>
+          </td>
+        </tr>
+      );
+    })}
+    {!membersQ.isLoading && filtered.length === 0 && (
+      <tr><td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No members found</td></tr>
+    )}
+  </tbody>
+</table>
+{hasMore && (
+  <div className="p-4 border-t text-center">
+    <Button variant="ghost" size="sm" onClick={() => setDisplayLimit(d => d + 50)}>
+      Load More... ({filteredRaw.length - displayLimit} remaining)
+    </Button>
+  </div>
+)}
+</div>
+        )}
       </Card>
 
       <AddMemberDialog open={adding} onOpenChange={setAdding} plans={plans} onCreated={invalidate} />
@@ -251,7 +351,7 @@ function AddMemberDialog({ open, onOpenChange, plans, onCreated }: { open: boole
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md w-[95vw] rounded-2xl">
         <DialogHeader><DialogTitle>Add new member</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div><Label>Full name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
@@ -334,7 +434,7 @@ function EditMemberDialog({ member, plans, onClose, onSaved }: { member: Member;
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md w-[95vw] rounded-2xl">
         <DialogHeader><DialogTitle>Edit {member.name}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
@@ -428,7 +528,7 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md w-[95vw] rounded-2xl">
         <DialogHeader>
           <DialogTitle>Renew Subscription</DialogTitle>
           <div className="text-sm text-muted-foreground">{member.name} ({member.memberId})</div>

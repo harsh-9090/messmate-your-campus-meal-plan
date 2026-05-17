@@ -13,6 +13,7 @@ import { Lock, AlertTriangle, History, LogOut, UtensilsCrossed, Loader2 } from "
 import { daysRemaining, formatINR, formatTimestamp, isWithinWindow } from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
 import type { Meal } from "@/lib/messmate/types";
+import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 
 export const Route = createFileRoute("/member/")({
   head: () => ({
@@ -109,9 +110,12 @@ function MemberPortal() {
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login" onClick={() => logout()}><LogOut className="h-4 w-4" /></Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/login" onClick={() => logout()}><LogOut className="h-4 w-4" /></Link>
+            </Button>
+          </div>
         </div>
       </header>
 

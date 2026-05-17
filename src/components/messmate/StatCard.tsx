@@ -19,15 +19,15 @@ export function StatCard({
   }[accent];
 
   return (
-    <Card className="p-5">
+    <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <p className="font-display text-3xl font-bold">{value}</p>
-          {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+        <div className="min-w-0 space-y-1.5">
+          <p className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider leading-none">{label}</p>
+          <p className="font-display text-2xl sm:text-4xl font-bold truncate leading-tight">{value}</p>
+          {hint && <p className="text-[11px] sm:text-sm font-medium text-muted-foreground/80 leading-tight">{hint}</p>}
         </div>
-        <div className={cn("rounded-xl p-3", ring)}>
-          <Icon className="h-5 w-5" />
+        <div className={cn("rounded-xl p-2.5 sm:p-3.5 shrink-0 shadow-sm", ring)}>
+          <Icon className="h-5 w-5 sm:h-6 w-6" />
         </div>
       </div>
     </Card>

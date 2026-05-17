@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/messmate/auth";
-import { AdminSidebar } from "@/components/messmate/AdminSidebar";
+import { AdminSidebar, MobileAdminNav } from "@/components/messmate/AdminSidebar";
 
 export const Route = createFileRoute("/admin")({
   component: AdminLayout,
@@ -15,11 +15,12 @@ function AdminLayout() {
   }, [user, navigate]);
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex min-h-screen w-full flex-col md:flex-row">
+      <MobileAdminNav />
       <AdminSidebar />
-      <div className="min-w-0 flex-1">
+      <main className="min-w-0 flex-1">
         <Outlet />
-      </div>
+      </main>
     </div>
   );
 }

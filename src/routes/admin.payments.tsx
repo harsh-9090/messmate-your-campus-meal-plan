@@ -73,7 +73,7 @@ function PaymentsPage() {
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="hidden md:table">
             <TableHeader>
               <TableRow>
                 <TableHead>Date & Time</TableHead>
@@ -146,6 +146,74 @@ function PaymentsPage() {
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
+          {filtered.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">
+              {paymentsQ.isLoading ? "Loading payments..." : "No payments found."}
+            </div>
+          ) : (
+            filtered.map((p) => (
+              <div key={p.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between border-b pb-3">
+                  <div>
+                    <div className="font-semibold">{p.memberName || 'Unknown'}</div>
+                    <div className="text-[10px] text-muted-foreground">{p.memberId || 'N/A'}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-emerald-600">{formatINR(p.amount)}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Date & Time</div>
+                    <div className="flex items-center gap-1 font-medium">
+                      <Calendar className="h-3 w-3 text-muted-foreground" />
+                      {p.createdAt ? formatTimestamp(p.createdAt) : '---'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Plan</div>
+                    <Badge variant="outline" className="font-normal mt-0.5">{p.planLabel}</Badge>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Method</div>
+                    <div className="flex items-center gap-1 font-medium">
+                      <CreditCard className="h-3 w-3 text-muted-foreground" />
+                      {p.method}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Type</div>
+                    <Badge 
+                      variant="secondary" 
+                      className={`capitalize mt-0.5 ${
+                        p.type === 'initial' ? 'bg-primary/10 text-primary' : 
+                        p.type === 'renewal' ? 'bg-indigo-100 text-indigo-700' : 
+                        'bg-amber-100 text-amber-700'
+                      }`}
+                    >
+                      {p.type}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="mt-1 flex justify-end pt-2 border-t">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
+                    onClick={() => { if(confirm("Delete this payment record? This cannot be undone.")) deletePaymentM.mutate(p.id); }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </Card>
     </div>

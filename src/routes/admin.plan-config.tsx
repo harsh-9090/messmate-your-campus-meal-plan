@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlanIcons } from "@/components/messmate/PlanBadge";
 import { formatINR, formatTime12h } from "@/lib/messmate/dateHelpers";
 import { toast } from "sonner";
-import { Plus, Edit2, Loader2, Check, X, Trash2, Power, PowerOff } from "lucide-react";
+import { Plus, Edit2, Loader2, Check, X, Trash2, Power, PowerOff, Sun, Utensils, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MEALS } from "@/lib/messmate/constants";
@@ -84,25 +84,27 @@ function PlanConfigPage() {
 
       <Card className="p-5">
         <h3 className="mb-4 font-display text-lg font-bold">Subscription Plans</h3>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
           {plans.map((p) => {
             const count = members.filter((m) => m.subscription.planId === p.planId).length;
             return (
-              <div key={p.planId} className={`group relative rounded-xl border p-4 transition-all ${p.isActive ? "hover:border-primary/50" : "bg-muted/30 opacity-60"}`}>
-                <div className="flex items-start justify-between">
+              <div key={p.planId} className={`group relative rounded-xl border p-3 sm:p-4 transition-all ${p.isActive ? "hover:border-primary/50" : "bg-muted/30 opacity-60"}`}>
+                <div className="flex items-start justify-between gap-1">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <div className="font-display text-lg font-bold">{p.label}</div>
-                      {!p.isActive && <Badge variant="outline" className="text-[10px] h-4">Inactive</Badge>}
+                    <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                      <div className="font-display text-sm sm:text-lg font-bold leading-tight">{p.label}</div>
+                      {!p.isActive && <Badge variant="outline" className="text-[9px] h-3.5 px-1">Inactive</Badge>}
                     </div>
-                    <PlanIcons plan={p} />
+                    <div className="mt-1">
+                      <PlanIcons plan={p} />
+                    </div>
                   </div>
-                  <Badge variant="secondary">{count} members</Badge>
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs shrink-0">{count} mem</Badge>
                 </div>
-                <div className="mt-4 flex items-center justify-between">
+                <div className="mt-4 flex items-center justify-between gap-1">
                   <div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Price / {p.durationMonths ?? 1}mo</div>
-                    <div className="text-lg font-bold text-primary">{formatINR(p.pricePerMonth)}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Price / {p.durationMonths ?? 1}mo</div>
+                    <div className="text-base sm:text-lg font-bold text-primary leading-tight">{formatINR(p.pricePerMonth)}</div>
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(p)}>
@@ -125,28 +127,60 @@ function PlanConfigPage() {
       </Card>
 
       {/* Meal Windows same as before */}
-      <Card className="p-5">
-        <h3 className="mb-4 font-display text-lg font-bold">Meal Time Windows</h3>
-        <p className="mb-4 text-sm text-muted-foreground">Scans outside the configured window will be denied with WRONG_TIME.</p>
-        <div className="space-y-3">
-          {windows.map((w) => (
-            <div key={w.meal} className="flex flex-wrap items-end gap-3 rounded-xl border p-4">
-              <div className="min-w-32">
-                <div className="font-display text-lg font-bold">{w.meal}</div>
-                <div className="text-xs text-muted-foreground">{formatTime12h(w.startTime)} – {formatTime12h(w.endTime)}</div>
+      <Card className="p-5 sm:p-6 overflow-hidden relative">
+        <div className="mb-6">
+          <h3 className="font-display text-xl font-bold">Meal Time Windows</h3>
+          <p className="text-sm text-muted-foreground mt-1">Configure when students are allowed to scan for each meal.</p>
+        </div>
+        
+        <div className="grid gap-4 sm:gap-6">
+          {windows.map((w) => {
+            const Icon = w.meal === "Breakfast" ? Plus : w.meal === "Lunch" ? Plus : Plus; // I'll use better icons below
+            return (
+              <div key={w.meal} className="group relative rounded-2xl border bg-card p-5 transition-all hover:shadow-md">
+                <div className="grid sm:grid-cols-[1fr_auto_auto] items-center gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-sm group-hover:scale-105 transition-transform">
+                      {w.meal === "Breakfast" && <Sun className="h-6 w-6" />}
+                      {w.meal === "Lunch" && <Utensils className="h-6 w-6" />}
+                      {w.meal === "Dinner" && <Moon className="h-6 w-6" />}
+                    </div>
+                    <div>
+                      <div className="font-display text-lg font-bold leading-tight">{w.meal}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 font-medium">
+                        Current: {formatTime12h(w.startTime)} – {formatTime12h(w.endTime)}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 sm:flex items-center gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">Start Time</Label>
+                      <div className="relative">
+                        <Input 
+                          type="time" 
+                          defaultValue={w.startTime}
+                          className="h-11 w-full sm:w-32 bg-muted/30 border-transparent focus:bg-background rounded-xl transition-all"
+                          onBlur={(e) => { if (e.target.value !== w.startTime) updateWindowM.mutate({ meal: w.meal, startTime: e.target.value, endTime: w.endTime }); }} 
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">End Time</Label>
+                      <div className="relative">
+                        <Input 
+                          type="time" 
+                          defaultValue={w.endTime}
+                          className="h-11 w-full sm:w-32 bg-muted/30 border-transparent focus:bg-background rounded-xl transition-all"
+                          onBlur={(e) => { if (e.target.value !== w.endTime) updateWindowM.mutate({ meal: w.meal, startTime: w.startTime, endTime: e.target.value }); }} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label className="text-xs">Start</Label>
-                <Input type="time" defaultValue={w.startTime}
-                  onBlur={(e) => { if (e.target.value !== w.startTime) updateWindowM.mutate({ meal: w.meal, startTime: e.target.value, endTime: w.endTime }); }} />
-              </div>
-              <div>
-                <Label className="text-xs">End</Label>
-                <Input type="time" defaultValue={w.endTime}
-                  onBlur={(e) => { if (e.target.value !== w.endTime) updateWindowM.mutate({ meal: w.meal, startTime: w.startTime, endTime: e.target.value }); }} />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
 
@@ -183,7 +217,7 @@ function AddPlanDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpenC
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg w-[95vw] rounded-2xl">
         <DialogHeader><DialogTitle>Add New Plan</DialogTitle></DialogHeader>
         <div className="space-y-4 py-4">
           <div className="grid grid-cols-2 gap-4">
@@ -243,7 +277,7 @@ function EditPlanDialog({ plan, onClose, onSaved, onDeactivate }: { plan: Plan; 
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg w-[95vw] rounded-2xl">
         <DialogHeader><DialogTitle>Edit {plan.label}</DialogTitle></DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">

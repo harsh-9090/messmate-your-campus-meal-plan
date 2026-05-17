@@ -12,6 +12,7 @@ import { todayISO, daysRemaining, formatINR, formatDate, isWithinWindow, formatT
 import { PlanBadge } from "@/components/messmate/PlanBadge";
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { Member } from "@/lib/messmate/types";
 
 export const Route = createFileRoute("/admin/")({
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminDashboard() {
+  const isMobile = useIsMobile();
   const qc = useQueryClient();
   const membersQ = useQuery({ queryKey: ["members", "all"], queryFn: () => membersApi.list({ limit: 500 }) });
   const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
@@ -69,8 +71,8 @@ function AdminDashboard() {
       </header>
 
       <div className="space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Today's Summary (IST)</h3>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/80 pl-1">Today's Summary (IST)</h3>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           <div className="cursor-pointer transition-transform hover:scale-[1.02]" onClick={() => setViewingList({ title: "New Joins Today", members: stats.new_list })}>
             <StatCard icon={UserPlus} label="New Joins" value={stats.new_members} accent="primary" />
           </div>
@@ -85,8 +87,8 @@ function AdminDashboard() {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70">Overall Metrics</h3>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/80 pl-1">Overall Metrics</h3>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
           <StatCard icon={Users} label="Total Members" value={members.length} accent="primary" />
           <StatCard icon={CreditCard} label="Active Plans" value={active.length} accent="success" />
           <StatCard icon={AlertTriangle} label="Expired" value={expired.length} accent="destructive" />
@@ -186,31 +188,46 @@ function AdminDashboard() {
 function StatsDetailDialog({ title, members, onClose }: { title: string; members: Member[]; onClose: () => void; }) {
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <p className="text-sm text-muted-foreground">{members.length} member{members.length === 1 ? "" : "s"}</p>
+      <DialogContent className="sm:max-w-xl w-[95vw] max-h-[90vh] rounded-2xl flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2">
+          <div className="flex flex-col items-center text-center">
+            <div className="mb-2 rounded-full bg-primary/10 p-3 text-primary">
+              <Users className="h-6 w-6" />
+            </div>
+            <DialogTitle className="font-display text-2xl">{title}</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Showing {members.length} member{members.length === 1 ? "" : "s"}
+            </p>
+          </div>
         </DialogHeader>
-        <div className="max-h-[60vh] overflow-y-auto pr-2">
+        
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           {members.length === 0 ? (
-            <div className="py-10 text-center text-sm text-muted-foreground">No members found.</div>
+            <div className="py-20 text-center flex flex-col items-center gap-3">
+              <div className="rounded-full bg-muted p-4">
+                <Users className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">No members found for this category today.</p>
+            </div>
           ) : (
-            <div className="divide-y">
-              {members.map((m) => (
-                <div key={m.memberId} className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
-                      {m.name.split(" ").map((n) => n[0]).join("")}
+            <div className="grid gap-3">
+              {members.slice(0, 100).map((m) => (
+                <div key={m.memberId} className="flex items-center justify-between gap-4 rounded-xl border bg-accent/30 p-3 transition-colors hover:bg-accent/50">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-sm font-bold text-primary shadow-sm border">
+                      {m.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
                     </div>
-                    <div>
-                      <div className="font-medium text-sm">{m.name}</div>
-                      <div className="text-xs text-muted-foreground">{m.memberId} · {m.mobile || "No mobile"}</div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm truncate">{m.name}</div>
+                      <div className="text-[10px] text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                        {m.memberId} {m.mobile && <span>· {m.mobile}</span>}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} />
-                    <div className="mt-1 text-[10px] text-muted-foreground">
-                      Ends: {formatDate(m.subscription.endDate)}
+                    <div className="mt-1 text-[10px] font-medium text-muted-foreground">
+                      Ends {formatDate(m.subscription.endDate)}
                     </div>
                   </div>
                 </div>
@@ -218,9 +235,10 @@ function StatsDetailDialog({ title, members, onClose }: { title: string; members
             </div>
           )}
         </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Close</Button>
-        </DialogFooter>
+
+        <div className="border-t p-4 bg-muted/30">
+          <Button className="w-full" variant="outline" onClick={onClose}>Dismiss</Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

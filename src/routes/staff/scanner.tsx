@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 
 export const Route = createFileRoute("/staff/scanner")({
   head: () => ({
@@ -108,6 +109,7 @@ function ScannerPage() {
             <Badge variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive">
               <XCircle className="mr-1 h-3 w-3" /> {deniedCount}
             </Badge>
+            <ThemeToggle />
             <Button variant="ghost" size="sm" asChild className="text-sidebar-foreground hover:bg-sidebar-accent">
               <Link to="/login" onClick={() => logout()}><LogOut className="h-4 w-4" /></Link>
             </Button>

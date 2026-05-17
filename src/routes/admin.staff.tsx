@@ -12,6 +12,7 @@ import { UserPlus, Shield, UserCog, Mail, Phone, Trash2, Edit, Loader2, Key } fr
 import { toast } from "sonner";
 import type { Member } from "@/lib/messmate/types";
 import { useAuth } from "@/lib/messmate/auth";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/admin/staff")({
   head: () => ({ meta: [{ title: "Staff Management — MessMate Admin" }] }),
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/admin/staff")({
 });
 
 function StaffPage() {
+  const isMobile = useIsMobile();
   const qc = useQueryClient();
   const { user: currentUser } = useAuth();
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -50,9 +52,9 @@ function StaffPage() {
         </Button>
       </header>
 
-      <Card className="overflow-hidden border-border/50 bg-card/50 backdrop-blur-sm">
+      <Card className="overflow-hidden border-border/50 bg-card shadow-sm">
         <div className="overflow-x-auto">
-          <Table>
+          <Table className="hidden md:table">
             <TableHeader className="bg-muted/30">
               <TableRow>
                 <TableHead>Team Member</TableHead>
@@ -128,6 +130,61 @@ function StaffPage() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Mobile Card View */}
+        <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
+          {staffQ.isLoading ? (
+            <div className="py-10 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-primary/50" /></div>
+          ) : staffQ.data?.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">No accounts found.</div>
+          ) : (
+            staffQ.data?.map((s) => (
+              <div key={s.memberId} className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm relative">
+                {s.memberId === currentUser?.id && <Badge variant="secondary" className="absolute top-3 right-3 text-[10px]">You</Badge>}
+                <div className="flex items-center gap-3 border-b pb-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${s.role === 'admin' ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                    {s.role === 'admin' ? <Shield className="h-5 w-5" /> : <UserCog className="h-5 w-5" />}
+                  </div>
+                  <div>
+                    <div className="font-bold">{s.name}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.memberId}</div>
+                  </div>
+                </div>
+                
+                <div className="grid gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-4 w-4 shrink-0" /> <span className="truncate">{s.email}</span>
+                  </div>
+                  {s.mobile && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="h-4 w-4 shrink-0" /> <span>{s.mobile}</span>
+                    </div>
+                  )}
+                  <div className="mt-1">
+                    <Badge variant="secondary" className={`capitalize ${s.role === 'admin' ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                      {s.role}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex justify-end gap-2 pt-2 border-t">
+                  <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setEditingStaff(s)}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
+                    disabled={s.memberId === currentUser?.id}
+                    onClick={() => { if(confirm("Permanently delete this account?")) deleteM.mutate(s.memberId); }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </Card>
 
       <StaffDialog open={isAddOpen} onOpenChange={setIsAddOpen} />
@@ -175,7 +232,7 @@ function StaffDialog({ open, onOpenChange, staff }: { open: boolean, onOpenChang
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md w-[95vw] rounded-2xl">
         <DialogHeader>
           <DialogTitle>{staff ? "Edit Team Member" : "Add Team Member"}</DialogTitle>
         </DialogHeader>

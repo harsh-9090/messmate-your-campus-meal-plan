@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { configApi } from "@/lib/messmate/api";
 import { motion } from "framer-motion";
 import {
   UtensilsCrossed,
@@ -9,11 +11,17 @@ import {
   Wallet,
   ArrowRight,
   CheckCircle2,
-  Users
+  Users,
+  Sun,
+  Utensils,
+  Moon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 import { Badge } from "@/components/ui/badge";
+import { getActiveMeal, formatTime12h } from "@/lib/messmate/dateHelpers";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,6 +34,14 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
+  const windowsQ = useQuery({
+    queryKey: ["windows"],
+    queryFn: () => configApi.listWindows(),
+    staleTime: 1000 * 60 * 60, // 1 hour
+  });
+
+  const activeMeal = windowsQ.data ? getActiveMeal(windowsQ.data) : null;
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -50,16 +66,25 @@ function LandingPage() {
             </div>
             <span className="font-display text-xl font-bold tracking-tight">Mom's Kitchen</span>
           </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">About Us</a>
-            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">How to Join</a>
-            <a href="#menu" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Today's Menu</a>
-            <Link to="/login">
-              <Button variant="ghost" className="text-sm font-medium">Student Login</Button>
-            </Link>
-            <Link to="/register">
-              <Button className="rounded-full px-6 shadow-lg shadow-primary/20">Register Now</Button>
-            </Link>
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-6">
+              <a href="#about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">About Us</a>
+              <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">How to Join</a>
+              <a href="#menu" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Today's Menu</a>
+              <ThemeToggle />
+              <Link to="/login">
+                <Button variant="ghost" className="text-sm font-medium">Student Login</Button>
+              </Link>
+              <Link to="/register">
+                <Button className="rounded-full px-6 shadow-lg shadow-primary/20">Register Now</Button>
+              </Link>
+            </div>
+            <div className="md:hidden flex items-center gap-2">
+              <ThemeToggle />
+              <Link to="/login">
+                <Button size="sm" variant="ghost" className="text-sm font-bold text-primary">Sign In</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
@@ -77,15 +102,19 @@ function LandingPage() {
               >
                 <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
                   <Badge variant="secondary" className="mr-2 bg-primary text-primary-foreground">STATUS</Badge>
-                  <span>Kitchen is currently serving Dinner!</span>
+                  <span>
+                    {activeMeal
+                      ? `Kitchen is currently serving ${activeMeal}!`
+                      : "Kitchen is closed now. See timings below."}
+                  </span>
                 </div>
                 <h1 className="font-display text-5xl font-extrabold tracking-tight sm:text-7xl">
                   Healthy meals for a <br />
-                  <span className="text-primary">Better Campus Life.</span>
+                  <span className="text-primary">Better Life.</span>
                 </h1>
                 <p className="max-w-lg text-lg text-muted-foreground sm:text-xl">
-                  Welcome to your official hostel dining hub. Enjoy nutritious, hygienic,
-                  and delicious meals served daily at your doorstep.
+                  Welcome to <span className="font-bold">Mom's Kitchen</span>. Enjoy nutritious, hygienic,
+                  and delicious meals served daily.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
                   <Link to="/register">
@@ -93,9 +122,12 @@ function LandingPage() {
                       Register as Member <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
-                  <Button size="lg" variant="outline" className="h-14 rounded-full px-8 text-lg border-2">
-                    View Meal Timings
-                  </Button>
+                  <a href="#menu">
+                    <Button size="lg" variant="outline" className="h-14 rounded-full px-8 text-lg border-2 group transition-all hover:bg-primary/5">
+                      <Clock className="mr-2 h-5 w-5 text-primary transition-transform group-hover:rotate-12" />
+                      View Meal Timings
+                    </Button>
+                  </a>
                 </div>
                 <div className="flex items-center gap-6 pt-4 text-muted-foreground border-t border-border mt-8">
                   <div className="flex flex-col">
@@ -172,9 +204,50 @@ function LandingPage() {
                   ))}
                 </ul>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <img src="/images/fresh_meal.png" className="rounded-3xl h-64 w-full object-cover" alt="Fresh Prepared Meal" />
-                <img src="/images/mess_kitchen.png" className="rounded-3xl h-64 w-full object-cover mt-8 shadow-2xl" alt="Our Hygienic Kitchen" />
+              <div className="relative">
+                <div className="absolute -inset-4 bg-primary/5 rounded-[3rem] blur-2xl" />
+                <div className="grid grid-cols-2 gap-4 sm:gap-6 relative">
+                  <div className="space-y-4 sm:space-y-6">
+                    <motion.div
+                      whileHover={{ y: -5 }}
+                      className="overflow-hidden rounded-[2rem] shadow-xl border-4 border-background"
+                    >
+                      <img
+                        src="/images/moms_special_thali.png"
+                        className="aspect-[4/5] w-full object-cover"
+                        alt="Delicious Thali"
+                      />
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ y: -5 }}
+                      className="overflow-hidden rounded-[2rem] shadow-lg border-4 border-background"
+                    >
+                      <img
+                        src="/images/mess_kitchen.png"
+                        className="aspect-square w-full object-cover"
+                        alt="Our Kitchen"
+                      />
+                    </motion.div>
+                  </div>
+                  <div className="pt-8 sm:pt-12 space-y-4 sm:space-y-6">
+                    <motion.div
+                      whileHover={{ y: -5 }}
+                      className="overflow-hidden rounded-[2rem] shadow-xl border-4 border-background"
+                    >
+                      <img
+                        src="/images/moms_fresh_cooking.png"
+                        className="aspect-[3/4] w-full object-cover"
+                        alt="Fresh Cooking"
+                      />
+                    </motion.div>
+                    <div className="aspect-square rounded-[2rem] bg-primary/10 flex items-center justify-center p-6 text-center border-4 border-background">
+                      <div className="space-y-1">
+                        <div className="text-2xl font-bold text-primary">100%</div>
+                        <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Quality<br />Assurance</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -212,36 +285,71 @@ function LandingPage() {
         {/* Menu Section */}
         <section id="menu" className="py-24 bg-muted/30">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="rounded-[3rem] bg-sidebar p-12 overflow-hidden relative border border-sidebar-border">
-              <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="rounded-[2rem] sm:rounded-[3rem] bg-card p-8 sm:p-16 overflow-hidden relative border shadow-xl">
+              {/* Decorative Background Blobs */}
+              <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+              <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+
+              <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
                 <div className="space-y-8">
                   <div className="space-y-4">
-                    <h2 className="text-primary font-bold uppercase tracking-widest text-sm">Meal Times</h2>
-                    <h3 className="text-4xl font-bold text-white">Daily Dining Schedule</h3>
-                    <p className="text-sidebar-foreground/70 text-lg">
+                    <h2 className="text-primary font-bold uppercase tracking-widest text-xs sm:text-sm">Meal Times</h2>
+                    <h3 className="text-3xl sm:text-5xl font-extrabold tracking-tight">Daily Dining Schedule</h3>
+                    <p className="text-muted-foreground text-base sm:text-lg max-w-md">
                       Punctuality ensures fresh food for everyone. Please visit the mess during
                       the following windows.
                     </p>
                   </div>
                   <div className="space-y-4">
                     {[
-                      { time: "08:00 AM - 09:30 AM", label: "Breakfast", menu: "Nutritious start with milk, sprouts, and main dish." },
-                      { time: "12:30 PM - 02:30 PM", label: "Lunch", menu: "Full thali with seasonal veg, dal, rice, and roti." },
-                      { time: "08:00 PM - 09:30 PM", label: "Dinner", menu: "Light and healthy dinner to end your day right." },
-                    ].map((m, i) => (
-                      <div key={i} className="flex gap-6 p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                          <Clock className="h-6 w-6" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-white font-bold">{m.label}</span>
-                            <span className="text-primary text-xs font-medium uppercase tracking-wider ml-auto">{m.time}</span>
+                      { meal: "Breakfast", label: "Breakfast", menu: "Nutritious start with milk, sprouts, and main dish.", icon: <Sun className="h-20 w-20" />, smallIcon: <Sun className="h-7 w-7" />, defaultTime: "08:00 AM - 09:30 AM" },
+                      { meal: "Lunch", label: "Lunch", menu: "Full thali with seasonal veg, dal, rice, and roti.", icon: <Utensils className="h-20 w-20" />, smallIcon: <Utensils className="h-7 w-7" />, defaultTime: "12:30 PM - 02:30 PM" },
+                      { meal: "Dinner", label: "Dinner", menu: "Light and healthy dinner to end your day right.", icon: <Moon className="h-20 w-20" />, smallIcon: <Moon className="h-7 w-7" />, defaultTime: "08:00 PM - 09:30 PM" },
+                    ].map((m, i) => {
+                      const w = windowsQ.data?.find(x => x.meal === m.meal);
+                      const displayTime = w ? `${formatTime12h(w.startTime)} - ${formatTime12h(w.endTime)}` : m.defaultTime;
+                      const isLive = activeMeal === m.meal;
+
+                      return (
+                        <div key={i} className={cn(
+                          "group relative rounded-2xl border transition-all overflow-hidden p-6",
+                          isLive
+                            ? "bg-primary/5 border-primary/30 shadow-glow"
+                            : "bg-muted/30 border-border/50 hover:bg-muted/50"
+                        )}>
+                          <div className="flex flex-col sm:flex-row gap-6 items-start relative z-10">
+                            <div className={cn(
+                              "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm border transition-transform group-hover:scale-110",
+                              isLive ? "bg-primary text-primary-foreground border-primary" : "bg-primary/10 text-primary border-primary/20"
+                            )}>
+                              {m.smallIcon}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl font-bold tracking-tight">{m.label}</span>
+                                  {isLive && (
+                                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/20 text-success text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                                      Live Now
+                                    </span>
+                                  )}
+                                </div>
+                                <span className={cn(
+                                  "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                                  isLive ? "bg-primary text-primary-foreground border-primary" : "bg-primary/10 text-primary border-primary/20"
+                                )}>
+                                  {displayTime}
+                                </span>
+                              </div>
+                              <p className="text-muted-foreground text-base leading-relaxed max-w-md">
+                                {m.menu}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-sidebar-foreground/80 text-sm">{m.menu}</p>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="relative">

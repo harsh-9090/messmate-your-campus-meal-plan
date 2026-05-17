@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { todayISO, formatTimestamp } from "@/lib/messmate/dateHelpers";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/admin/scan-logs")({
   head: () => ({ meta: [{ title: "Scan Logs — MessMate Admin" }] }),
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/admin/scan-logs")({
 const REASONS = ["all", "UNPAID", "EXPIRED", "NOT_IN_PLAN", "WRONG_TIME", "ALREADY_USED", "INVALID_TOKEN"];
 
 function ScanLogsPage() {
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
 
@@ -97,8 +99,8 @@ function ScanLogsPage() {
           </Select>
         </div>
         <div className="max-h-[600px] overflow-y-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-muted/80 text-xs uppercase tracking-wider text-muted-foreground backdrop-blur">
+          <table className="w-full text-sm hidden md:table">
+            <thead className="sticky top-0 bg-muted/95 text-xs uppercase tracking-wider text-muted-foreground border-b z-10">
               <tr>
                 <th className="px-4 py-2 text-left">Time</th>
                 <th className="px-4 py-2 text-left">Member</th>
@@ -130,6 +132,39 @@ function ScanLogsPage() {
               {!allQ.isLoading && filtered.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-sm text-muted-foreground">No scan logs yet</td></tr>}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="grid grid-cols-1 gap-3 p-4 md:hidden max-h-[600px] overflow-y-auto">
+          {allQ.isLoading && <div className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>}
+          {filtered.map((l) => (
+            <div key={l.id} className="flex flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm">
+              <div className="flex items-center justify-between border-b pb-2">
+                <div className="text-xs text-muted-foreground font-medium">{formatTimestamp(l.timestamp)}</div>
+                <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                  l.status === "allowed" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")}>
+                  {l.status === "allowed" ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                  <span className="uppercase tracking-wider">{l.status}</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-semibold">{l.memberName}</div>
+                  <div className="text-xs text-muted-foreground">{l.memberId}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium">{l.meal}</div>
+                </div>
+              </div>
+              {l.status === "denied" && (
+                <div className="mt-1 rounded-md bg-destructive/5 p-2 text-xs">
+                  {l.denialCode && <Badge variant="outline" className="mr-1 text-[10px] border-destructive/30 text-destructive">{l.denialCode}</Badge>}
+                  <span className="text-destructive/80 font-medium">{l.denialReason}</span>
+                </div>
+              )}
+            </div>
+          ))}
+          {!allQ.isLoading && filtered.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground">No scan logs yet</div>}
         </div>
       </Card>
     </div>
