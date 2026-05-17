@@ -47,20 +47,11 @@ export function QRCanvas({ size = 200 }: Props) {
 
   const ttl = data?.expiresIn || 8;
   const pct = (secondsLeft / ttl) * 100;
-  const ring = 2 * Math.PI * 46;
+  const ring = 2 * Math.PI * 8;
   const offset = ring - (pct / 100) * ring;
 
   return (
-    <div className="relative inline-flex items-center justify-center">
-      <svg className="absolute -inset-3 -rotate-90" width={size + 24} height={size + 24} viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="46" stroke="currentColor" strokeOpacity="0.1" strokeWidth="2" fill="none" />
-        <circle
-          cx="50" cy="50" r="46"
-          stroke="currentColor" strokeWidth="2" fill="none"
-          strokeDasharray={ring} strokeDashoffset={offset} strokeLinecap="round"
-          className="text-primary transition-all duration-1000 ease-linear"
-        />
-      </svg>
+    <div className="relative inline-flex flex-col items-center justify-center pb-8">
       <div className="rounded-2xl bg-white p-3 shadow-glow" style={{ width: size + 24, height: size + 24 }}>
         {isLoading ? (
           <div className="grid h-full w-full place-items-center text-slate-400">
@@ -74,8 +65,23 @@ export function QRCanvas({ size = 200 }: Props) {
           <canvas ref={canvasRef} width={size} height={size} />
         )}
       </div>
-      <div className="absolute -bottom-7 text-xs font-medium text-muted-foreground">
-        {isError ? "Offline" : `Refreshes in ${secondsLeft}s`}
+      <div className="absolute bottom-0 flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+        {isError ? (
+          <span>Offline</span>
+        ) : (
+          <>
+            <svg className="-rotate-90 text-primary" width="14" height="14" viewBox="0 0 20 20">
+              <circle cx="10" cy="10" r="8" stroke="currentColor" strokeOpacity="0.15" strokeWidth="2.5" fill="none" />
+              <circle
+                cx="10" cy="10" r="8"
+                stroke="currentColor" strokeWidth="2.5" fill="none"
+                strokeDasharray={ring} strokeDashoffset={offset} strokeLinecap="round"
+                className="transition-all duration-1000 ease-linear"
+              />
+            </svg>
+            <span>Refreshes in {secondsLeft}s</span>
+          </>
+        )}
       </div>
     </div>
   );
