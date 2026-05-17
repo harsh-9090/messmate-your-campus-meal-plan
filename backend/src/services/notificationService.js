@@ -4,15 +4,25 @@ const createTransporter = () => {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
     return null;
   }
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_PORT === "465",
+  
+  const config = {
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-  });
+  };
+
+  // If using Gmail, bypass custom host/port config and leverage Nodemailer's native
+  // optimized Gmail service configuration to prevent TLS/STARTTLS handshaking failures in cloud envs.
+  if (process.env.SMTP_HOST.includes("gmail.com")) {
+    config.service = "gmail";
+  } else {
+    config.host = process.env.SMTP_HOST;
+    config.port = parseInt(process.env.SMTP_PORT || "587");
+    config.secure = process.env.SMTP_PORT === "465";
+  }
+
+  return nodemailer.createTransport(config);
 };
 
 export async function notifyExpiringSoon(member, daysLeft) {
