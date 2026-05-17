@@ -72,7 +72,7 @@ async function request<T>(
         return request<T>(path, { ...init, _retry: true });
       }
     } catch {}
-    // Refresh failed — log out
+    // Refresh failed - log out
     onUnauthorized();
   }
 

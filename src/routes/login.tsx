@@ -13,8 +13,8 @@ import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — Mom's Kitchen" },
-      { name: "description", content: "Mom's Kitchen hostel mess management — log in as admin, staff, or member." },
+      { title: "Sign in - Mom's Kitchen" },
+      { name: "description", content: "Mom's Kitchen hostel mess management - log in as admin, staff, or member." },
     ],
   }),
   component: LoginPage,
@@ -80,7 +80,7 @@ function LoginPage() {
           <div className="absolute inset-0 bg-sidebar/10 backdrop-blur-[0.5px]" />
         </div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="relative z-10 flex items-center gap-3"
@@ -94,7 +94,7 @@ function LoginPage() {
           </div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -124,7 +124,7 @@ function LoginPage() {
         <div className="lg:hidden absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
         <div className="lg:hidden absolute -bottom-24 -left-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}

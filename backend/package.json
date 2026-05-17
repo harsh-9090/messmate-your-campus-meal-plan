@@ -1,7 +1,7 @@
 {
   "name": "messmate-server",
   "version": "1.1.0",
-  "description": "MessMate hostel mess management — Express + PostgreSQL API",
+  "description": "MessMate hostel mess management - Express + PostgreSQL API",
   "type": "module",
   "main": "src/index.js",
   "scripts": {

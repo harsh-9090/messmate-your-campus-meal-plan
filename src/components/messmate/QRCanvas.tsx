@@ -32,7 +32,7 @@ export function QRCanvas({ size = 200 }: Props) {
       margin: 1,
       color: { dark: "#1e1b4b", light: "#ffffff" },
       errorCorrectionLevel: "M",
-    }).catch(() => {});
+    }).catch(() => { });
 
     const ttl = data.expiresIn || 8;
     setSecondsLeft(ttl);
@@ -68,7 +68,7 @@ export function QRCanvas({ size = 200 }: Props) {
           </div>
         ) : isError ? (
           <div className="grid h-full w-full place-items-center px-4 text-center text-xs font-medium text-destructive">
-            QR unavailable — check backend connection
+            QR unavailable - check backend connection
           </div>
         ) : (
           <canvas ref={canvasRef} width={size} height={size} />

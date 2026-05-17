@@ -17,7 +17,7 @@ import type { Member } from "@/lib/messmate/types";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
 
 export const Route = createFileRoute("/admin/")({
-  head: () => ({ meta: [{ title: "Dashboard — Mom's Kitchen Admin" }] }),
+  head: () => ({ meta: [{ title: "Dashboard - Mom's Kitchen Admin" }] }),
   component: AdminDashboard,
 });
 
@@ -44,7 +44,7 @@ function AdminDashboard() {
   const members = membersQ.data?.items ?? [];
   const windows = windowsQ.data ?? [];
   const summary = summaryQ.data ?? { Breakfast: 0, Lunch: 0, Dinner: 0, total: 0 };
-  const stats = statsQ.data ?? { 
+  const stats = statsQ.data ?? {
     new_members: 0, renewed_members: 0, expired_members: 0, collection: 0,
     new_list: [], renewed_list: [], expired_list: []
   };
@@ -205,7 +205,7 @@ function StatsDetailDialog({ title, members, onClose }: { title: string; members
             </p>
           </div>
         </DialogHeader>
-        
+
         <div className="flex-1 overflow-y-auto px-6 py-4">
           {members.length === 0 ? (
             <div className="py-20 text-center flex flex-col items-center gap-3">

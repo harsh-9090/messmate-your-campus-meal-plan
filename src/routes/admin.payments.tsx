@@ -12,16 +12,16 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/admin/payments")({
-  head: () => ({ meta: [{ title: "Payments — Mom's Kitchen Admin" }] }),
+  head: () => ({ meta: [{ title: "Payments - Mom's Kitchen Admin" }] }),
   component: PaymentsPage,
 });
 
 function PaymentsPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const paymentsQ = useQuery({ 
-    queryKey: ["payments"], 
-    queryFn: () => paymentsApi.list({ limit: 200 }) 
+  const paymentsQ = useQuery({
+    queryKey: ["payments"],
+    queryFn: () => paymentsApi.list({ limit: 200 })
   });
 
   const deletePaymentM = useMutation({
@@ -44,7 +44,7 @@ function PaymentsPage() {
   }
 
   const payments = paymentsQ.data ?? [];
-  const filtered = payments.filter(p => 
+  const filtered = payments.filter(p =>
     (p.memberName?.toLowerCase() ?? "").includes(search.toLowerCase()) ||
     (p.memberId?.toLowerCase() ?? "").includes(search.toLowerCase())
   );
@@ -61,8 +61,8 @@ function PaymentsPage() {
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search member or ID..." 
+          <Input
+            placeholder="Search member or ID..."
             className="pl-9"
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -117,13 +117,12 @@ function PaymentsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        variant="secondary" 
-                        className={`capitalize ${
-                          p.type === 'initial' ? 'bg-primary/10 text-primary' : 
-                          p.type === 'renewal' ? 'bg-indigo-100 text-indigo-700' : 
-                          'bg-amber-100 text-amber-700'
-                        }`}
+                      <Badge
+                        variant="secondary"
+                        className={`capitalize ${p.type === 'initial' ? 'bg-primary/10 text-primary' :
+                            p.type === 'renewal' ? 'bg-indigo-100 text-indigo-700' :
+                              'bg-amber-100 text-amber-700'
+                          }`}
                       >
                         {p.type}
                       </Badge>
@@ -132,11 +131,11 @@ function PaymentsPage() {
                       {formatINR(p.amount)}
                     </TableCell>
                     <TableCell>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => { if(confirm("Delete this payment record? This cannot be undone.")) deletePaymentM.mutate(p.id); }}
+                        onClick={() => { if (confirm("Delete this payment record? This cannot be undone.")) deletePaymentM.mutate(p.id); }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -188,13 +187,12 @@ function PaymentsPage() {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Type</div>
-                    <Badge 
-                      variant="secondary" 
-                      className={`capitalize mt-0.5 ${
-                        p.type === 'initial' ? 'bg-primary/10 text-primary' : 
-                        p.type === 'renewal' ? 'bg-indigo-100 text-indigo-700' : 
-                        'bg-amber-100 text-amber-700'
-                      }`}
+                    <Badge
+                      variant="secondary"
+                      className={`capitalize mt-0.5 ${p.type === 'initial' ? 'bg-primary/10 text-primary' :
+                          p.type === 'renewal' ? 'bg-indigo-100 text-indigo-700' :
+                            'bg-amber-100 text-amber-700'
+                        }`}
                     >
                       {p.type}
                     </Badge>
@@ -202,11 +200,11 @@ function PaymentsPage() {
                 </div>
 
                 <div className="mt-1 flex justify-end pt-2 border-t">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
-                    onClick={() => { if(confirm("Delete this payment record? This cannot be undone.")) deletePaymentM.mutate(p.id); }}
+                    onClick={() => { if (confirm("Delete this payment record? This cannot be undone.")) deletePaymentM.mutate(p.id); }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

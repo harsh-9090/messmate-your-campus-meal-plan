@@ -23,7 +23,7 @@ import { useState } from "react";
 import type { Meal, Plan } from "@/lib/messmate/types";
 
 export const Route = createFileRoute("/admin/plan-config")({
-  head: () => ({ meta: [{ title: "Plan Config — Mom's Kitchen Admin" }] }),
+  head: () => ({ meta: [{ title: "Plan Config - Mom's Kitchen Admin" }] }),
   component: PlanConfigPage,
 });
 
@@ -110,11 +110,11 @@ function PlanConfigPage() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditing(p)}>
                       <Edit2 className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10" 
-                      onClick={() => { if(confirm("Permanently delete this plan?")) deletePlanM.mutate(p.planId); }}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => { if (confirm("Permanently delete this plan?")) deletePlanM.mutate(p.planId); }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -132,7 +132,7 @@ function PlanConfigPage() {
           <h3 className="font-display text-xl font-bold">Meal Time Windows</h3>
           <p className="text-sm text-muted-foreground mt-1">Configure when students are allowed to scan for each meal.</p>
         </div>
-        
+
         <div className="grid gap-4 sm:gap-6">
           {windows.map((w) => {
             const Icon = w.meal === "Breakfast" ? Plus : w.meal === "Lunch" ? Plus : Plus; // I'll use better icons below
@@ -152,27 +152,27 @@ function PlanConfigPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 sm:flex items-center gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">Start Time</Label>
                       <div className="relative">
-                        <Input 
-                          type="time" 
+                        <Input
+                          type="time"
                           defaultValue={w.startTime}
                           className="h-11 w-full sm:w-32 bg-muted/30 border-transparent focus:bg-background rounded-xl transition-all"
-                          onBlur={(e) => { if (e.target.value !== w.startTime) updateWindowM.mutate({ meal: w.meal, startTime: e.target.value, endTime: w.endTime }); }} 
+                          onBlur={(e) => { if (e.target.value !== w.startTime) updateWindowM.mutate({ meal: w.meal, startTime: e.target.value, endTime: w.endTime }); }}
                         />
                       </div>
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">End Time</Label>
                       <div className="relative">
-                        <Input 
-                          type="time" 
+                        <Input
+                          type="time"
                           defaultValue={w.endTime}
                           className="h-11 w-full sm:w-32 bg-muted/30 border-transparent focus:bg-background rounded-xl transition-all"
-                          onBlur={(e) => { if (e.target.value !== w.endTime) updateWindowM.mutate({ meal: w.meal, startTime: w.startTime, endTime: e.target.value }); }} 
+                          onBlur={(e) => { if (e.target.value !== w.endTime) updateWindowM.mutate({ meal: w.meal, startTime: w.startTime, endTime: e.target.value }); }}
                         />
                       </div>
                     </div>
@@ -186,11 +186,11 @@ function PlanConfigPage() {
 
       <AddPlanDialog open={adding} onOpenChange={setAdding} onSaved={invalidate} />
       {editing && (
-        <EditPlanDialog 
-          plan={editing} 
-          onClose={() => setEditing(null)} 
-          onSaved={invalidate} 
-          onDeactivate={(isActive) => deactivatePlanM.mutate({ planId: editing.planId, isActive })} 
+        <EditPlanDialog
+          plan={editing}
+          onClose={() => setEditing(null)}
+          onSaved={invalidate}
+          onDeactivate={(isActive) => deactivatePlanM.mutate({ planId: editing.planId, isActive })}
         />
       )}
     </div>
@@ -307,9 +307,9 @@ function EditPlanDialog({ plan, onClose, onSaved, onDeactivate }: { plan: Plan; 
           </div>
         </div>
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button 
-            variant="outline" 
-            className="sm:mr-auto gap-2" 
+          <Button
+            variant="outline"
+            className="sm:mr-auto gap-2"
             onClick={() => { onDeactivate(!plan.isActive); onClose(); }}
           >
             {plan.isActive ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}

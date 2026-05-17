@@ -23,7 +23,7 @@ import { GhostLoader } from "@/components/messmate/GhostLoader";
 export const Route = createFileRoute("/staff/scanner")({
   head: () => ({
     meta: [
-      { title: "Mess Scanner — Mom's Kitchen" },
+      { title: "Mess Scanner - Mom's Kitchen" },
       { name: "description", content: "Staff scanner for mess hall: validate member QR codes against plan, time, and usage." },
     ],
   }),
@@ -152,7 +152,7 @@ function ScannerPage() {
                   <div className="text-2xl">{MEAL_ICONS[m]}</div>
                   <div className="font-semibold">{m}</div>
                   <div className="text-[10px] text-muted-foreground">
-                    {w ? `${formatTime12h(w.startTime)} – ${formatTime12h(w.endTime)}` : "—"}
+                    {w ? `${formatTime12h(w.startTime)} – ${formatTime12h(w.endTime)}` : "-"}
                   </div>
                 </button>
               );
@@ -314,7 +314,7 @@ function CameraScanner({
             lastRef.current = { token: decoded, at: now };
             onDetect(decoded);
           },
-          () => {}
+          () => { }
         );
       } catch (e: any) {
         const msg = e?.message || "Unable to access camera. Check permissions.";
@@ -325,7 +325,7 @@ function CameraScanner({
       cancelled = true;
       const s = scannerRef.current;
       if (s) {
-        try { s.stop().catch(() => {}).then(() => s.clear?.()); } catch {}
+        try { s.stop().catch(() => { }).then(() => s.clear?.()); } catch { }
         scannerRef.current = null;
       }
     };

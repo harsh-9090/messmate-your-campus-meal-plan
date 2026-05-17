@@ -12,7 +12,7 @@ import { getCache, setCache } from "../db/redis.js";
 const router = Router();
 router.use(verifyToken);
 
-// POST /scan/validate  — staff/admin only
+// POST /scan/validate  - staff/admin only
 router.post("/validate",
   requireRole("staff", "admin"),
   scanLimiter,

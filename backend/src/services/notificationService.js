@@ -16,7 +16,7 @@ const createTransporter = () => {
 };
 
 export async function notifyExpiringSoon(member, daysLeft) {
-  console.log(`[NOTIFY] Preparing to email ${member.memberId} (${member.email}) — expires in ${daysLeft} days`);
+  console.log(`[NOTIFY] Preparing to email ${member.memberId} (${member.email}) - expires in ${daysLeft} days`);
   
   const transporter = createTransporter();
   if (!transporter) {
@@ -50,7 +50,7 @@ export async function notifyExpiringSoon(member, daysLeft) {
 }
 
 export async function notifyExpired(member) {
-  console.log(`[NOTIFY] Preparing to email ${member.memberId} (${member.email}) — plan EXPIRED`);
+  console.log(`[NOTIFY] Preparing to email ${member.memberId} (${member.email}) - plan EXPIRED`);
 
   const transporter = createTransporter();
   if (!transporter) {

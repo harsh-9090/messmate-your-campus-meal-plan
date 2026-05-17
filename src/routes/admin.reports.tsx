@@ -10,7 +10,7 @@ import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGri
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/reports")({
-  head: () => ({ meta: [{ title: "Reports — Mom's Kitchen Admin" }] }),
+  head: () => ({ meta: [{ title: "Reports - Mom's Kitchen Admin" }] }),
   component: ReportsPage,
 });
 

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
 export const Route = createFileRoute("/admin/finance")({
-  head: () => ({ meta: [{ title: "Finance & Analytics — Mom's Kitchen Admin" }] }),
+  head: () => ({ meta: [{ title: "Finance & Analytics - Mom's Kitchen Admin" }] }),
   component: FinancePage,
 });
 
@@ -29,8 +29,8 @@ function FinancePage() {
     return "";
   };
 
-  const financeQ = useQuery({ 
-    queryKey: ["reports", "finance", period, getQueryDate()], 
+  const financeQ = useQuery({
+    queryKey: ["reports", "finance", period, getQueryDate()],
     queryFn: () => reportsApi.getFinance({ period, date: getQueryDate() }),
     refetchInterval: 300_000 // 5 min
   });
@@ -67,7 +67,7 @@ function FinancePage() {
           <h1 className="font-display text-3xl font-bold">Finance & Analytics</h1>
           <p className="text-sm text-muted-foreground">Revenue tracking and business growth insights</p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-2 shadow-sm">
           <Tabs value={period} onValueChange={(v: any) => setPeriod(v)}>
             <TabsList className="h-9">
@@ -106,10 +106,10 @@ function FinancePage() {
             <ResponsiveContainer>
               <BarChart data={data.monthly}>
                 <XAxis dataKey="month" stroke="currentColor" fontSize={11} />
-                <YAxis stroke="currentColor" fontSize={11} tickFormatter={(v) => `₹${v/1000}k`} />
-                <Tooltip 
+                <YAxis stroke="currentColor" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} />
+                <Tooltip
                   cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
-                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} 
+                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }}
                   formatter={(v: any) => [formatINR(Number(v)), "Revenue"]}
                 />
                 <Bar dataKey="revenue" fill={PRIMARY_COLOR} radius={[4, 4, 0, 0]} />
@@ -135,11 +135,11 @@ function FinancePage() {
                 >
                   {data.methods.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
-                <Tooltip 
-                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} 
+                <Tooltip
+                  contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }}
                   formatter={(v: any) => [formatINR(Number(v)), "Total"]}
                 />
-                <Legend verticalAlign="bottom" height={36}/>
+                <Legend verticalAlign="bottom" height={36} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -154,7 +154,7 @@ function FinancePage() {
               <BarChart data={data.plans} layout="vertical" margin={{ left: 40 }}>
                 <XAxis type="number" hide />
                 <YAxis dataKey="name" type="category" stroke="currentColor" fontSize={11} width={100} />
-                <Tooltip 
+                <Tooltip
                   content={(props: any) => {
                     const { active, payload } = props;
                     if (active && payload && payload.length) {

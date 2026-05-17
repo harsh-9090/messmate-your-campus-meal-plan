@@ -1,4 +1,4 @@
-# MessMate — Backend (Node.js + Express + PostgreSQL)
+# MessMate - Backend (Node.js + Express + PostgreSQL)
 
 Standalone REST API for the MessMate hostel mess management system.
 
@@ -16,7 +16,7 @@ Requires Node 20+ and PostgreSQL 13+ (local, Docker, Neon, Supabase Postgres, RD
 
 `npm run seed` calls `migrate` first, so a fresh database is bootstrapped end-to-end.
 If you only want to (re)create the schema without seed data, run `npm run migrate`.
-The dev server also runs `migrate()` on boot — safe because the schema uses `IF NOT EXISTS`.
+The dev server also runs `migrate()` on boot - safe because the schema uses `IF NOT EXISTS`.
 
 ## Database setup
 
@@ -49,9 +49,9 @@ docker run --name messmate-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=messm
 
 Highlights:
 
-- `POST /auth/login` — returns access token + sets refresh httpOnly cookie
-- `GET  /qr/token` — member-only, returns 8-second JWT QR token
-- `POST /scan/validate` — staff-only, body `{ qrToken, meal }`, runs the 5-step validator
+- `POST /auth/login` - returns access token + sets refresh httpOnly cookie
+- `GET  /qr/token` - member-only, returns 8-second JWT QR token
+- `POST /scan/validate` - staff-only, body `{ qrToken, meal }`, runs the 5-step validator
 - `GET  /members`, `POST /members`, `PUT /members/:id/renew`, etc.
 - `GET  /reports/daily?date=YYYY-MM-DD`
 - `GET  /reports/export?type=daily&format=csv`
@@ -60,12 +60,12 @@ Highlights:
 
 Implemented in `src/services/scanValidator.js`. Order is strict:
 
-1. UNPAID — `sub_is_paid = FALSE`
-2. EXPIRED — today outside `[sub_start_date, sub_end_date]`
-3. NOT_IN_PLAN — meal not in `sub_meals[]`
-4. WRONG_TIME — current time outside the meal's window
-5. ALREADY_USED — conditional `UPDATE meal_usage SET used_<meal> = TRUE WHERE used_<meal> = FALSE`
-   (atomic — Postgres `RETURNING` returns no row if already used)
+1. UNPAID - `sub_is_paid = FALSE`
+2. EXPIRED - today outside `[sub_start_date, sub_end_date]`
+3. NOT_IN_PLAN - meal not in `sub_meals[]`
+4. WRONG_TIME - current time outside the meal's window
+5. ALREADY_USED - conditional `UPDATE meal_usage SET used_<meal> = TRUE WHERE used_<meal> = FALSE`
+   (atomic - Postgres `RETURNING` returns no row if already used)
 
 If all pass: mark usage, log scan, return success.
 
@@ -87,7 +87,7 @@ See `src/db/schema.sql`. Tables: `plans`, `meal_windows`, `members` (with flat `
 - refresh JWT = 7d (httpOnly cookie)
 - QR JWT = 8s with random `nonce`
 - `helmet`, `cors` whitelist via `CLIENT_ORIGIN`, `express-rate-limit` on `/scan/*` and `/qr/*`
-- soft delete (`is_active = FALSE`) — members never hard-deleted
+- soft delete (`is_active = FALSE`) - members never hard-deleted
 
 ## Deploy
 
@@ -95,6 +95,6 @@ Render / Railway / Fly.io / your own VPS. Set every env var from `.env.example`.
 
 ## Notes
 
-- Email/WhatsApp notifications are stubbed — wire `nodemailer` and `twilio` with the provided env vars.
+- Email/WhatsApp notifications are stubbed - wire `nodemailer` and `twilio` with the provided env vars.
 - Razorpay integration is intentionally not included (Phase 2).
 - This server is independent of the Lovable frontend; it is **not** deployed by Lovable.

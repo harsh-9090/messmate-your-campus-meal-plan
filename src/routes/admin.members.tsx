@@ -23,7 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const PAYMENT_METHODS = ["Cash", "Online", "UPI", "Card"];
 
 export const Route = createFileRoute("/admin/members")({
-  head: () => ({ meta: [{ title: "Members — Mom's Kitchen Admin" }] }),
+  head: () => ({ meta: [{ title: "Members - Mom's Kitchen Admin" }] }),
   component: MembersPage,
 });
 
@@ -164,7 +164,7 @@ function MembersPage() {
                         : <Badge className="bg-success text-success-foreground">Active</Badge>}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <div className="text-xs text-muted-foreground">Plan</div>
@@ -252,46 +252,46 @@ function MembersPage() {
                         {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
                         {(m.subscription.endDate || m.createdAt) && (
                           <div className="text-[10px] text-muted-foreground">
-                {expired ? `${-left}d ago` : `${left}d left`}
+                            {expired ? `${-left}d ago` : `${left}d left`}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {!m.isActive ? (
+                          <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
+                        ) : !m.subscription.isPaid ? (
+                          <div>
+                            <Badge variant="destructive" className={cn(m.subscription.amountPaid > 0 && "bg-orange-500 hover:bg-orange-600 border-orange-500")}>
+                              {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                            </Badge>
+                            {m.subscription.dueAmount > 0 && <div className="mt-1 text-[10px] font-medium text-destructive">Due: ₹{m.subscription.dueAmount}</div>}
+                          </div>
+                        ) : expired ? <Badge variant="destructive">Expired</Badge>
+                          : <Badge className="bg-success text-success-foreground">Active</Badge>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
+                          <Button size="sm" variant="ghost" onClick={() => setEditing(m)}><Edit3 className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => setRenewing(m)}><RefreshCw className="h-3.5 w-3.5" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId); }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!membersQ.isLoading && filtered.length === 0 && (
+                  <tr><td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No members found</td></tr>
+                )}
+              </tbody>
+            </table>
+            {hasMore && (
+              <div className="p-4 border-t text-center">
+                <Button variant="ghost" size="sm" onClick={() => setDisplayLimit(d => d + 50)}>
+                  Load More... ({filteredRaw.length - displayLimit} remaining)
+                </Button>
               </div>
             )}
-          </td>
-          <td className="px-4 py-3">
-            {!m.isActive ? (
-              <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
-            ) : !m.subscription.isPaid ? (
-              <div>
-                <Badge variant="destructive" className={cn(m.subscription.amountPaid > 0 && "bg-orange-500 hover:bg-orange-600 border-orange-500")}>
-                  {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
-                </Badge>
-                {m.subscription.dueAmount > 0 && <div className="mt-1 text-[10px] font-medium text-destructive">Due: ₹{m.subscription.dueAmount}</div>}
-              </div>
-            ) : expired ? <Badge variant="destructive">Expired</Badge>
-              : <Badge className="bg-success text-success-foreground">Active</Badge>}
-          </td>
-          <td className="px-4 py-3">
-            <div className="flex justify-end gap-1">
-              <Button size="sm" variant="ghost" onClick={() => setEditing(m)}><Edit3 className="h-3.5 w-3.5" /></Button>
-              <Button size="sm" variant="ghost" onClick={() => setRenewing(m)}><RefreshCw className="h-3.5 w-3.5" /></Button>
-              <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId); }}><Trash2 className="h-3.5 w-3.5" /></Button>
-            </div>
-          </td>
-        </tr>
-      );
-    })}
-    {!membersQ.isLoading && filtered.length === 0 && (
-      <tr><td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No members found</td></tr>
-    )}
-  </tbody>
-</table>
-{hasMore && (
-  <div className="p-4 border-t text-center">
-    <Button variant="ghost" size="sm" onClick={() => setDisplayLimit(d => d + 50)}>
-      Load More... ({filteredRaw.length - displayLimit} remaining)
-    </Button>
-  </div>
-)}
-</div>
+          </div>
         )}
       </Card>
 
@@ -513,10 +513,10 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
   const dueAmount = Math.max(0, price - amountPaidNum);
 
   const renewM = useMutation({
-    mutationFn: () => membersApi.renew(member.memberId, { 
-      planId, 
-      amountPaid: amountPaidNum, 
-      paymentMethod 
+    mutationFn: () => membersApi.renew(member.memberId, {
+      planId,
+      amountPaid: amountPaidNum,
+      paymentMethod
     }),
     onSuccess: () => {
       toast.success(`${member.name}'s plan renewed!`);
@@ -559,7 +559,7 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
               </Select>
             </div>
           </div>
-          
+
           {dueAmount > 0 ? (
             <div className="rounded-lg bg-destructive/10 p-3 text-center text-sm font-bold text-destructive">
               Balance Due: ₹{dueAmount}

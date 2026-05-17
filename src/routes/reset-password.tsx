@@ -23,7 +23,7 @@ export const Route = createFileRoute("/reset-password")({
   },
   head: () => ({
     meta: [
-      { title: "Reset Password — Mom's Kitchen" },
+      { title: "Reset Password - Mom's Kitchen" },
       { name: "description", content: "Enter your secure token and complete resetting your account password." },
     ],
   }),

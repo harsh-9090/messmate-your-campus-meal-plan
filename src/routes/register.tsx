@@ -29,7 +29,7 @@ import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "Register — Mom's Kitchen" },
+      { title: "Register - Mom's Kitchen" },
       { name: "description", content: "Create your student account for the hostel mess." },
     ],
   }),
@@ -88,14 +88,14 @@ function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center bg-muted/30 p-6 relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
         <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="w-full max-w-md relative z-10"
         >
           <Card className="p-10 text-center space-y-6 shadow-2xl rounded-[2.5rem] border-none bg-background/80 backdrop-blur-xl">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", damping: 12, delay: 0.2 }}
@@ -157,7 +157,7 @@ function RegisterPage() {
           <div className="absolute inset-0 bg-sidebar/10 backdrop-blur-[0.5px]" />
         </div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="relative z-10 flex items-center gap-3"
@@ -168,7 +168,7 @@ function RegisterPage() {
           <div className="font-display text-2xl font-bold tracking-tight">Mom's Kitchen</div>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -188,11 +188,11 @@ function RegisterPage() {
               "Real-time Meal Tracking",
               "Easy Online Renewals"
             ].map((txt, i) => (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 + i * 0.1 }}
-                key={i} 
+                key={i}
                 className="flex items-center gap-3 font-medium text-sm"
               >
                 <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -213,7 +213,7 @@ function RegisterPage() {
         <div className="lg:hidden absolute -top-24 -right-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
         <div className="lg:hidden absolute -bottom-24 -left-24 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -278,7 +278,7 @@ function RegisterPage() {
                     {plans?.map((plan) => (
                       <SelectItem key={plan.planId} value={plan.planId} className="py-4 focus:bg-primary/10 rounded-xl cursor-pointer m-1 transition-colors">
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-foreground">{plan.label} — ₹{plan.pricePerMonth}</span>
+                          <span className="font-bold text-sm text-foreground">{plan.label} - ₹{plan.pricePerMonth}</span>
                           <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold mt-0.5">
                             {plan.meals.join(" • ")}
                           </span>

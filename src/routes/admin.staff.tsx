@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/messmate/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/admin/staff")({
-  head: () => ({ meta: [{ title: "Staff Management — Mom's Kitchen Admin" }] }),
+  head: () => ({ meta: [{ title: "Staff Management - Mom's Kitchen Admin" }] }),
   component: StaffPage,
 });
 
@@ -26,9 +26,9 @@ function StaffPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Member | null>(null);
 
-  const staffQ = useQuery({ 
-    queryKey: ["staff"], 
-    queryFn: () => staffApi.list() 
+  const staffQ = useQuery({
+    queryKey: ["staff"],
+    queryFn: () => staffApi.list()
   });
 
   const deleteM = useMutation({
@@ -101,8 +101,8 @@ function StaffPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge 
-                        variant="secondary" 
+                      <Badge
+                        variant="secondary"
                         className={`capitalize ${s.role === 'admin' ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'}`}
                       >
                         {s.role}
@@ -113,12 +113,12 @@ function StaffPage() {
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => setEditingStaff(s)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           disabled={s.memberId === currentUser?.id}
-                          onClick={() => { if(confirm("Permanently delete this account?")) deleteM.mutate(s.memberId); }}
+                          onClick={() => { if (confirm("Permanently delete this account?")) deleteM.mutate(s.memberId); }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -150,7 +150,7 @@ function StaffPage() {
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.memberId}</div>
                   </div>
                 </div>
-                
+
                 <div className="grid gap-2 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Mail className="h-4 w-4 shrink-0" /> <span className="truncate">{s.email}</span>
@@ -171,12 +171,12 @@ function StaffPage() {
                   <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setEditingStaff(s)}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
                     disabled={s.memberId === currentUser?.id}
-                    onClick={() => { if(confirm("Permanently delete this account?")) deleteM.mutate(s.memberId); }}
+                    onClick={() => { if (confirm("Permanently delete this account?")) deleteM.mutate(s.memberId); }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -188,10 +188,10 @@ function StaffPage() {
       </Card>
 
       <StaffDialog open={isAddOpen} onOpenChange={setIsAddOpen} />
-      <StaffDialog 
-        open={!!editingStaff} 
-        onOpenChange={(open) => !open && setEditingStaff(null)} 
-        staff={editingStaff} 
+      <StaffDialog
+        open={!!editingStaff}
+        onOpenChange={(open) => !open && setEditingStaff(null)}
+        staff={editingStaff}
       />
     </div>
   );
@@ -205,13 +205,13 @@ function StaffDialog({ open, onOpenChange, staff }: { open: boolean, onOpenChang
   useEffect(() => {
     if (open) {
       if (staff) {
-        setFormData({ 
+        setFormData({
           memberId: staff.memberId || "",
-          name: staff.name || "", 
-          email: staff.email || "", 
-          mobile: staff.mobile || "", 
-          password: "", 
-          role: (staff.role as "staff" | "admin") || "staff" 
+          name: staff.name || "",
+          email: staff.email || "",
+          mobile: staff.mobile || "",
+          password: "",
+          role: (staff.role as "staff" | "admin") || "staff"
         });
       } else {
         setFormData({ memberId: "", name: "", email: "", mobile: "", password: "", role: "staff" });
@@ -263,18 +263,18 @@ function StaffDialog({ open, onOpenChange, staff }: { open: boolean, onOpenChang
           <div className="grid gap-2">
             <label className="text-xs font-semibold uppercase text-muted-foreground">Role</label>
             <div className="flex gap-2">
-              <Button 
+              <Button
                 type="button"
-                variant={formData.role === 'staff' ? 'default' : 'outline'} 
-                className="flex-1 gap-2" 
+                variant={formData.role === 'staff' ? 'default' : 'outline'}
+                className="flex-1 gap-2"
                 onClick={() => setFormData({ ...formData, role: 'staff' })}
               >
                 <UserCog className="h-4 w-4" /> Staff
               </Button>
-              <Button 
+              <Button
                 type="button"
-                variant={formData.role === 'admin' ? 'default' : 'outline'} 
-                className="flex-1 gap-2" 
+                variant={formData.role === 'admin' ? 'default' : 'outline'}
+                className="flex-1 gap-2"
                 onClick={() => setFormData({ ...formData, role: 'admin' })}
               >
                 <Shield className="h-4 w-4" /> Admin

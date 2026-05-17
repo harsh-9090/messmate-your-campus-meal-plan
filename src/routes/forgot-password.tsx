@@ -12,7 +12,7 @@ import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
     meta: [
-      { title: "Forgot Password — Mom's Kitchen" },
+      { title: "Forgot Password - Mom's Kitchen" },
       { name: "description", content: "Reset your Mom's Kitchen password securely via your registered email." },
     ],
   }),
