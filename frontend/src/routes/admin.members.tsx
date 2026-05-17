@@ -36,31 +36,22 @@ function MembersPage() {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [renewing, setRenewing] = useState<Member | null>(null);
-  const [displayLimit, setDisplayLimit] = useState(50);
+  const [page, setPage] = useState(1);
 
   const membersQ = useQuery({
-    queryKey: ["members", { search, status, planFilter }],
-    queryFn: () => membersApi.list({ search, status, planId: planFilter === "all" ? undefined : planFilter, limit: 500 }),
+    queryKey: ["members", { search, status, planFilter, page }],
+    queryFn: () => membersApi.list({ search, status, planId: planFilter === "all" ? undefined : planFilter, page, limit: 50 }),
   });
   const plansQ = useQuery({ queryKey: ["plans"], queryFn: () => configApi.listPlans() });
 
   const members = membersQ.data?.items ?? [];
   const plans = plansQ.data ?? [];
+  const total = membersQ.data?.total ?? 0;
+  const totalPages = Math.ceil(total / 50);
 
-  const filteredRaw = useMemo(() => {
-    return members.filter((m) => {
-      const matchSearch = m.name.toLowerCase().includes(search.toLowerCase()) || m.memberId.toLowerCase().includes(search.toLowerCase());
-      if (!matchSearch) return false;
-      if (status === "active") return m.isActive && daysRemaining(m.subscription.endDate) >= 0;
-      if (status === "expired") return daysRemaining(m.subscription.endDate) < 0;
-      if (status === "unpaid") return !m.subscription.isPaid;
-      if (status === "pending") return !m.isActive;
-      return true;
-    });
-  }, [members, search, status]);
-
-  const filtered = useMemo(() => filteredRaw.slice(0, displayLimit), [filteredRaw, displayLimit]);
-  const hasMore = filteredRaw.length > displayLimit;
+  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
+  const handleStatus = (v: any) => { setStatus(v); setPage(1); };
+  const handlePlanFilter = (v: string) => { setPlanFilter(v); setPage(1); };
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["members"] });
 
@@ -79,7 +70,7 @@ function MembersPage() {
         <div>
           <h1 className="font-display text-3xl font-bold">Members</h1>
           <p className="text-sm text-muted-foreground">
-            {membersQ.isLoading ? "Loading…" : `${filtered.length} member${filtered.length === 1 ? "" : "s"}`}
+            {membersQ.isLoading ? "Loading…" : `${total} member${total === 1 ? "" : "s"}`}
           </p>
         </div>
         <Button onClick={() => setAdding(true)} disabled={!plans.length}>
@@ -91,9 +82,9 @@ function MembersPage() {
         <div className="flex flex-wrap gap-2">
           <div className="relative min-w-64 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Search name or ID…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input className="pl-9" placeholder="Search name or ID…" value={search} onChange={(e) => handleSearch(e.target.value)} />
           </div>
-          <Select value={status} onValueChange={(v: any) => setStatus(v)}>
+          <Select value={status} onValueChange={(v: any) => handleStatus(v)}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -106,7 +97,7 @@ function MembersPage() {
             </SelectContent>
           </Select>
 
-          <Select value={planFilter} onValueChange={setPlanFilter}>
+          <Select value={planFilter} onValueChange={handlePlanFilter}>
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Filter by Plan" />
             </SelectTrigger>
@@ -130,10 +121,10 @@ function MembersPage() {
             {membersQ.isError && (
               <div className="py-10 text-center text-destructive font-medium">Failed to load members. Please try again.</div>
             )}
-            {!membersQ.isLoading && !membersQ.isError && filtered.length === 0 && (
+            {!membersQ.isLoading && !membersQ.isError && members.length === 0 && (
               <div className="py-8 text-center text-sm text-muted-foreground">No members found</div>
             )}
-            {!membersQ.isLoading && !membersQ.isError && filtered.map((m) => {
+            {!membersQ.isLoading && !membersQ.isError && members.map((m) => {
               const left = daysRemaining(m.subscription.endDate);
               const expired = left < 0;
               return (
@@ -199,11 +190,6 @@ function MembersPage() {
                 </div>
               );
             })}
-            {hasMore && (
-              <Button variant="outline" className="w-full mt-2" onClick={() => setDisplayLimit(d => d + 50)}>
-                Load More Members ({filteredRaw.length - displayLimit} remaining)
-              </Button>
-            )}
           </div>
         ) : (
           /* Desktop Table View */
@@ -227,7 +213,7 @@ function MembersPage() {
                 {membersQ.isError && (
                   <tr><td colSpan={7} className="py-10 text-center text-destructive font-medium">Failed to load members. Please try again.</td></tr>
                 )}
-                {!membersQ.isLoading && !membersQ.isError && filtered.map((m) => {
+                {!membersQ.isLoading && !membersQ.isError && members.map((m) => {
                   const left = daysRemaining(m.subscription.endDate);
                   const expired = left < 0;
                   return (
@@ -279,21 +265,65 @@ function MembersPage() {
                     </tr>
                   );
                 })}
-                {!membersQ.isLoading && filtered.length === 0 && (
+                {!membersQ.isLoading && members.length === 0 && (
                   <tr><td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No members found</td></tr>
                 )}
               </tbody>
             </table>
-            {hasMore && (
-              <div className="p-4 border-t text-center">
-                <Button variant="ghost" size="sm" onClick={() => setDisplayLimit(d => d + 50)}>
-                  Load More... ({filteredRaw.length - displayLimit} remaining)
-                </Button>
-              </div>
-            )}
           </div>
         )}
       </Card>
+
+      {/* Pagination Controls */}
+      {!membersQ.isLoading && !membersQ.isError && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card border rounded-xl p-4 shadow-sm">
+          <div className="text-sm text-muted-foreground">
+            Showing <span className="font-semibold text-foreground">{Math.min(total, (page - 1) * 50 + 1)}</span> to{" "}
+            <span className="font-semibold text-foreground">{Math.min(page * 50, total)}</span> of{" "}
+            <span className="font-semibold text-foreground">{total}</span> members
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            
+            {/* Page number buttons */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+              .map((p, idx, arr) => {
+                const prev = arr[idx - 1];
+                const showEllipsis = prev && p - prev > 1;
+                return (
+                  <React.Fragment key={p}>
+                    {showEllipsis && <span className="px-1 text-muted-foreground">...</span>}
+                    <Button
+                      variant={p === page ? "default" : "outline"}
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setPage(p)}
+                    >
+                      {p}
+                    </Button>
+                  </React.Fragment>
+                );
+              })}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       <AddMemberDialog open={adding} onOpenChange={setAdding} plans={plans} onCreated={invalidate} />
       {editing && (
