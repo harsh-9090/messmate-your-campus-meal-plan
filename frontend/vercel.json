@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/assets/:path*",
-      "destination": "/dist/client/assets/:path*"
+      "destination": "/client/assets/:path*"
     },
     {
       "source": "/images/:path*",
-      "destination": "/dist/client/images/:path*"
+      "destination": "/client/images/:path*"
     },
     {
       "source": "/(.*)",
