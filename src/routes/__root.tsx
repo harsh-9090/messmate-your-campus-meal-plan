@@ -68,19 +68,40 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+import { GhostLoader } from "@/components/messmate/GhostLoader";
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "MessMate — Hostel Mess Management" },
-      { name: "description", content: "Dynamic QR codes, meal-window enforcement, and 30-day rolling subscriptions for college hostels." },
-      { name: "author", content: "MessMate" },
-      { property: "og:title", content: "MessMate — Hostel Mess Management" },
-      { property: "og:description", content: "Dynamic QR codes, meal-window enforcement, and 30-day rolling subscriptions for college hostels." },
+
+      // Primary SEO
+      { title: "Mom's Kitchen" },
+      {
+        name: "description",
+        content:
+          "Mom's Kitchen provides fresh and affordable meals with QR-based attendance, subscription meal plans, and easy student access.",
+      },
+      { name: "author", content: "Mom's Kitchen" },
+
+      // Open Graph
+      { property: "og:title", content: "Mom's Kitchen" },
+      {
+        property: "og:description",
+        content:
+          "Fresh homemade meals for students with smart QR check-ins and flexible meal subscriptions.",
+      },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+
+      // Twitter
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Mom's Kitchen" },
+      {
+        name: "twitter:description",
+        content:
+          "Healthy hostel meals, QR-based check-ins, and simple monthly subscriptions at Mom's Kitchen.",
+      },
     ],
     links: [
       {
@@ -93,6 +114,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
+  pendingComponent: () => <GhostLoader size="fullscreen" />,
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {

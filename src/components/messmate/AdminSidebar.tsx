@@ -30,7 +30,7 @@ function SidebarContent({ onNavItemClick }: { onNavItemClick?: () => void }) {
           <UtensilsCrossed className="h-5 w-5" />
         </div>
         <div>
-          <div className="font-display text-lg font-bold leading-none">MessMate</div>
+          <div className="font-display text-lg font-bold leading-none">Mom's Kitchen</div>
           <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50">Admin Console</div>
         </div>
       </div>
@@ -103,7 +103,7 @@ export function MobileAdminNav() {
         </Sheet>
         <div className="ml-3 flex items-center gap-2">
           <UtensilsCrossed className="h-5 w-5 text-primary" />
-          <span className="font-display font-bold">MessMate</span>
+          <span className="font-display font-bold">Mom's Kitchen</span>
         </div>
       </div>
       <ThemeToggle />

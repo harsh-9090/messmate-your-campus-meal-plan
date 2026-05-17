@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
+import { GhostLoader } from "@/components/messmate/GhostLoader";
 
 export const Route = createFileRoute("/staff/scanner")({
   head: () => ({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/staff/scanner")({
 
 function ScannerPage() {
   const authUser = useAuth((s) => s.user);
+  const _hasHydrated = useAuth((s) => s._hasHydrated);
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -80,7 +82,16 @@ function ScannerPage() {
     if (t) scanM.mutate(t);
   }, [scanM]);
 
-  if (!authUser) { navigate({ to: "/login" }); return null; }
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (!authUser || authUser.role !== "staff") navigate({ to: "/login" });
+  }, [_hasHydrated, authUser, navigate]);
+
+  if (!_hasHydrated || !authUser) return null;
+
+  if (windowsQ.isLoading) {
+    return <GhostLoader size="fullscreen" />;
+  }
 
   const windowForMeal = windows.find((w) => w.meal === meal);
   const todayLogs = logsQ.data ?? [];

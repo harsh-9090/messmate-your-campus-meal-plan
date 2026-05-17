@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 4000;
     await connectRedis();
     await migrate();
     startCron();
-    app.listen(PORT, () => console.log(`✓ MessMate API listening on http://localhost:${PORT}`));
+    app.listen(PORT, () => console.log(`✓ Mom's Kitchen API listening on http://localhost:${PORT}`));
   } catch (err) {
     console.error("✗ Startup failed:", err);
     process.exit(1);

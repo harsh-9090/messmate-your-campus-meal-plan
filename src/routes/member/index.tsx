@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/messmate/auth";
 import { membersApi, scanApi, configApi } from "@/lib/messmate/api";
@@ -14,6 +15,7 @@ import { daysRemaining, formatINR, formatTimestamp, isWithinWindow } from "@/lib
 import { MEALS } from "@/lib/messmate/constants";
 import type { Meal } from "@/lib/messmate/types";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
+import { GhostLoader } from "@/components/messmate/GhostLoader";
 
 export const Route = createFileRoute("/member/")({
   head: () => ({
@@ -27,6 +29,7 @@ export const Route = createFileRoute("/member/")({
 
 function MemberPortal() {
   const authUser = useAuth((s) => s.user);
+  const _hasHydrated = useAuth((s) => s._hasHydrated);
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
 
@@ -43,15 +46,14 @@ function MemberPortal() {
     refetchInterval: 15_000,
   });
 
-  if (!authUser) {
-    return (
-      <div className="grid min-h-screen place-items-center">
-        <Button onClick={() => navigate({ to: "/login" })}>Sign in</Button>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!_hasHydrated) return;
+    if (!authUser || authUser.role !== "member") navigate({ to: "/login" });
+  }, [_hasHydrated, authUser, navigate]);
+
+  if (!_hasHydrated || !authUser) return null;
   if (meQ.isLoading) {
-    return <div className="grid min-h-screen place-items-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <GhostLoader size="fullscreen" />;
   }
   if (meQ.isError || !meQ.data) {
     return (

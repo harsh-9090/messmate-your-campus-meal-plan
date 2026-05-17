@@ -14,6 +14,7 @@ import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from 
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Member } from "@/lib/messmate/types";
+import { GhostLoader } from "@/components/messmate/GhostLoader";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Dashboard — MessMate Admin" }] }),
@@ -60,6 +61,10 @@ function AdminDashboard() {
   members.forEach((m) => { planCounts[m.subscription.planLabel] = (planCounts[m.subscription.planLabel] || 0) + 1; });
   const planChart = Object.entries(planCounts).map(([name, value]) => ({ name, value }));
   const COLORS = ["hsl(245 75% 60%)", "hsl(150 60% 50%)", "hsl(40 95% 60%)", "hsl(0 75% 60%)", "hsl(220 70% 60%)", "hsl(290 60% 60%)"];
+
+  if (membersQ.isLoading) {
+    return <GhostLoader size="fullscreen" />;
+  }
 
   return (
     <div className="space-y-6 p-6 md:p-8">
