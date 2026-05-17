@@ -7,7 +7,7 @@ import { nextMemberId } from "../services/memberIdService.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
 import { delByPattern } from "../db/redis.js";
-import { addMonths, format } from "date-fns";
+import { addDays, format } from "date-fns";
 import crypto from "node:crypto";
 import { sendPasswordResetEmail, sendRegistrationReceivedEmail } from "../services/notificationService.js";
 
@@ -90,7 +90,7 @@ router.post("/register",
       const p = planRows[0];
 
       const start = new Date();
-      const end = addMonths(start, p.duration_months || 1);
+      const end = addDays(start, (p.duration_months || 1) * 30);
       const hash = await bcrypt.hash(password, 10);
       
       await query(
