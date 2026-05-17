@@ -15,7 +15,7 @@ import { useAuth } from "@/lib/messmate/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/admin/staff")({
-  head: () => ({ meta: [{ title: "Staff Management — MessMate Admin" }] }),
+  head: () => ({ meta: [{ title: "Staff Management — Mom's Kitchen Admin" }] }),
   component: StaffPage,
 });
 

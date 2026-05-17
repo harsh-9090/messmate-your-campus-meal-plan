@@ -17,7 +17,7 @@ import type { Member } from "@/lib/messmate/types";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
 
 export const Route = createFileRoute("/admin/")({
-  head: () => ({ meta: [{ title: "Dashboard — MessMate Admin" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — Mom's Kitchen Admin" }] }),
   component: AdminDashboard,
 });
 

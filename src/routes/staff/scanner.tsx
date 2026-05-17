@@ -23,7 +23,7 @@ import { GhostLoader } from "@/components/messmate/GhostLoader";
 export const Route = createFileRoute("/staff/scanner")({
   head: () => ({
     meta: [
-      { title: "Mess Scanner — MessMate" },
+      { title: "Mess Scanner — Mom's Kitchen" },
       { name: "description", content: "Staff scanner for mess hall: validate member QR codes against plan, time, and usage." },
     ],
   }),

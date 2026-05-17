@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/admin/scan-logs")({
-  head: () => ({ meta: [{ title: "Scan Logs — MessMate Admin" }] }),
+  head: () => ({ meta: [{ title: "Scan Logs — Mom's Kitchen Admin" }] }),
   component: ScanLogsPage,
 });
 

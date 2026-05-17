@@ -23,7 +23,7 @@ import { useState } from "react";
 import type { Meal, Plan } from "@/lib/messmate/types";
 
 export const Route = createFileRoute("/admin/plan-config")({
-  head: () => ({ meta: [{ title: "Plan Config — MessMate Admin" }] }),
+  head: () => ({ meta: [{ title: "Plan Config — Mom's Kitchen Admin" }] }),
   component: PlanConfigPage,
 });
 

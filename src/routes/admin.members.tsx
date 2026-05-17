@@ -23,7 +23,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const PAYMENT_METHODS = ["Cash", "Online", "UPI", "Card"];
 
 export const Route = createFileRoute("/admin/members")({
-  head: () => ({ meta: [{ title: "Members — MessMate Admin" }] }),
+  head: () => ({ meta: [{ title: "Members — Mom's Kitchen Admin" }] }),
   component: MembersPage,
 });
 

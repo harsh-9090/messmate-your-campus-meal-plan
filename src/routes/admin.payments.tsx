@@ -12,7 +12,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/admin/payments")({
-  head: () => ({ meta: [{ title: "Payments — MessMate Admin" }] }),
+  head: () => ({ meta: [{ title: "Payments — Mom's Kitchen Admin" }] }),
   component: PaymentsPage,
 });
 

@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "MessMate — Smart Campus Dining" },
+      { title: "Mom's Kitchen — Smart Campus Dining" },
       { name: "description", content: "The all-in-one management system for your campus hostel mess. Smart QR check-ins, automated billing, and real-time analytics." },
     ],
   }),

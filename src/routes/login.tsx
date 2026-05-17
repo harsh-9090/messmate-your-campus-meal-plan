@@ -13,8 +13,8 @@ import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — MessMate" },
-      { name: "description", content: "MessMate hostel mess management — log in as admin, staff, or member." },
+      { title: "Sign in — Mom's Kitchen" },
+      { name: "description", content: "Mom's Kitchen hostel mess management — log in as admin, staff, or member." },
     ],
   }),
   component: LoginPage,

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
 export const Route = createFileRoute("/admin/finance")({
-  head: () => ({ meta: [{ title: "Finance & Analytics — MessMate Admin" }] }),
+  head: () => ({ meta: [{ title: "Finance & Analytics — Mom's Kitchen Admin" }] }),
   component: FinancePage,
 });
 
