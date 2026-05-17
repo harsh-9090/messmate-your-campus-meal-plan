@@ -536,17 +536,28 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
   const [planId, setPlanId] = useState(member.subscription.planId);
   const [amountPaid, setAmountPaid] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [applyAbsenceCredits, setApplyAbsenceCredits] = useState(false);
 
   const selectedPlan = plans.find((p) => p.planId === planId);
   const price = selectedPlan?.pricePerMonth ?? 0;
   const amountPaidNum = parseInt(amountPaid) || 0;
   const dueAmount = Math.max(0, price - amountPaidNum);
 
+  // Fetch consecutive absence credits
+  const creditsQ = useQuery({
+    queryKey: ["members", member.memberId, "absence-credits"],
+    queryFn: () => membersApi.getAbsenceCredits(member.memberId),
+  });
+
+  const totalDaysAdded = (selectedPlan?.durationMonths ?? 1) * 30 + (applyAbsenceCredits ? (creditsQ.data?.totalCreditDays ?? 0) : 0);
+  const projectedExpiry = formatDate(addDaysISO(todayISO(), totalDaysAdded));
+
   const renewM = useMutation({
     mutationFn: () => membersApi.renew(member.memberId, {
       planId,
       amountPaid: amountPaidNum,
-      paymentMethod
+      paymentMethod,
+      applyAbsenceCredits
     }),
     onSuccess: () => {
       toast.success(`${member.name}'s plan renewed!`);
@@ -590,6 +601,45 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
             </div>
           </div>
 
+          {/* Absence Reward Section */}
+          {creditsQ.data && creditsQ.data.totalCreditDays > 0 && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="apply-credits-toggle"
+                  checked={applyAbsenceCredits}
+                  onCheckedChange={(checked) => setApplyAbsenceCredits(!!checked)}
+                  className="mt-1"
+                />
+                <div className="space-y-0.5">
+                  <Label htmlFor="apply-credits-toggle" className="font-semibold text-primary cursor-pointer text-sm">
+                    Apply Absence Credits (+{creditsQ.data.totalCreditDays} days)
+                  </Label>
+                  <p className="text-xs text-muted-foreground leading-snug">
+                    Streak of 3+ consecutive absent days detected in the current billing cycle.
+                  </p>
+                </div>
+              </div>
+
+              {/* Streaks breakdown */}
+              <div className="text-xs space-y-1.5 pl-6 border-l border-primary/20 ml-2">
+                <div className="font-semibold text-muted-foreground uppercase tracking-wider text-[10px] mb-1">
+                  Qualifying Streaks:
+                </div>
+                {creditsQ.data.streaks.map((s, idx) => (
+                  <div key={idx} className="flex justify-between items-center bg-background/50 py-1 px-2 rounded border border-muted/50 text-[11px]">
+                    <span className="text-muted-foreground">
+                      {formatDate(s.start)} to {formatDate(s.end)}
+                    </span>
+                    <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-medium">
+                      {s.length} days absent
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {dueAmount > 0 ? (
             <div className="rounded-lg bg-destructive/10 p-3 text-center text-sm font-bold text-destructive">
               Balance Due: ₹{dueAmount}
@@ -599,6 +649,28 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
               Fully Paid
             </div>
           )}
+
+          {/* Extended Expiry Preview */}
+          <div className="rounded-xl bg-muted/30 p-3 space-y-2 text-sm border border-muted">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Standard Expiration:</span>
+              <span className="font-medium text-foreground">
+                {formatDate(addDaysISO(todayISO(), (selectedPlan?.durationMonths ?? 1) * 30))}
+              </span>
+            </div>
+            {applyAbsenceCredits && (creditsQ.data?.totalCreditDays ?? 0) > 0 && (
+              <div className="flex justify-between text-success">
+                <span>Absence Extension:</span>
+                <span className="font-semibold">
+                  +{creditsQ.data?.totalCreditDays} Days Reward
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between font-bold border-t pt-2 border-muted-foreground/20">
+              <span>Projected Expiry Date:</span>
+              <span className="text-primary">{projectedExpiry}</span>
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>Cancel</Button>

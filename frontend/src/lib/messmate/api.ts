@@ -129,8 +129,12 @@ export const membersApi = {
   update: (id: string, patch: Partial<{ name: string; email: string; mobile: string; password: string; photoUrl: string }>) =>
     request<Member>(`/members/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   remove: (id: string) => request<{ ok: true }>(`/members/${id}`, { method: "DELETE" }),
-  renew: (id: string, data: { planId?: string; amountPaid?: number; paymentMethod?: string }) => 
+  renew: (id: string, data: { planId?: string; amountPaid?: number; paymentMethod?: string; applyAbsenceCredits?: boolean }) => 
     request(`/members/${id}/renew`, { method: "PUT", body: JSON.stringify(data) }),
+  getAbsenceCredits: (id: string) =>
+    request<{ totalCreditDays: number; streaks: Array<{ start: string; end: string; length: number; credit: number }> }>(
+      `/members/${id}/absence-credits`
+    ),
   addPayment: (id: string, amountPaid: number, paymentMethod = "Cash") => 
     request(`/members/${id}/payment`, { method: "PUT", body: JSON.stringify({ amountPaid, paymentMethod }) }),
   changePlan: (id: string, data: { planId: string; meals: Meal[]; startDate?: string }) =>

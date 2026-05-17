@@ -7,6 +7,7 @@ import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { getCache, setCache, delCache, delByPattern } from "../db/redis.js";
 import { nextMemberId } from "../services/memberIdService.js";
 import { sendPlanActivatedEmail } from "../services/notificationService.js";
+import { calculateAbsenceCredits } from "../services/absenceService.js";
 
 const router = Router();
 router.use(verifyToken);
@@ -80,6 +81,17 @@ router.get("/:id", async (req, res, next) => {
     const result = stripPassword(rowToMember(rows[0]));
     await setCache(cacheKey, result, 600); // 10 min
     res.json(result);
+  } catch (e) { next(e); }
+});
+
+router.get("/:id/absence-credits", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { rows } = await query(`SELECT sub_start_date, sub_end_date FROM members WHERE member_id = $1`, [req.params.id]);
+    if (!rows[0]) return res.status(404).json({ error: "Member not found" });
+
+    const { sub_start_date, sub_end_date } = rows[0];
+    const credits = await calculateAbsenceCredits(req.params.id, sub_start_date, sub_end_date);
+    res.json(credits);
   } catch (e) { next(e); }
 });
 
@@ -173,15 +185,23 @@ router.delete("/:id", requireRole("admin"), async (req, res, next) => {
 router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
   try {
     const today = new Date();
-    const { planId = null, amountPaid = 0, paymentMethod = "Cash" } = req.body;
+    const { planId = null, amountPaid = 0, paymentMethod = "Cash", applyAbsenceCredits = false } = req.body;
     
-    // Fetch current or new plan
-    const targetPlanId = planId || (await query(`SELECT sub_plan_id FROM members WHERE member_id = $1`, [req.params.id])).rows[0]?.sub_plan_id;
+    // Fetch current member sub dates and target plan
+    const currentMember = (await query(`SELECT sub_plan_id, sub_start_date, sub_end_date FROM members WHERE member_id = $1`, [req.params.id])).rows[0];
+    const targetPlanId = planId || currentMember?.sub_plan_id;
     const plan = (await query(`SELECT * FROM plans WHERE plan_id = $1`, [targetPlanId])).rows[0];
     
     const duration = plan?.duration_months ?? 1;
     const price = plan?.price_per_month ?? 0;
-    const end = addDays(today, duration * 30);
+
+    let credits = 0;
+    if (applyAbsenceCredits && currentMember?.sub_start_date && currentMember?.sub_end_date) {
+      const calc = await calculateAbsenceCredits(req.params.id, currentMember.sub_start_date, currentMember.sub_end_date);
+      credits = calc.totalCreditDays;
+    }
+
+    const end = addDays(today, (duration * 30) + credits);
     const isPaid = amountPaid >= price && price > 0;
 
     const { rows } = await query(
