@@ -7,19 +7,30 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node modules
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Environment
 .env
-node_modules
-dist
-dist-ssr
-.output
-.vinxi
-.tanstack/**
-.nitro
+frontend/.env
+backend/.env
 *.local
 
-# Wrangler / Cloudflare
-.wrangler/
-.dev.vars
+# Production builds
+dist/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.output
+frontend/.vinxi
+frontend/.nitro
+
+# Cache & tools
+frontend/.tanstack/
+frontend/.wrangler/
+backend/.wrangler/
+frontend/.lovable/
 
 # Editor directories and files
 .vscode/*
@@ -31,6 +42,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Lovable
-.lovable/
