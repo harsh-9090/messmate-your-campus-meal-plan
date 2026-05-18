@@ -155,7 +155,7 @@ function ScannerPage() {
       {/* Main Grid: Stacks on mobile, side-by-side on desktop */}
       <main className="mx-auto max-w-xl md:max-w-5xl space-y-4 md:space-y-0 p-4 md:grid md:grid-cols-12 md:gap-6">
         
-        {/* LEFT COLUMN: Camera Scanner & Mobile Vertical Logs (Visible if activeTab === 'scan' on mobile) */}
+        {/* LEFT COLUMN: Camera Scanner (Visible if activeTab === 'scan' on mobile) */}
         <div className={`md:col-span-7 space-y-4 ${activeTab === "scan" ? "block" : "hidden md:block"}`}>
           {/* Live Camera Scanner */}
           <Card className="overflow-hidden p-0 shadow-sm border">
@@ -221,42 +221,6 @@ function ScannerPage() {
             <div className="px-4 py-2 text-center text-[11px] text-muted-foreground border-t">
               Hold the QR steady inside the box · auto-detects in ~1s
             </div>
-          </Card>
-
-          {/* Today's scans list (Mobile scan tab vertical view) */}
-          <Card className="md:hidden p-4 shadow-sm border">
-            <div className="mb-3 flex items-center gap-2 border-b pb-2">
-              <History className="h-4 w-4 text-muted-foreground" />
-              <div className="font-display text-base font-bold">Recent Scans</div>
-            </div>
-            {todayLogs.length === 0 ? (
-              <p className="py-8 text-center text-xs text-muted-foreground">No scans recorded today.</p>
-            ) : (
-              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                {todayLogs.map((l) => (
-                  <div
-                    key={l.id}
-                    className={cn(
-                      "flex items-center justify-between rounded-lg border p-3 text-xs bg-muted/5 hover:bg-muted/10 transition-all",
-                      l.status === "allowed"
-                        ? "border-success/30 bg-success/5 text-success"
-                        : "border-destructive/30 bg-destructive/5 text-destructive"
-                    )}
-                  >
-                    <div>
-                      <div className="font-bold">{l.memberName}</div>
-                      <div className="text-[10px] opacity-80 mt-0.5">
-                        {l.meal} · {formatTimestamp(l.timestamp).split(",")[1]?.trim() ?? ""}
-                      </div>
-                      {l.status === "denied" && <div className="text-[9px] font-semibold mt-0.5">{l.denialReason}</div>}
-                    </div>
-                    <Badge variant={l.status === "allowed" ? "default" : "destructive"} className={cn("text-[9px] font-bold", l.status === "allowed" ? "bg-success text-success-foreground" : "")}>
-                      {l.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
           </Card>
         </div>
 
