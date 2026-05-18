@@ -1,7 +1,7 @@
 {
   "name": "Mom's Kitchen",
-  "short_name": "MK",
-  "description": "Meal Plan Scanner & Subscription Portal",
+  "short_name": "Mom's Kitchen",
+  "description": "Best Mess in Pune",
   "start_url": "/login",
   "display": "standalone",
   "background_color": "#0f172a",

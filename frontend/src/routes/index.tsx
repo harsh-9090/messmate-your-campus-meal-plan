@@ -26,8 +26,8 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Mom's Kitchen - Smart Campus Dining" },
-      { name: "description", content: "The all-in-one management system for your campus hostel mess. Smart QR check-ins, automated billing, and real-time analytics." },
+      { title: "Mom's Kitchen - Best Mess in Pune" },
+      { name: "description", content: "Best mess in Pune, Serving delicious and hygienic food to students." },
     ],
   }),
   component: LandingPage,
@@ -184,7 +184,7 @@ function LandingPage() {
                 <h2 className="text-primary font-bold uppercase tracking-widest text-sm">About Our Mess</h2>
                 <h3 className="text-4xl font-extrabold tracking-tight">Your health is our priority.</h3>
                 <p className="text-muted-foreground text-lg">
-                  The Campus Kitchen is dedicated to providing students with high-quality, balanced meals
+                  Mom's Kitchen is dedicated to providing students with high-quality, balanced meals
                   that feel like home. We use fresh ingredients, maintain strict hygiene standards,
                   and plan our menus to ensure you have the energy needed for your academic success.
                 </p>

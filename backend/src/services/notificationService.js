@@ -131,7 +131,7 @@ export async function sendRegistrationReceivedEmail(member) {
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e0e7ff; border-radius: 12px; background-color: #ffffff;">
       <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;">
         <h2 style="color: #6366f1; margin: 0; font-size: 24px;">Registration Received! 🥣</h2>
-        <p style="color: #6b7280; font-size: 14px; margin-top: 5px;">Mom's Kitchen Campus Meal Portal</p>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 5px;">Mom's Kitchen Portal</p>
       </div>
       
       <p>Hello <strong>${member.name}</strong>,</p>
@@ -188,7 +188,7 @@ export async function sendPlanActivatedEmail(member, planDetails) {
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #d1fae5; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
       <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #ecfdf5; padding-bottom: 15px;">
         <h2 style="color: #10b981; margin: 0; font-size: 24px;">Your Plan is Active! 🎉</h2>
-        <p style="color: #6b7280; font-size: 14px; margin-top: 5px;">Mom's Kitchen Campus Meal Portal</p>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 5px;">Mom's Kitchen Meal Portal</p>
       </div>
       
       <p>Hello <strong>${member.name}</strong>,</p>
