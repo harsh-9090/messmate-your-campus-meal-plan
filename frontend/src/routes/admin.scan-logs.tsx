@@ -22,10 +22,14 @@ function ScanLogsPage() {
   const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [dateMode, setDateMode] = useState<"all" | "today" | "custom">("all");
+  const [customDate, setCustomDate] = useState(todayISO());
+
+  const dateParam = dateMode === "today" ? todayISO() : dateMode === "custom" ? customDate : undefined;
 
   const allQ = useQuery({
-    queryKey: ["logs", "recent"],
-    queryFn: () => scanApi.logs({ limit: 500 }),
+    queryKey: ["logs", "recent", dateMode, dateParam],
+    queryFn: () => scanApi.logs({ date: dateParam, limit: 500 }),
     refetchInterval: 10_000,
   });
   const todayQ = useQuery({
@@ -87,16 +91,38 @@ function ScanLogsPage() {
       </Card>
 
       <Card>
-        <div className="flex flex-wrap gap-2 border-b p-4">
-          <Input className="w-64" placeholder="Search member…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="flex flex-wrap items-center gap-3 border-b p-4">
+          <Input className="w-64 animate-fade-in" placeholder="Search member…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          
+          {/* Status Dropdown */}
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">All Statuses</SelectItem>
               <SelectItem value="allowed">Allowed only</SelectItem>
               {REASONS.slice(1).map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
             </SelectContent>
           </Select>
+
+          {/* Date Filter Dropdown */}
+          <Select value={dateMode} onValueChange={(val: any) => setDateMode(val)}>
+            <SelectTrigger className="w-44"><SelectValue placeholder="Date Filter" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Dates</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="custom">Specific Date</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Conditional Date Picker Input */}
+          {dateMode === "custom" && (
+            <Input 
+              type="date" 
+              className="w-44 animate-slide-in" 
+              value={customDate} 
+              onChange={(e) => setCustomDate(e.target.value)} 
+            />
+          )}
         </div>
         <div className="max-h-[600px] overflow-y-auto">
           <table className="w-full text-sm hidden md:table">
