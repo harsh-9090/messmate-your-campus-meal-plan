@@ -5,14 +5,13 @@ import { useAuth } from "@/lib/messmate/auth";
 import { configApi, scanApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScanResultScreen } from "@/components/messmate/ScanResult";
 import { MEALS, MEAL_ICONS } from "@/lib/messmate/constants";
 import { getActiveMeal, formatTime12h, formatTimestamp, todayISO } from "@/lib/messmate/dateHelpers";
 import type { Meal, ScanResult } from "@/lib/messmate/types";
 import {
-  Camera, CameraOff, LogOut, UtensilsCrossed, Send, ScanLine,
+  Camera, CameraOff, LogOut, UtensilsCrossed, ScanLine,
   CheckCircle2, XCircle, Loader2, AlertTriangle, History, Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -47,7 +46,6 @@ function ScannerPage() {
   useEffect(() => { if (activeFromTime) setMeal(activeFromTime); }, [activeFromTime]);
 
   const [result, setResult] = useState<ScanResult | null>(null);
-  const [manualToken, setManualToken] = useState("");
   const [cameraOn, setCameraOn] = useState(true); // auto-start
   const [camError, setCamError] = useState<string | null>(null);
   const lastTokenRef = useRef<string | null>(null);
@@ -103,7 +101,7 @@ function ScannerPage() {
   if (result) return <ScanResultScreen result={result} onNext={handleNext} onRetry={handleRetry} />;
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pb-12">
+    <div className="min-h-screen bg-background pb-12">
       <header className="sticky top-0 z-10 border-b bg-sidebar text-sidebar-foreground shadow-sm">
         <div className="mx-auto flex max-w-xl md:max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
@@ -157,7 +155,7 @@ function ScannerPage() {
       {/* Main Grid: Stacks on mobile, side-by-side on desktop */}
       <main className="mx-auto max-w-xl md:max-w-5xl space-y-4 md:space-y-0 p-4 md:grid md:grid-cols-12 md:gap-6">
         
-        {/* LEFT COLUMN: Camera Scanner & Manual Input (Visible if activeTab === 'scan' on mobile) */}
+        {/* LEFT COLUMN: Camera Scanner & Mobile Vertical Logs (Visible if activeTab === 'scan' on mobile) */}
         <div className={`md:col-span-7 space-y-4 ${activeTab === "scan" ? "block" : "hidden md:block"}`}>
           {/* Live Camera Scanner */}
           <Card className="overflow-hidden p-0 shadow-sm border">
@@ -225,22 +223,40 @@ function ScannerPage() {
             </div>
           </Card>
 
-          {/* Manual Entry Fallback */}
-          <Card className="p-4 shadow-sm border">
-            <div className="mb-2 text-xs uppercase tracking-wider text-muted-foreground font-semibold">Manual token (fallback)</div>
-            <form
-              className="flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const t = manualToken.trim();
-                if (t) { handleDetect(t); setManualToken(""); }
-              }}
-            >
-              <Input value={manualToken} onChange={(e) => setManualToken(e.target.value)} placeholder="Paste QR token" />
-              <Button type="submit" className="cursor-pointer" disabled={!manualToken.trim() || scanM.isPending}>
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
+          {/* Today's scans list (Mobile scan tab vertical view) */}
+          <Card className="md:hidden p-4 shadow-sm border">
+            <div className="mb-3 flex items-center gap-2 border-b pb-2">
+              <History className="h-4 w-4 text-muted-foreground" />
+              <div className="font-display text-base font-bold">Recent Scans</div>
+            </div>
+            {todayLogs.length === 0 ? (
+              <p className="py-8 text-center text-xs text-muted-foreground">No scans recorded today.</p>
+            ) : (
+              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                {todayLogs.map((l) => (
+                  <div
+                    key={l.id}
+                    className={cn(
+                      "flex items-center justify-between rounded-lg border p-3 text-xs bg-muted/5 hover:bg-muted/10 transition-all",
+                      l.status === "allowed"
+                        ? "border-success/30 bg-success/5 text-success"
+                        : "border-destructive/30 bg-destructive/5 text-destructive"
+                    )}
+                  >
+                    <div>
+                      <div className="font-bold">{l.memberName}</div>
+                      <div className="text-[10px] opacity-80 mt-0.5">
+                        {l.meal} · {formatTimestamp(l.timestamp).split(",")[1]?.trim() ?? ""}
+                      </div>
+                      {l.status === "denied" && <div className="text-[9px] font-semibold mt-0.5">{l.denialReason}</div>}
+                    </div>
+                    <Badge variant={l.status === "allowed" ? "default" : "destructive"} className={cn("text-[9px] font-bold", l.status === "allowed" ? "bg-success text-success-foreground" : "")}>
+                      {l.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
 
@@ -282,8 +298,8 @@ function ScannerPage() {
             )}
           </Card>
 
-          {/* Today's Scans list (Desktop dynamic view) */}
-          <Card className="hidden md:block p-4 shadow-sm border">
+          {/* Today's Scans list (Desktop and Mobile shift logs tab vertical view) */}
+          <Card className={cn("p-4 shadow-sm border", activeTab === "shift" ? "block" : "hidden md:block")}>
             <div className="mb-3 flex items-center gap-2 border-b pb-2">
               <History className="h-4 w-4 text-muted-foreground" />
               <div className="font-display text-base font-bold">Today's Shift Logs</div>
@@ -296,7 +312,7 @@ function ScannerPage() {
                   <div
                     key={l.id}
                     className={cn(
-                      "flex items-center justify-between rounded-lg border p-3 text-xs",
+                      "flex items-center justify-between rounded-lg border p-3 text-xs bg-muted/5 hover:bg-muted/10 transition-all",
                       l.status === "allowed"
                         ? "border-success/30 bg-success/5 text-success"
                         : "border-destructive/30 bg-destructive/5 text-destructive"
@@ -319,35 +335,6 @@ function ScannerPage() {
           </Card>
         </div>
       </main>
-
-      {/* Today's scans strip (Only visible on mobile in scan tab) */}
-      {activeTab === "scan" && (
-        <div className="md:hidden fixed inset-x-0 bottom-0 border-t bg-background/95 p-3 backdrop-blur z-10 shadow-lg">
-          <div className="mx-auto max-w-xl">
-            <div className="mb-1 flex items-center justify-between">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Recent scans</div>
-              <div className="text-[9px] text-muted-foreground animate-pulse">Auto-refresh 5s</div>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {todayLogs.length === 0 && <div className="py-2 text-xs text-muted-foreground">No scans yet</div>}
-              {todayLogs.map((l) => (
-                <div
-                  key={l.id}
-                  className={cn(
-                    "shrink-0 rounded-md border px-2.5 py-1 text-[11px] font-semibold shadow-sm",
-                    l.status === "allowed"
-                      ? "border-success/30 bg-success/10 text-success"
-                      : "border-destructive/30 bg-destructive/10 text-destructive"
-                  )}
-                >
-                  <div className="font-bold">{l.memberName}</div>
-                  <div className="text-[9px] opacity-80">{l.meal} · {formatTimestamp(l.timestamp).split(",")[1]?.trim() ?? ""}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
