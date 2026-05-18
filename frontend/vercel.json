@@ -2,6 +2,34 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/site.webmanifest",
+      "destination": "/client/site.webmanifest"
+    },
+    {
+      "source": "/sw.js",
+      "destination": "/client/sw.js"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/client/favicon.ico"
+    },
+    {
+      "source": "/favicon.png",
+      "destination": "/client/favicon.png"
+    },
+    {
+      "source": "/apple-touch-icon.png",
+      "destination": "/client/apple-touch-icon.png"
+    },
+    {
+      "source": "/apple-touch-icon-precomposed.png",
+      "destination": "/client/apple-touch-icon-precomposed.png"
+    },
+    {
+      "source": "/icons/:path*",
+      "destination": "/client/icons/:path*"
+    },
+    {
       "source": "/assets/:path*",
       "destination": "/client/assets/:path*"
     },
