@@ -104,11 +104,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Healthy hostel meals, QR-based check-ins, and simple monthly subscriptions at Mom's Kitchen.",
       },
       { name: "twitter:image", content: "/og-image.png" },
+
+      // iOS PWA Capability
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "MessMate" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      {
+        rel: "manifest",
+        href: "/manifest.webmanifest",
       },
       {
         rel: "icon",
