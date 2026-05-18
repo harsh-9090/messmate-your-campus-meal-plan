@@ -52,7 +52,7 @@ function MemberPortal() {
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"pass" | "account">("pass");
+  const [activeTab, setActiveTab] = useState<"today" | "pass" | "account">("today");
 
   const meQ = useQuery({
     queryKey: ["member", authUser?.id],
@@ -162,6 +162,16 @@ function MemberPortal() {
       {/* Tactile Mobile Tab Selector (Hidden on md and up) */}
       <div className="md:hidden flex border-b bg-background sticky top-[65px] z-10 p-1 bg-slate-50 dark:bg-slate-900 border-b">
         <button
+          onClick={() => setActiveTab("today")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold transition-all rounded-lg cursor-pointer ${
+            activeTab === "today"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <UtensilsCrossed className="h-4 w-4" /> Today's Menu
+        </button>
+        <button
           onClick={() => setActiveTab("pass")}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold transition-all rounded-lg cursor-pointer ${
             activeTab === "pass"
@@ -184,68 +194,11 @@ function MemberPortal() {
       </div>
 
       {/* Main Grid: Stacks on mobile, side-by-side on desktop */}
-      <main className="mx-auto max-w-2xl md:max-w-5xl space-y-4 md:space-y-0 p-4 md:grid md:grid-cols-12 md:gap-6">
-        {/* LEFT COLUMN: Pass & Meals (Visible if activeTab === 'pass' on mobile) */}
+      <main className="mx-auto max-w-2xl md:max-w-7xl space-y-4 md:space-y-0 p-4 md:grid md:grid-cols-12 md:gap-6">
+        {/* COLUMN 1: Today's Menu & Meals Status (Visible if activeTab === 'today' on mobile) */}
         <div
-          className={`md:col-span-6 space-y-4 ${activeTab === "pass" ? "block" : "hidden md:block"}`}
+          className={`md:col-span-4 space-y-4 ${activeTab === "today" ? "block" : "hidden md:block"}`}
         >
-          {/* Expiry Warning */}
-          {!expired && left <= 3 && sub.isPaid && (
-            <Card className="border-warning/40 bg-warning/10 p-4 animate-pulse">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="mt-0.5 h-5 w-5 text-warning animate-bounce" />
-                <div>
-                  <div className="font-semibold">
-                    Plan expires in {left} day{left === 1 ? "" : "s"}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Contact admin to renew before it expires.
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* Secure Dining Pass QR */}
-          <Card className="p-5 sm:p-6 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Your Pass
-                </div>
-                <div className="font-display text-xl font-bold">Scan at counter</div>
-              </div>
-              <UtensilsCrossed className="h-5 w-5 text-primary" />
-            </div>
-            <div className="grid place-items-center py-4">
-              {locked ? (
-                <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-destructive/40 bg-destructive/5 p-8 text-center w-full max-w-sm">
-                  <Lock className="h-10 w-10 text-destructive" />
-                  <div className="font-display text-xl font-bold text-destructive">
-                    {expired ? "Plan Expired" : "Payment Pending"}
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {expired
-                      ? "Your 30-day plan has ended. Contact admin to renew."
-                      : `Your subscription payment is pending (Due: ${formatINR(sub.dueAmount)}). Contact admin.`}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-4 w-full">
-                  {inGracePeriod && (
-                    <Badge
-                      variant="outline"
-                      className="border-amber-500 bg-amber-50 text-amber-600"
-                    >
-                      Grace Period: {gracePeriod - daysSinceStart} days left to pay
-                    </Badge>
-                  )}
-                  <QRCanvas meals={sub.meals} />
-                </div>
-              )}
-            </div>
-          </Card>
-
           {/* Today's Menu */}
           <Card className="p-4 sm:p-5 shadow-sm border-border bg-card">
             <div className="mb-3 flex items-center justify-between">
@@ -347,9 +300,71 @@ function MemberPortal() {
           </Card>
         </div>
 
-        {/* RIGHT COLUMN: Subscription & Historical logs (Visible if activeTab === 'account' on mobile) */}
+        {/* COLUMN 2: Pass & Warnings (Visible if activeTab === 'pass' on mobile) */}
         <div
-          className={`md:col-span-6 space-y-4 ${activeTab === "account" ? "block" : "hidden md:block"}`}
+          className={`md:col-span-4 space-y-4 ${activeTab === "pass" ? "block" : "hidden md:block"}`}
+        >
+          {/* Expiry Warning */}
+          {!expired && left <= 3 && sub.isPaid && (
+            <Card className="border-warning/40 bg-warning/10 p-4 animate-pulse">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 text-warning animate-bounce" />
+                <div>
+                  <div className="font-semibold">
+                    Plan expires in {left} day{left === 1 ? "" : "s"}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Contact admin to renew before it expires.
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Secure Dining Pass QR */}
+          <Card className="p-5 sm:p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Your Pass
+                </div>
+                <div className="font-display text-xl font-bold">Scan at counter</div>
+              </div>
+              <UtensilsCrossed className="h-5 w-5 text-primary" />
+            </div>
+            <div className="grid place-items-center py-4">
+              {locked ? (
+                <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-destructive/40 bg-destructive/5 p-8 text-center w-full max-w-sm">
+                  <Lock className="h-10 w-10 text-destructive" />
+                  <div className="font-display text-xl font-bold text-destructive">
+                    {expired ? "Plan Expired" : "Payment Pending"}
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {expired
+                      ? "Your 30-day plan has ended. Contact admin to renew."
+                      : `Your subscription payment is pending (Due: ${formatINR(sub.dueAmount)}). Contact admin.`}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-4 w-full">
+                  {inGracePeriod && (
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500 bg-amber-50 text-amber-600"
+                    >
+                      Grace Period: {gracePeriod - daysSinceStart} days left to pay
+                    </Badge>
+                  )}
+                  <QRCanvas meals={sub.meals} />
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* COLUMN 3: Subscription & Historical logs (Visible if activeTab === 'account' on mobile) */}
+        <div
+          className={`md:col-span-4 space-y-4 ${activeTab === "account" ? "block" : "hidden md:block"}`}
         >
           {/* Subscription Progress Card */}
           <Card className="overflow-hidden p-0 shadow-sm">
