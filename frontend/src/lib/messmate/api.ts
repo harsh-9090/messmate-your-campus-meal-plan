@@ -165,7 +165,7 @@ export const configApi = {
 
 // ---------- QR ----------
 export const qrApi = {
-  token: () => request<{ token: string; expiresIn: number }>("/qr/token"),
+  token: () => request<{ tokens: Record<string, string>; date: string }>("/qr/token"),
 };
 
 // ---------- Scan ----------

@@ -185,7 +185,7 @@ function MemberPortal() {
                     Grace Period: {gracePeriod - daysSinceStart} days left to pay
                   </Badge>
                 )}
-                <QRCanvas />
+                <QRCanvas meals={sub.meals} />
               </div>
             )}
           </div>

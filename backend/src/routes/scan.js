@@ -23,7 +23,7 @@ router.post("/validate",
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
       const { qrToken, meal } = req.body;
-      const decoded = await verifyQRToken(qrToken);
+      const decoded = await verifyQRToken(qrToken, meal);
       if (!decoded) {
         await query(
           `INSERT INTO scan_logs (meal, date, ts, status, denial_code, denial_reason, scanned_by)
