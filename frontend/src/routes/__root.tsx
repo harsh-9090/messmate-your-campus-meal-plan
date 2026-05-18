@@ -93,6 +93,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Fresh homemade meals for students with smart QR check-ins and flexible meal subscriptions.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:image", content: "/og-image.png" },
 
       // Twitter
       { name: "twitter:card", content: "summary_large_image" },
@@ -102,11 +103,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Healthy hostel meals, QR-based check-ins, and simple monthly subscriptions at Mom's Kitchen.",
       },
+      { name: "twitter:image", content: "/og-image.png" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
+      },
+      {
+        rel: "icon",
+        href: "/favicon.ico",
+      },
+      {
+        rel: "icon",
+        type: "image/png",
+        href: "/favicon.png",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/icons/icon-192x192.png",
       },
     ],
   }),
