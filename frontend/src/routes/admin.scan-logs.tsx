@@ -53,7 +53,7 @@ function ScanLogsPage() {
   });
 
   return (
-    <div className="space-y-5 p-6 md:p-8">
+    <div className="space-y-5 p-4 sm:p-6 md:p-8 overflow-x-hidden">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold">Scan Logs</h1>
@@ -61,10 +61,10 @@ function ScanLogsPage() {
         </div>
 
         {/* Tab Toggle Bar */}
-        <div className="flex border p-1 bg-slate-50 dark:bg-slate-900 rounded-lg w-full sm:w-auto max-w-sm shrink-0">
+        <div className="flex border p-1 bg-slate-50 dark:bg-slate-900 rounded-lg w-full sm:w-auto max-w-sm shrink-0 overflow-hidden">
           <button
             onClick={() => setActiveTab("feed")}
-            className={`flex-1 sm:flex-initial px-4 py-1.5 text-xs font-bold transition-all rounded-md cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`flex-1 sm:flex-initial px-2.5 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold transition-all rounded-md cursor-pointer flex items-center justify-center gap-1 ${
               activeTab === "feed"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -74,7 +74,7 @@ function ScanLogsPage() {
           </button>
           <button
             onClick={() => setActiveTab("stats")}
-            className={`flex-1 sm:flex-initial px-4 py-1.5 text-xs font-bold transition-all rounded-md cursor-pointer flex items-center justify-center gap-1.5 ${
+            className={`flex-1 sm:flex-initial px-2.5 sm:px-4 py-1.5 text-[11px] sm:text-xs font-bold transition-all rounded-md cursor-pointer flex items-center justify-center gap-1 ${
               activeTab === "stats"
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -88,7 +88,7 @@ function ScanLogsPage() {
       {activeTab === "stats" ? (
         <div className="space-y-4 animate-fade-in">
           {/* Metrics Grid Cards: 2-Columns on Mobile, 3-Columns on Desktop */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
             <Card className="p-4 shadow-sm border">
               <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Allowed today</div>
               <div className="font-display text-3xl font-bold text-success mt-1">
@@ -126,9 +126,9 @@ function ScanLogsPage() {
           </Card>
         </div>
       ) : (
-        <Card className="shadow-sm border animate-fade-in">
+        <Card className="shadow-sm border animate-fade-in overflow-hidden">
           {/* Filters Area */}
-          <div className="flex flex-wrap items-center gap-3 border-b p-4">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 border-b p-4">
             <Input className="w-full sm:w-64" placeholder="Search member name or ID…" value={search} onChange={(e) => setSearch(e.target.value)} />
             
             {/* Status Dropdown */}
