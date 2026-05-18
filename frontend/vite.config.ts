@@ -12,9 +12,9 @@ export default defineConfig({
         registerType: "autoUpdate",
         injectRegister: "auto",
         manifest: {
-          name: "MessMate - Mom's Kitchen",
-          short_name: "MessMate",
-          description: "Premium Campus Meal Plan Scanner & Subscription Portal",
+          name: "Mom's Kitchen",
+          short_name: "MK",
+          description: "Meal Plan Scanner & Subscription Portal",
           theme_color: "#0f172a",
           background_color: "#0f172a",
           display: "standalone",
