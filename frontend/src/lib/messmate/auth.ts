@@ -3,7 +3,11 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { authApi, configureApi } from "./api";
 
-interface AuthUser { id: string; name: string; role: "admin" | "staff" | "member"; }
+interface AuthUser {
+  id: string;
+  name: string;
+  role: "admin" | "staff" | "member";
+}
 
 interface AuthState {
   accessToken: string | null;
@@ -31,7 +35,9 @@ export const useAuth = create<AuthState>()(
         return user;
       },
       logout: async () => {
-        try { await authApi.logout(); } catch {}
+        try {
+          await authApi.logout();
+        } catch {}
         set({ accessToken: null, user: null });
       },
     }),
@@ -41,8 +47,8 @@ export const useAuth = create<AuthState>()(
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
-    }
-  )
+    },
+  ),
 );
 
 // Wire the api client to the store

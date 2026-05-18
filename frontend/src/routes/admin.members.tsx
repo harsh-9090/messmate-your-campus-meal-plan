@@ -7,12 +7,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2 } from "lucide-react";
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
-import { todayISO, daysRemaining, formatDate, formatINR, addDaysISO } from "@/lib/messmate/dateHelpers";
+import {
+  todayISO,
+  daysRemaining,
+  formatDate,
+  formatINR,
+  addDaysISO,
+} from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
 import type { Meal, Member, Plan } from "@/lib/messmate/types";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -40,7 +58,14 @@ function MembersPage() {
 
   const membersQ = useQuery({
     queryKey: ["members", { search, status, planFilter, page }],
-    queryFn: () => membersApi.list({ search, status, planId: planFilter === "all" ? undefined : planFilter, page, limit: 50 }),
+    queryFn: () =>
+      membersApi.list({
+        search,
+        status,
+        planId: planFilter === "all" ? undefined : planFilter,
+        page,
+        limit: 50,
+      }),
   });
   const plansQ = useQuery({ queryKey: ["plans"], queryFn: () => configApi.listPlans() });
 
@@ -49,19 +74,34 @@ function MembersPage() {
   const total = membersQ.data?.total ?? 0;
   const totalPages = Math.ceil(total / 50);
 
-  const handleSearch = (v: string) => { setSearch(v); setPage(1); };
-  const handleStatus = (v: any) => { setStatus(v); setPage(1); };
-  const handlePlanFilter = (v: string) => { setPlanFilter(v); setPage(1); };
+  const handleSearch = (v: string) => {
+    setSearch(v);
+    setPage(1);
+  };
+  const handleStatus = (v: any) => {
+    setStatus(v);
+    setPage(1);
+  };
+  const handlePlanFilter = (v: string) => {
+    setPlanFilter(v);
+    setPage(1);
+  };
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["members"] });
 
   const renewM = useMutation({
     mutationFn: (id: string) => membersApi.renew(id, {}),
-    onSuccess: () => { toast.success("Plan renewed"); invalidate(); },
+    onSuccess: () => {
+      toast.success("Plan renewed");
+      invalidate();
+    },
   });
   const deleteM = useMutation({
     mutationFn: (id: string) => membersApi.remove(id),
-    onSuccess: () => { toast.success("Member removed"); invalidate(); },
+    onSuccess: () => {
+      toast.success("Member removed");
+      invalidate();
+    },
   });
 
   return (
@@ -82,7 +122,12 @@ function MembersPage() {
         <div className="flex flex-wrap gap-2">
           <div className="relative min-w-64 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-9" placeholder="Search name or ID…" value={search} onChange={(e) => handleSearch(e.target.value)} />
+            <Input
+              className="pl-9"
+              placeholder="Search name or ID…"
+              value={search}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
           </div>
           <Select value={status} onValueChange={(v: any) => handleStatus(v)}>
             <SelectTrigger className="w-[140px]">
@@ -104,7 +149,9 @@ function MembersPage() {
             <SelectContent>
               <SelectItem value="all">All Plans</SelectItem>
               {plansQ.data?.map((p) => (
-                <SelectItem key={p.planId} value={p.planId}>{p.label}</SelectItem>
+                <SelectItem key={p.planId} value={p.planId}>
+                  {p.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -116,80 +163,153 @@ function MembersPage() {
           /* Mobile Card View */
           <div className="grid grid-cols-1 gap-4 p-4">
             {membersQ.isLoading && (
-              <div className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
+              <div className="py-10 text-center">
+                <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
             )}
             {membersQ.isError && (
-              <div className="py-10 text-center text-destructive font-medium">Failed to load members. Please try again.</div>
+              <div className="py-10 text-center text-destructive font-medium">
+                Failed to load members. Please try again.
+              </div>
             )}
             {!membersQ.isLoading && !membersQ.isError && members.length === 0 && (
               <div className="py-8 text-center text-sm text-muted-foreground">No members found</div>
             )}
-            {!membersQ.isLoading && !membersQ.isError && members.map((m) => {
-              const left = daysRemaining(m.subscription.endDate);
-              const expired = left < 0;
-              return (
-                <div key={m.memberId} className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-2 border-b pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
-                        {(m.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")}
+            {!membersQ.isLoading &&
+              !membersQ.isError &&
+              members.map((m) => {
+                const left = daysRemaining(m.subscription.endDate);
+                const expired = left < 0;
+                return (
+                  <div
+                    key={m.memberId}
+                    className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-2 border-b pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
+                          {(m.name || "U")
+                            .split(" ")
+                            .map((n) => n[0])
+                            .slice(0, 2)
+                            .join("")}
+                        </div>
+                        <div>
+                          <div className="font-semibold leading-tight">{m.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {m.memberId}
+                            {m.mobile && <> · 📞 {m.mobile}</>}
+                          </div>
+                        </div>
                       </div>
                       <div>
-                        <div className="font-semibold leading-tight">{m.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {m.memberId}{m.mobile && <> · 📞 {m.mobile}</>}
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      {!m.isActive ? (
-                        <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
-                      ) : !m.subscription.isPaid ? (
-                        <div className="text-right">
-                          <Badge variant="destructive" className={cn(m.subscription.amountPaid > 0 && "bg-orange-500 hover:bg-orange-600 border-orange-500")}>
-                            {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                        {!m.isActive ? (
+                          <Badge
+                            variant="outline"
+                            className="border-amber-500 text-amber-500 bg-amber-50"
+                          >
+                            Pending
                           </Badge>
-                          {m.subscription.dueAmount > 0 && <div className="mt-1 text-[10px] font-medium text-destructive">Due: ₹{m.subscription.dueAmount}</div>}
-                        </div>
-                      ) : expired ? <Badge variant="destructive">Expired</Badge>
-                        : <Badge className="bg-success text-success-foreground">Active</Badge>}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <div className="text-xs text-muted-foreground">Plan</div>
-                      <div className="mt-1"><PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} /></div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground">Meals</div>
-                      <div className="mt-1"><PlanIcons plan={m.subscription} /></div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground">Start Date</div>
-                      <div className="font-medium">{formatDate(m.subscription.startDate || m.createdAt)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-muted-foreground">Expiry Date</div>
-                      <div className={cn("font-medium", expired && "text-destructive", !expired && left <= 3 && (m.subscription.endDate || m.createdAt) && "text-warning")}>
-                        {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
-                        {(m.subscription.endDate || m.createdAt) && (
-                          <div className="text-[10px] text-muted-foreground">
-                            {expired ? `${-left}d ago` : `${left}d left`}
+                        ) : !m.subscription.isPaid ? (
+                          <div className="text-right">
+                            <Badge
+                              variant="destructive"
+                              className={cn(
+                                m.subscription.amountPaid > 0 &&
+                                  "bg-orange-500 hover:bg-orange-600 border-orange-500",
+                              )}
+                            >
+                              {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                            </Badge>
+                            {m.subscription.dueAmount > 0 && (
+                              <div className="mt-1 text-[10px] font-medium text-destructive">
+                                Due: ₹{m.subscription.dueAmount}
+                              </div>
+                            )}
                           </div>
+                        ) : expired ? (
+                          <Badge variant="destructive">Expired</Badge>
+                        ) : (
+                          <Badge className="bg-success text-success-foreground">Active</Badge>
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="mt-2 flex justify-end gap-2 pt-2 border-t">
-                    <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => setEditing(m)}><Edit3 className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => setRenewing(m)}><RefreshCw className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline" className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10" onClick={() => { if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId); }}><Trash2 className="h-4 w-4" /></Button>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Plan</div>
+                        <div className="mt-1">
+                          <PlanBadge
+                            planId={m.subscription.planId}
+                            label={m.subscription.planLabel}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Meals</div>
+                        <div className="mt-1">
+                          <PlanIcons plan={m.subscription} />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Start Date</div>
+                        <div className="font-medium">
+                          {formatDate(m.subscription.startDate || m.createdAt)}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Expiry Date</div>
+                        <div
+                          className={cn(
+                            "font-medium",
+                            expired && "text-destructive",
+                            !expired &&
+                              left <= 3 &&
+                              (m.subscription.endDate || m.createdAt) &&
+                              "text-warning",
+                          )}
+                        >
+                          {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
+                          {(m.subscription.endDate || m.createdAt) && (
+                            <div className="text-[10px] text-muted-foreground">
+                              {expired ? `${-left}d ago` : `${left}d left`}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex justify-end gap-2 pt-2 border-t">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setEditing(m)}
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setRenewing(m)}
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         ) : (
           /* Desktop Table View */
@@ -208,65 +328,132 @@ function MembersPage() {
               </thead>
               <tbody>
                 {membersQ.isLoading && (
-                  <tr><td colSpan={7} className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center">
+                      <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+                    </td>
+                  </tr>
                 )}
                 {membersQ.isError && (
-                  <tr><td colSpan={7} className="py-10 text-center text-destructive font-medium">Failed to load members. Please try again.</td></tr>
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-destructive font-medium">
+                      Failed to load members. Please try again.
+                    </td>
+                  </tr>
                 )}
-                {!membersQ.isLoading && !membersQ.isError && members.map((m) => {
-                  const left = daysRemaining(m.subscription.endDate);
-                  const expired = left < 0;
-                  return (
-                    <tr key={m.memberId} className="border-t hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">
-                            {(m.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")}
-                          </div>
-                          <div>
-                            <div className="font-medium leading-tight">{m.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {m.memberId}{m.mobile && <> · 📞 {m.mobile}</>}
+                {!membersQ.isLoading &&
+                  !membersQ.isError &&
+                  members.map((m) => {
+                    const left = daysRemaining(m.subscription.endDate);
+                    const expired = left < 0;
+                    return (
+                      <tr key={m.memberId} className="border-t hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">
+                              {(m.name || "U")
+                                .split(" ")
+                                .map((n) => n[0])
+                                .slice(0, 2)
+                                .join("")}
+                            </div>
+                            <div>
+                              <div className="font-medium leading-tight">{m.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {m.memberId}
+                                {m.mobile && <> · 📞 {m.mobile}</>}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3"><PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} /></td>
-                      <td className="px-4 py-3"><PlanIcons plan={m.subscription} /></td>
-                      <td className="px-4 py-3 text-xs">{formatDate(m.subscription.startDate || m.createdAt)}</td>
-                      <td className={cn("px-4 py-3 text-xs", expired && "text-destructive font-semibold", !expired && left <= 3 && (m.subscription.endDate || m.createdAt) && "text-warning font-semibold")}>
-                        {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
-                        {(m.subscription.endDate || m.createdAt) && (
-                          <div className="text-[10px] text-muted-foreground">
-                            {expired ? `${-left}d ago` : `${left}d left`}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {!m.isActive ? (
-                          <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
-                        ) : !m.subscription.isPaid ? (
-                          <div>
-                            <Badge variant="destructive" className={cn(m.subscription.amountPaid > 0 && "bg-orange-500 hover:bg-orange-600 border-orange-500")}>
-                              {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <PlanBadge
+                            planId={m.subscription.planId}
+                            label={m.subscription.planLabel}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <PlanIcons plan={m.subscription} />
+                        </td>
+                        <td className="px-4 py-3 text-xs">
+                          {formatDate(m.subscription.startDate || m.createdAt)}
+                        </td>
+                        <td
+                          className={cn(
+                            "px-4 py-3 text-xs",
+                            expired && "text-destructive font-semibold",
+                            !expired &&
+                              left <= 3 &&
+                              (m.subscription.endDate || m.createdAt) &&
+                              "text-warning font-semibold",
+                          )}
+                        >
+                          {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
+                          {(m.subscription.endDate || m.createdAt) && (
+                            <div className="text-[10px] text-muted-foreground">
+                              {expired ? `${-left}d ago` : `${left}d left`}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {!m.isActive ? (
+                            <Badge
+                              variant="outline"
+                              className="border-amber-500 text-amber-500 bg-amber-50"
+                            >
+                              Pending
                             </Badge>
-                            {m.subscription.dueAmount > 0 && <div className="mt-1 text-[10px] font-medium text-destructive">Due: ₹{m.subscription.dueAmount}</div>}
+                          ) : !m.subscription.isPaid ? (
+                            <div>
+                              <Badge
+                                variant="destructive"
+                                className={cn(
+                                  m.subscription.amountPaid > 0 &&
+                                    "bg-orange-500 hover:bg-orange-600 border-orange-500",
+                                )}
+                              >
+                                {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                              </Badge>
+                              {m.subscription.dueAmount > 0 && (
+                                <div className="mt-1 text-[10px] font-medium text-destructive">
+                                  Due: ₹{m.subscription.dueAmount}
+                                </div>
+                              )}
+                            </div>
+                          ) : expired ? (
+                            <Badge variant="destructive">Expired</Badge>
+                          ) : (
+                            <Badge className="bg-success text-success-foreground">Active</Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-1">
+                            <Button size="sm" variant="ghost" onClick={() => setEditing(m)}>
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setRenewing(m)}>
+                              <RefreshCw className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId);
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
                           </div>
-                        ) : expired ? <Badge variant="destructive">Expired</Badge>
-                          : <Badge className="bg-success text-success-foreground">Active</Badge>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => setEditing(m)}><Edit3 className="h-3.5 w-3.5" /></Button>
-                          <Button size="sm" variant="ghost" onClick={() => setRenewing(m)}><RefreshCw className="h-3.5 w-3.5" /></Button>
-                          <Button size="sm" variant="ghost" onClick={() => { if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId); }}><Trash2 className="h-3.5 w-3.5" /></Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 {!membersQ.isLoading && members.length === 0 && (
-                  <tr><td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">No members found</td></tr>
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                      No members found
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -278,9 +465,12 @@ function MembersPage() {
       {!membersQ.isLoading && !membersQ.isError && totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card border rounded-xl p-4 shadow-sm">
           <div className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{Math.min(total, (page - 1) * 50 + 1)}</span> to{" "}
-            <span className="font-semibold text-foreground">{Math.min(page * 50, total)}</span> of{" "}
-            <span className="font-semibold text-foreground">{total}</span> members
+            Showing{" "}
+            <span className="font-semibold text-foreground">
+              {Math.min(total, (page - 1) * 50 + 1)}
+            </span>{" "}
+            to <span className="font-semibold text-foreground">{Math.min(page * 50, total)}</span>{" "}
+            of <span className="font-semibold text-foreground">{total}</span> members
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-center">
             <Button
@@ -291,7 +481,7 @@ function MembersPage() {
             >
               Previous
             </Button>
-            
+
             {/* Page number buttons */}
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
@@ -312,7 +502,7 @@ function MembersPage() {
                   </React.Fragment>
                 );
               })}
-            
+
             <Button
               variant="outline"
               size="sm"
@@ -325,7 +515,12 @@ function MembersPage() {
         </div>
       )}
 
-      <AddMemberDialog open={adding} onOpenChange={setAdding} plans={plans} onCreated={invalidate} />
+      <AddMemberDialog
+        open={adding}
+        onOpenChange={setAdding}
+        plans={plans}
+        onCreated={invalidate}
+      />
       {editing && (
         <EditMemberDialog
           member={editing}
@@ -346,7 +541,17 @@ function MembersPage() {
   );
 }
 
-function AddMemberDialog({ open, onOpenChange, plans, onCreated }: { open: boolean; onOpenChange: (v: boolean) => void; plans: Plan[]; onCreated: () => void; }) {
+function AddMemberDialog({
+  open,
+  onOpenChange,
+  plans,
+  onCreated,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  plans: Plan[];
+  onCreated: () => void;
+}) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
@@ -369,12 +574,27 @@ function AddMemberDialog({ open, onOpenChange, plans, onCreated }: { open: boole
   };
 
   const createM = useMutation({
-    mutationFn: () => membersApi.create({ name, email, password, mobile: mobile || undefined, planId, meals, startDate, amountPaid: amountPaidNum, paymentMethod }),
+    mutationFn: () =>
+      membersApi.create({
+        name,
+        email,
+        password,
+        mobile: mobile || undefined,
+        planId,
+        meals,
+        startDate,
+        amountPaid: amountPaidNum,
+        paymentMethod,
+      }),
     onSuccess: (m) => {
       toast.success(`${m.name} added (${m.memberId})`);
       onCreated();
       onOpenChange(false);
-      setName(""); setEmail(""); setMobile(""); setAmountPaid(""); setPaymentMethod("Cash");
+      setName("");
+      setEmail("");
+      setMobile("");
+      setAmountPaid("");
+      setPaymentMethod("Cash");
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
@@ -382,20 +602,45 @@ function AddMemberDialog({ open, onOpenChange, plans, onCreated }: { open: boole
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md w-[95vw] rounded-2xl">
-        <DialogHeader><DialogTitle>Add new member</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Add new member</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
-          <div><Label>Full name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <div><Label>Email</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-            <div><Label>Mobile</Label><Input type="tel" placeholder="e.g. 9876543210" value={mobile} onChange={(e) => setMobile(e.target.value)} /></div>
+          <div>
+            <Label>Full name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div><Label>Initial password</Label><Input value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div>
+              <Label>Mobile</Label>
+              <Input
+                type="tel"
+                placeholder="e.g. 9876543210"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+              />
+            </div>
+          </div>
+          <div>
+            <Label>Initial password</Label>
+            <Input value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
           <div>
             <Label>Plan</Label>
             <Select value={planId} onValueChange={onPlanChange}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {plans.map((p) => <SelectItem key={p.planId} value={p.planId}>{p.label}</SelectItem>)}
+                {plans.map((p) => (
+                  <SelectItem key={p.planId} value={p.planId}>
+                    {p.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -406,7 +651,9 @@ function AddMemberDialog({ open, onOpenChange, plans, onCreated }: { open: boole
                 <label key={m} className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={meals.includes(m)}
-                    onCheckedChange={(v) => setMeals(v ? [...meals, m] : meals.filter((x) => x !== m))}
+                    onCheckedChange={(v) =>
+                      setMeals(v ? [...meals, m] : meals.filter((x) => x !== m))
+                    }
                   />
                   {m}
                 </label>
@@ -414,26 +661,49 @@ function AddMemberDialog({ open, onOpenChange, plans, onCreated }: { open: boole
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Start date</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></div>
+            <div>
+              <Label>Start date</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
             <div>
               <Label>Amount Paid (Total: ₹{price})</Label>
-              <Input type="number" placeholder={`₹${price}`} value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} />
+              <Input
+                type="number"
+                placeholder={`₹${price}`}
+                value={amountPaid}
+                onChange={(e) => setAmountPaid(e.target.value)}
+              />
             </div>
           </div>
           <div>
             <Label>Payment Method</Label>
             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                {PAYMENT_METHODS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            {dueAmount > 0 && <div className="mt-1 text-xs font-semibold text-destructive text-right">Due Amount: ₹{dueAmount}</div>}
+            {dueAmount > 0 && (
+              <div className="mt-1 text-xs font-semibold text-destructive text-right">
+                Due Amount: ₹{dueAmount}
+              </div>
+            )}
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={() => createM.mutate()} disabled={createM.isPending || !name || !email || !planId}>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => createM.mutate()}
+            disabled={createM.isPending || !name || !email || !planId}
+          >
             {createM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Create
           </Button>
         </DialogFooter>
@@ -442,7 +712,17 @@ function AddMemberDialog({ open, onOpenChange, plans, onCreated }: { open: boole
   );
 }
 
-function EditMemberDialog({ member, plans, onClose, onSaved }: { member: Member; plans: Plan[]; onClose: () => void; onSaved: () => void; }) {
+function EditMemberDialog({
+  member,
+  plans,
+  onClose,
+  onSaved,
+}: {
+  member: Member;
+  plans: Plan[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [name, setName] = useState(member.name);
   const [mobile, setMobile] = useState(member.mobile ?? "");
   const [planId, setPlanId] = useState(member.subscription.planId);
@@ -458,32 +738,62 @@ function EditMemberDialog({ member, plans, onClose, onSaved }: { member: Member;
         await membersApi.addPayment(member.memberId, parseInt(addPayment), paymentMethod);
       }
     },
-    onSuccess: () => { toast.success("Member updated"); onSaved(); onClose(); },
+    onSuccess: () => {
+      toast.success("Member updated");
+      onSaved();
+      onClose();
+    },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-md w-[95vw] rounded-2xl">
-        <DialogHeader><DialogTitle>Edit {member.name}</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Edit {member.name}</DialogTitle>
+        </DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-            <div><Label>Mobile</Label><Input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} /></div>
+            <div>
+              <Label>Name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div>
+              <Label>Mobile</Label>
+              <Input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} />
+            </div>
           </div>
           <div>
             <Label>Plan</Label>
-            <Select value={planId} onValueChange={(v) => { setPlanId(v); const p = plans.find((x) => x.planId === v); if (p) setMeals(p.meals); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={planId}
+              onValueChange={(v) => {
+                setPlanId(v);
+                const p = plans.find((x) => x.planId === v);
+                if (p) setMeals(p.meals);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {plans.map((p) => <SelectItem key={p.planId} value={p.planId}>{p.label}</SelectItem>)}
+                {plans.map((p) => (
+                  <SelectItem key={p.planId} value={p.planId}>
+                    {p.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div className="flex gap-3">
             {MEALS.map((m) => (
               <label key={m} className="flex items-center gap-2 text-sm">
-                <Checkbox checked={meals.includes(m)} onCheckedChange={(v) => setMeals(v ? [...meals, m] : meals.filter((x) => x !== m))} />
+                <Checkbox
+                  checked={meals.includes(m)}
+                  onCheckedChange={(v) =>
+                    setMeals(v ? [...meals, m] : meals.filter((x) => x !== m))
+                  }
+                />
                 {m}
               </label>
             ))}
@@ -499,21 +809,36 @@ function EditMemberDialog({ member, plans, onClose, onSaved }: { member: Member;
               <div className="text-right text-xs">
                 <div>Total: ₹{member.subscription.pricePerMonth}</div>
                 <div>Paid: ₹{member.subscription.amountPaid}</div>
-                {member.subscription.dueAmount > 0 && <div className="font-bold text-destructive">Due: ₹{member.subscription.dueAmount}</div>}
+                {member.subscription.dueAmount > 0 && (
+                  <div className="font-bold text-destructive">
+                    Due: ₹{member.subscription.dueAmount}
+                  </div>
+                )}
               </div>
             </div>
             {!member.subscription.isPaid && (
               <div className="mt-2 space-y-2 border-t pt-2">
                 <div className="flex items-center gap-2">
                   <Label className="w-24 whitespace-nowrap text-xs">Add Amount</Label>
-                  <Input type="number" placeholder="Enter amount..." value={addPayment} onChange={(e) => setAddPayment(e.target.value)} />
+                  <Input
+                    type="number"
+                    placeholder="Enter amount..."
+                    value={addPayment}
+                    onChange={(e) => setAddPayment(e.target.value)}
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <Label className="w-24 whitespace-nowrap text-xs">Method</Label>
                   <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-8">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      {PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                      {PAYMENT_METHODS.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -522,7 +847,9 @@ function EditMemberDialog({ member, plans, onClose, onSaved }: { member: Member;
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>
             {saveM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
           </Button>
@@ -532,7 +859,17 @@ function EditMemberDialog({ member, plans, onClose, onSaved }: { member: Member;
   );
 }
 
-function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member; plans: Plan[]; onClose: () => void; onSaved: () => void; }) {
+function RenewMemberDialog({
+  member,
+  plans,
+  onClose,
+  onSaved,
+}: {
+  member: Member;
+  plans: Plan[];
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const [planId, setPlanId] = useState(member.subscription.planId);
   const [amountPaid, setAmountPaid] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
@@ -549,16 +886,19 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
     queryFn: () => membersApi.getAbsenceCredits(member.memberId),
   });
 
-  const totalDaysAdded = (selectedPlan?.durationMonths ?? 1) * 30 + (applyAbsenceCredits ? (creditsQ.data?.totalCreditDays ?? 0) : 0);
+  const totalDaysAdded =
+    (selectedPlan?.durationMonths ?? 1) * 30 +
+    (applyAbsenceCredits ? (creditsQ.data?.totalCreditDays ?? 0) : 0);
   const projectedExpiry = formatDate(addDaysISO(todayISO(), totalDaysAdded));
 
   const renewM = useMutation({
-    mutationFn: () => membersApi.renew(member.memberId, {
-      planId,
-      amountPaid: amountPaidNum,
-      paymentMethod,
-      applyAbsenceCredits
-    }),
+    mutationFn: () =>
+      membersApi.renew(member.memberId, {
+        planId,
+        amountPaid: amountPaidNum,
+        paymentMethod,
+        applyAbsenceCredits,
+      }),
     onSuccess: () => {
       toast.success(`${member.name}'s plan renewed!`);
       onSaved();
@@ -572,15 +912,23 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
       <DialogContent className="max-w-md w-[95vw] rounded-2xl">
         <DialogHeader>
           <DialogTitle>Renew Subscription</DialogTitle>
-          <div className="text-sm text-muted-foreground">{member.name} ({member.memberId})</div>
+          <div className="text-sm text-muted-foreground">
+            {member.name} ({member.memberId})
+          </div>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
             <Label>Select Plan</Label>
             <Select value={planId} onValueChange={setPlanId}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {plans.map((p) => <SelectItem key={p.planId} value={p.planId}>{p.label} (₹{p.pricePerMonth})</SelectItem>)}
+                {plans.map((p) => (
+                  <SelectItem key={p.planId} value={p.planId}>
+                    {p.label} (₹{p.pricePerMonth})
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -588,14 +936,25 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Amount Paid</Label>
-              <Input type="number" placeholder={`₹${price}`} value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} />
+              <Input
+                type="number"
+                placeholder={`₹${price}`}
+                value={amountPaid}
+                onChange={(e) => setAmountPaid(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Payment Method</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  {PAYMENT_METHODS.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {m}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -612,7 +971,10 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
                   className="mt-1"
                 />
                 <div className="space-y-0.5">
-                  <Label htmlFor="apply-credits-toggle" className="font-semibold text-primary cursor-pointer text-sm">
+                  <Label
+                    htmlFor="apply-credits-toggle"
+                    className="font-semibold text-primary cursor-pointer text-sm"
+                  >
                     Apply Absence Credits (+{creditsQ.data.totalCreditDays} days)
                   </Label>
                   <p className="text-xs text-muted-foreground leading-snug">
@@ -627,7 +989,10 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
                   Qualifying Streaks:
                 </div>
                 {creditsQ.data.streaks.map((s, idx) => (
-                  <div key={idx} className="flex justify-between items-center bg-background/50 py-1 px-2 rounded border border-muted/50 text-[11px]">
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center bg-background/50 py-1 px-2 rounded border border-muted/50 text-[11px]"
+                  >
                     <span className="text-muted-foreground">
                       {formatDate(s.start)} to {formatDate(s.end)}
                     </span>
@@ -661,9 +1026,7 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
             {applyAbsenceCredits && (creditsQ.data?.totalCreditDays ?? 0) > 0 && (
               <div className="flex justify-between text-success">
                 <span>Absence Extension:</span>
-                <span className="font-semibold">
-                  +{creditsQ.data?.totalCreditDays} Days Reward
-                </span>
+                <span className="font-semibold">+{creditsQ.data?.totalCreditDays} Days Reward</span>
               </div>
             )}
             <div className="flex justify-between font-bold border-t pt-2 border-muted-foreground/20">
@@ -673,9 +1036,12 @@ function RenewMemberDialog({ member, plans, onClose, onSaved }: { member: Member
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
           <Button onClick={() => renewM.mutate()} disabled={renewM.isPending}>
-            {renewM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Renew & Log Payment
+            {renewM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Renew & Log
+            Payment
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -3,7 +3,7 @@ import type { Meal, MealWindow } from "./types";
 
 export const todayISO = () => format(new Date(), "yyyy-MM-dd");
 
-export const formatDate = (iso: string | null | undefined) => 
+export const formatDate = (iso: string | null | undefined) =>
   iso ? format(parseISO(iso), "dd MMM yyyy") : "-";
 
 export const daysRemaining = (endDateISO: string | null | undefined) =>
@@ -37,6 +37,10 @@ export const getActiveMeal = (windows: MealWindow[], now = new Date()): Meal | n
 };
 
 export const formatINR = (n: number) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(n);
 
 export const formatTimestamp = (iso: string) => format(parseISO(iso), "dd MMM, hh:mm a");

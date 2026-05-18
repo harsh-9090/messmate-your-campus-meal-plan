@@ -19,7 +19,7 @@ import {
   Loader2,
   ShieldCheck,
   ArrowLeft,
-  CheckCircle2
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -44,14 +44,14 @@ function RegisterPage() {
     mobile: "",
     password: "",
     confirmPassword: "",
-    planId: ""
+    planId: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const { data: plans, isLoading: loadingPlans } = useQuery({
     queryKey: ["plans"],
-    queryFn: () => configApi.listPlans()
+    queryFn: () => configApi.listPlans(),
   });
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -107,14 +107,20 @@ function RegisterPage() {
               <h2 className="text-3xl font-extrabold tracking-tight">Registration Sent!</h2>
               <p className="text-muted-foreground font-medium leading-relaxed">
                 Your account has been created successfully with your selected plan.
-                <br /><br />
-                <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2">Next Step</span>
                 <br />
-                Please visit the mess office to verify your ID and pay your subscription to activate your account.
+                <br />
+                <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-2">
+                  Next Step
+                </span>
+                <br />
+                Please visit the mess office to verify your ID and pay your subscription to activate
+                your account.
               </p>
             </div>
             <Link to="/login">
-              <Button className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20">Go to Login</Button>
+              <Button className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-primary/20">
+                Go to Login
+              </Button>
             </Link>
           </Card>
         </motion.div>
@@ -179,26 +185,23 @@ function RegisterPage() {
             <span className="text-primary text-6xl">Healthy Life.</span>
           </h1>
           <p className="max-w-md text-sidebar-foreground/70 text-lg leading-relaxed">
-            Register today to start enjoying fresh, hygienic, and balanced meals
-            at your campus hostel.
+            Register today to start enjoying fresh, hygienic, and balanced meals.
           </p>
           <div className="space-y-4 pt-4">
-            {[
-              "Digital QR for Every Meal",
-              "Real-time Meal Tracking",
-              "Easy Online Renewals"
-            ].map((txt, i) => (
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 + i * 0.1 }}
-                key={i}
-                className="flex items-center gap-3 font-medium text-sm"
-              >
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                <span>{txt}</span>
-              </motion.div>
-            ))}
+            {["Digital QR for Every Meal", "Real-time Meal Tracking", "Easy Online Renewals"].map(
+              (txt, i) => (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                  key={i}
+                  className="flex items-center gap-3 font-medium text-sm"
+                >
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                  <span>{txt}</span>
+                </motion.div>
+              ),
+            )}
           </div>
         </motion.div>
 
@@ -220,14 +223,23 @@ function RegisterPage() {
           className="w-full max-w-md space-y-4 py-8 relative z-10"
         >
           <div className="space-y-1">
-            <h2 className="font-display text-4xl font-extrabold tracking-tight leading-none">New Member</h2>
-            <p className="text-sm text-muted-foreground font-medium">Fill in your details and pick your plan.</p>
+            <h2 className="font-display text-4xl font-extrabold tracking-tight leading-none">
+              New Member
+            </h2>
+            <p className="text-sm text-muted-foreground font-medium">
+              Fill in your details and pick your plan.
+            </p>
           </div>
 
           <form className="space-y-5" onSubmit={handleRegister}>
             <div className="grid gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">Full Name</Label>
+                <Label
+                  htmlFor="name"
+                  className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                >
+                  Full Name
+                </Label>
                 <Input
                   id="name"
                   required
@@ -240,7 +252,12 @@ function RegisterPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="mobile" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">Mobile No</Label>
+                  <Label
+                    htmlFor="mobile"
+                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                  >
+                    Mobile No
+                  </Label>
                   <Input
                     id="mobile"
                     required
@@ -251,7 +268,12 @@ function RegisterPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">Email Address</Label>
+                  <Label
+                    htmlFor="email"
+                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                  >
+                    Email Address
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -265,20 +287,30 @@ function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">Choose Your Plan</Label>
+                <Label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">
+                  Choose Your Plan
+                </Label>
                 <Select
                   value={formData.planId}
                   onValueChange={(val) => setFormData({ ...formData, planId: val })}
                   disabled={loadingPlans}
                 >
                   <SelectTrigger className="h-14 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all">
-                    <SelectValue placeholder={loadingPlans ? "Loading plans..." : "Select a meal plan"} />
+                    <SelectValue
+                      placeholder={loadingPlans ? "Loading plans..." : "Select a meal plan"}
+                    />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl border-border shadow-2xl overflow-hidden">
                     {plans?.map((plan) => (
-                      <SelectItem key={plan.planId} value={plan.planId} className="py-4 focus:bg-primary/10 rounded-xl cursor-pointer m-1 transition-colors">
+                      <SelectItem
+                        key={plan.planId}
+                        value={plan.planId}
+                        className="py-4 focus:bg-primary/10 rounded-xl cursor-pointer m-1 transition-colors"
+                      >
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-foreground">{plan.label} - ₹{plan.pricePerMonth}</span>
+                          <span className="font-bold text-sm text-foreground">
+                            {plan.label} - ₹{plan.pricePerMonth}
+                          </span>
                           <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold mt-0.5">
                             {plan.meals.join(" • ")}
                           </span>
@@ -291,7 +323,12 @@ function RegisterPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="pw" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">Password</Label>
+                  <Label
+                    htmlFor="pw"
+                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                  >
+                    Password
+                  </Label>
                   <Input
                     id="pw"
                     type="password"
@@ -303,7 +340,12 @@ function RegisterPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="cpw" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">Confirm</Label>
+                  <Label
+                    htmlFor="cpw"
+                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                  >
+                    Confirm
+                  </Label>
                   <Input
                     id="cpw"
                     type="password"
@@ -317,15 +359,29 @@ function RegisterPage() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 mt-2 transition-all active:scale-[0.98]" disabled={submitting}>
-              {submitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <UserPlus className="mr-2 h-6 w-6" />}
+            <Button
+              type="submit"
+              className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 mt-2 transition-all active:scale-[0.98]"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+              ) : (
+                <UserPlus className="mr-2 h-6 w-6" />
+              )}
               Apply for Membership
             </Button>
           </form>
 
           <div className="pt-6 border-t border-border/50 text-center">
             <p className="text-sm text-muted-foreground font-medium">
-              Already have an account? <Link to="/login" className="text-primary font-bold hover:underline decoration-2 underline-offset-4">Sign In</Link>
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-primary font-bold hover:underline decoration-2 underline-offset-4"
+              >
+                Sign In
+              </Link>
             </p>
           </div>
         </motion.div>

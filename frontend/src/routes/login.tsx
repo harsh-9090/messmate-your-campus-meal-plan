@@ -14,7 +14,10 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Sign in - Mom's Kitchen" },
-      { name: "description", content: "Mom's Kitchen hostel mess management - log in as admin, staff, or member." },
+      {
+        name: "description",
+        content: "Mom's Kitchen hostel mess management - log in as admin, staff, or member.",
+      },
     ],
   }),
   component: LoginPage,
@@ -29,7 +32,10 @@ function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!memberId.trim() || !password) { toast.error("Enter credentials"); return; }
+    if (!memberId.trim() || !password) {
+      toast.error("Enter credentials");
+      return;
+    }
     setSubmitting(true);
     try {
       const user = await login(memberId.trim(), password);
@@ -90,7 +96,9 @@ function LoginPage() {
           </div>
           <div>
             <div className="font-display text-2xl font-bold tracking-tight">Mom's Kitchen</div>
-            <div className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-bold">Quality meals at affordable prices</div>
+            <div className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-bold">
+              Quality meals at affordable prices
+            </div>
           </div>
         </motion.div>
 
@@ -101,12 +109,13 @@ function LoginPage() {
           className="relative z-10 space-y-6"
         >
           <h1 className="font-display text-5xl font-extrabold leading-tight tracking-tight">
-            Fresh meals,<br />
+            Fresh meals,
+            <br />
             <span className="text-primary text-6xl">Ready for you.</span>
           </h1>
           <p className="max-w-md text-sidebar-foreground/70 text-lg leading-relaxed">
-            Welcome back to your hostel's central kitchen. Access your digital QR,
-            track your meals, and manage your subscription all in one place.
+            Welcome back to your hostel's central kitchen. Access your digital QR, track your meals,
+            and manage your subscription all in one place.
           </p>
           <div className="flex items-center gap-4 pt-4 text-primary font-bold">
             <ShieldCheck className="h-6 w-6" />
@@ -131,14 +140,23 @@ function LoginPage() {
           className="w-full max-w-sm space-y-8 relative z-10"
         >
           <div className="space-y-3">
-            <h2 className="font-display text-4xl lg:text-5xl font-extrabold tracking-tight">Welcome Back</h2>
-            <p className="text-muted-foreground font-medium">Access your mess account to manage meals.</p>
+            <h2 className="font-display text-4xl lg:text-5xl font-extrabold tracking-tight">
+              Welcome Back
+            </h2>
+            <p className="text-muted-foreground font-medium">
+              Access your mess account to manage meals.
+            </p>
           </div>
 
           <form className="space-y-6" onSubmit={handleLogin}>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="mid" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">Member ID / Email</Label>
+                <Label
+                  htmlFor="mid"
+                  className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                >
+                  Member ID / Email
+                </Label>
                 <Input
                   id="mid"
                   placeholder="e.g. STU001 or name@college.edu"
@@ -150,8 +168,18 @@ function LoginPage() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between px-1">
-                  <Label htmlFor="pw" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80">Password</Label>
-                  <Link to="/forgot-password" className="text-[11px] font-bold text-primary hover:underline transition-colors">Forgot Password?</Link>
+                  <Label
+                    htmlFor="pw"
+                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80"
+                  >
+                    Password
+                  </Label>
+                  <Link
+                    to="/forgot-password"
+                    className="text-[11px] font-bold text-primary hover:underline transition-colors"
+                  >
+                    Forgot Password?
+                  </Link>
                 </div>
                 <Input
                   id="pw"
@@ -164,15 +192,29 @@ function LoginPage() {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98]" disabled={submitting}>
-              {submitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <LogIn className="mr-2 h-6 w-6" />}
+            <Button
+              type="submit"
+              className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98]"
+              disabled={submitting}
+            >
+              {submitting ? (
+                <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+              ) : (
+                <LogIn className="mr-2 h-6 w-6" />
+              )}
               Sign in to Dashboard
             </Button>
           </form>
 
           <div className="pt-8 border-t border-border/50 text-center">
             <p className="text-sm text-muted-foreground font-medium">
-              New student? <Link to="/register" className="text-primary font-bold hover:underline decoration-2 underline-offset-4">Join Mom's Kitchen</Link>
+              New student?{" "}
+              <Link
+                to="/register"
+                className="text-primary font-bold hover:underline decoration-2 underline-offset-4"
+              >
+                Join Mom's Kitchen
+              </Link>
             </p>
           </div>
         </motion.div>

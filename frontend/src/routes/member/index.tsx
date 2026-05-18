@@ -10,8 +10,21 @@ import { QRCanvas } from "@/components/messmate/QRCanvas";
 import { SubscriptionBar } from "@/components/messmate/SubscriptionBar";
 import { MealChip } from "@/components/messmate/MealChip";
 import { PlanBadge } from "@/components/messmate/PlanBadge";
-import { Lock, AlertTriangle, History, LogOut, UtensilsCrossed, CreditCard, QrCode } from "lucide-react";
-import { daysRemaining, formatINR, formatTimestamp, isWithinWindow } from "@/lib/messmate/dateHelpers";
+import {
+  Lock,
+  AlertTriangle,
+  History,
+  LogOut,
+  UtensilsCrossed,
+  CreditCard,
+  QrCode,
+} from "lucide-react";
+import {
+  daysRemaining,
+  formatINR,
+  formatTimestamp,
+  isWithinWindow,
+} from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
 import type { Meal } from "@/lib/messmate/types";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
@@ -21,7 +34,10 @@ export const Route = createFileRoute("/member/")({
   head: () => ({
     meta: [
       { title: "My Meals - Mom's Kitchen" },
-      { name: "description", content: "Your dynamic QR code, today's meal status, and 30-day plan progress." },
+      {
+        name: "description",
+        content: "Your dynamic QR code, today's meal status, and 30-day plan progress.",
+      },
     ],
   }),
   component: MemberPortal,
@@ -63,7 +79,9 @@ function MemberPortal() {
         <div>
           <p className="text-destructive">Couldn't load your profile.</p>
           <p className="mt-1 text-sm text-muted-foreground">Make sure the backend is running.</p>
-          <Button className="mt-4" onClick={() => meQ.refetch()}>Retry</Button>
+          <Button className="mt-4" onClick={() => meQ.refetch()}>
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -105,19 +123,26 @@ function MemberPortal() {
         <div className="mx-auto flex max-w-2xl md:max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-primary text-sm font-bold text-white">
-              {me.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+              {me.name
+                .split(" ")
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join("")}
             </div>
             <div>
               <div className="text-sm font-semibold">{me.name}</div>
               <div className="text-xs text-muted-foreground">
-                {me.memberId}{me.mobile && <> · 📞 {me.mobile}</>}
+                {me.memberId}
+                {me.mobile && <> · 📞 {me.mobile}</>}
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" size="sm" asChild className="cursor-pointer">
-              <Link to="/login" onClick={() => logout()}><LogOut className="h-4 w-4" /></Link>
+              <Link to="/login" onClick={() => logout()}>
+                <LogOut className="h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </div>
@@ -149,18 +174,22 @@ function MemberPortal() {
 
       {/* Main Grid: Stacks on mobile, side-by-side on desktop */}
       <main className="mx-auto max-w-2xl md:max-w-5xl space-y-4 md:space-y-0 p-4 md:grid md:grid-cols-12 md:gap-6">
-        
         {/* LEFT COLUMN: Pass & Meals (Visible if activeTab === 'pass' on mobile) */}
-        <div className={`md:col-span-6 space-y-4 ${activeTab === "pass" ? "block" : "hidden md:block"}`}>
-          
+        <div
+          className={`md:col-span-6 space-y-4 ${activeTab === "pass" ? "block" : "hidden md:block"}`}
+        >
           {/* Expiry Warning */}
           {!expired && left <= 3 && sub.isPaid && (
             <Card className="border-warning/40 bg-warning/10 p-4 animate-pulse">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-5 w-5 text-warning animate-bounce" />
                 <div>
-                  <div className="font-semibold">Plan expires in {left} day{left === 1 ? "" : "s"}</div>
-                  <div className="text-sm text-muted-foreground">Contact admin to renew before it expires.</div>
+                  <div className="font-semibold">
+                    Plan expires in {left} day{left === 1 ? "" : "s"}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Contact admin to renew before it expires.
+                  </div>
                 </div>
               </div>
             </Card>
@@ -170,7 +199,9 @@ function MemberPortal() {
           <Card className="p-5 sm:p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Your Pass</div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Your Pass
+                </div>
                 <div className="font-display text-xl font-bold">Scan at counter</div>
               </div>
               <UtensilsCrossed className="h-5 w-5 text-primary" />
@@ -183,14 +214,18 @@ function MemberPortal() {
                     {expired ? "Plan Expired" : "Payment Pending"}
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    {expired ? "Your 30-day plan has ended. Contact admin to renew."
+                    {expired
+                      ? "Your 30-day plan has ended. Contact admin to renew."
                       : `Your subscription payment is pending (Due: ${formatINR(sub.dueAmount)}). Contact admin.`}
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-4 w-full">
                   {inGracePeriod && (
-                    <Badge variant="outline" className="border-amber-500 bg-amber-50 text-amber-600">
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500 bg-amber-50 text-amber-600"
+                    >
                       Grace Period: {gracePeriod - daysSinceStart} days left to pay
                     </Badge>
                   )}
@@ -207,14 +242,17 @@ function MemberPortal() {
               <PlanBadge planId={sub.planId} label={sub.planLabel} />
             </div>
             <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-              {MEALS.map((m) => <MealChip key={m} meal={m} state={stateOf(m)} />)}
+              {MEALS.map((m) => (
+                <MealChip key={m} meal={m} state={stateOf(m)} />
+              ))}
             </div>
           </Card>
         </div>
 
         {/* RIGHT COLUMN: Subscription & Historical logs (Visible if activeTab === 'account' on mobile) */}
-        <div className={`md:col-span-6 space-y-4 ${activeTab === "account" ? "block" : "hidden md:block"}`}>
-          
+        <div
+          className={`md:col-span-6 space-y-4 ${activeTab === "account" ? "block" : "hidden md:block"}`}
+        >
           {/* Subscription Progress Card */}
           <Card className="overflow-hidden p-0 shadow-sm">
             <div className="bg-gradient-primary p-5 text-white">
@@ -222,13 +260,25 @@ function MemberPortal() {
                 <div>
                   <div className="text-xs uppercase tracking-wider opacity-70">Current Plan</div>
                   <div className="font-display text-2xl font-bold">{sub.planLabel}</div>
-                  <div className="mt-1 text-sm opacity-80">{formatINR(sub.pricePerMonth)} / month</div>
+                  <div className="mt-1 text-sm opacity-80">
+                    {formatINR(sub.pricePerMonth)} / month
+                  </div>
                 </div>
                 <div className="text-right">
-                  <Badge className={sub.isPaid ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
+                  <Badge
+                    className={
+                      sub.isPaid
+                        ? "bg-success text-success-foreground"
+                        : "bg-destructive text-destructive-foreground"
+                    }
+                  >
                     {sub.isPaid ? "Paid" : "Unpaid"}
                   </Badge>
-                  {sub.dueAmount > 0 && <div className="mt-1 text-[10px] font-bold text-white">Due: {formatINR(sub.dueAmount)}</div>}
+                  {sub.dueAmount > 0 && (
+                    <div className="mt-1 text-[10px] font-bold text-white">
+                      Due: {formatINR(sub.dueAmount)}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="mt-3 flex gap-2 text-2xl">
@@ -237,7 +287,9 @@ function MemberPortal() {
                 {sub.meals.includes("Dinner") && <span>🌙</span>}
               </div>
             </div>
-            <div className="p-5"><SubscriptionBar sub={sub} /></div>
+            <div className="p-5">
+              <SubscriptionBar sub={sub} />
+            </div>
           </Card>
 
           {/* Historical Check-in Scan logs */}
@@ -251,12 +303,27 @@ function MemberPortal() {
             ) : (
               <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
                 {myLogs.map((l) => (
-                  <div key={l.id} className="flex items-center justify-between rounded-lg border p-3 text-sm bg-muted/5 hover:bg-muted/10 transition-all">
+                  <div
+                    key={l.id}
+                    className="flex items-center justify-between rounded-lg border p-3 text-sm bg-muted/5 hover:bg-muted/10 transition-all"
+                  >
                     <div>
-                      <div className="font-medium">{l.meal} <span className="text-[10px] text-muted-foreground font-normal">· {formatTimestamp(l.timestamp)}</span></div>
-                      {l.status === "denied" && <div className="text-[10px] text-destructive font-medium mt-0.5">{l.denialReason}</div>}
+                      <div className="font-medium">
+                        {l.meal}{" "}
+                        <span className="text-[10px] text-muted-foreground font-normal">
+                          · {formatTimestamp(l.timestamp)}
+                        </span>
+                      </div>
+                      {l.status === "denied" && (
+                        <div className="text-[10px] text-destructive font-medium mt-0.5">
+                          {l.denialReason}
+                        </div>
+                      )}
                     </div>
-                    <Badge variant={l.status === "allowed" ? "default" : "destructive"} className={l.status === "allowed" ? "bg-success text-success-foreground" : ""}>
+                    <Badge
+                      variant={l.status === "allowed" ? "default" : "destructive"}
+                      className={l.status === "allowed" ? "bg-success text-success-foreground" : ""}
+                    >
                       {l.status}
                     </Badge>
                   </div>
@@ -265,7 +332,6 @@ function MemberPortal() {
             )}
           </Card>
         </div>
-
       </main>
     </div>
   );

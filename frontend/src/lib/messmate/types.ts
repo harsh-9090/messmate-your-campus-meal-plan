@@ -91,6 +91,6 @@ export interface Payment {
   planLabel: string;
   amount: number;
   method: string;
-  type: 'initial' | 'renewal' | 'topup';
+  type: "initial" | "renewal" | "topup";
   createdAt: string;
 }

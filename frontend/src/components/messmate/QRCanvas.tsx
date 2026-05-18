@@ -15,7 +15,7 @@ const getAutoSelectedMeal = (allowedMeals: string[]): string => {
   if (hours >= 5 && hours < 11.5) preferred = "Breakfast";
   else if (hours >= 11.5 && hours < 16.5) preferred = "Lunch";
   else if (hours >= 16.5 && hours < 23) preferred = "Dinner";
-  
+
   if (preferred && allowedMeals.includes(preferred)) {
     return preferred;
   }
@@ -24,7 +24,7 @@ const getAutoSelectedMeal = (allowedMeals: string[]): string => {
 
 export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+
   // Dynamically auto-select current active meal type
   const [selectedMeal, setSelectedMeal] = useState(() => getAutoSelectedMeal(meals));
 
@@ -45,7 +45,7 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
       margin: 1,
       color: { dark: "#1e1b4b", light: "#ffffff" },
       errorCorrectionLevel: "M",
-    }).catch(() => { });
+    }).catch(() => {});
   }, [selectedToken, size]);
 
   return (
@@ -71,7 +71,10 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
       </div>
 
       {/* QR Canvas Card */}
-      <div className="rounded-2xl bg-white p-3 shadow-glow" style={{ width: size + 24, height: size + 24 }}>
+      <div
+        className="rounded-2xl bg-white p-3 shadow-glow"
+        style={{ width: size + 24, height: size + 24 }}
+      >
         {isLoading ? (
           <div className="grid h-full w-full place-items-center text-slate-400">
             <Loader2 className="h-8 w-8 animate-spin" />

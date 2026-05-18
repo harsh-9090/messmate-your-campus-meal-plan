@@ -11,7 +11,7 @@ function AdminLayout() {
   const user = useAuth((s) => s.user);
   const _hasHydrated = useAuth((s) => s._hasHydrated);
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     if (!_hasHydrated) return;
     if (!user || user.role !== "admin") navigate({ to: "/login" });

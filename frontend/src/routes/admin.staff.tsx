@@ -6,8 +6,21 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { UserPlus, Shield, UserCog, Mail, Phone, Trash2, Edit, Loader2, Key } from "lucide-react";
 import { toast } from "sonner";
 import type { Member } from "@/lib/messmate/types";
@@ -28,7 +41,7 @@ function StaffPage() {
 
   const staffQ = useQuery({
     queryKey: ["staff"],
-    queryFn: () => staffApi.list()
+    queryFn: () => staffApi.list(),
   });
 
   const deleteM = useMutation({
@@ -45,7 +58,9 @@ function StaffPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold text-foreground">Staff Management</h1>
-          <p className="text-sm text-muted-foreground">Manage administrative and operational team accounts</p>
+          <p className="text-sm text-muted-foreground">
+            Manage administrative and operational team accounts
+          </p>
         </div>
         <Button onClick={() => setIsAddOpen(true)} className="gap-2 shadow-lg shadow-primary/20">
           <UserPlus className="h-4 w-4" /> Add Team Member
@@ -72,19 +87,36 @@ function StaffPage() {
                 </TableRow>
               ) : staffQ.data?.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">No accounts found.</TableCell>
+                  <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                    No accounts found.
+                  </TableCell>
                 </TableRow>
               ) : (
                 staffQ.data?.map((s) => (
                   <TableRow key={s.memberId}>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className={`flex h-9 w-9 items-center justify-center rounded-full ${s.role === 'admin' ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                          {s.role === 'admin' ? <Shield className="h-4 w-4" /> : <UserCog className="h-4 w-4" />}
+                        <div
+                          className={`flex h-9 w-9 items-center justify-center rounded-full ${s.role === "admin" ? "bg-indigo-100 text-indigo-600" : "bg-emerald-100 text-emerald-600"}`}
+                        >
+                          {s.role === "admin" ? (
+                            <Shield className="h-4 w-4" />
+                          ) : (
+                            <UserCog className="h-4 w-4" />
+                          )}
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold">{s.name} {s.memberId === currentUser?.id && <Badge variant="secondary" className="ml-1 text-[10px]">You</Badge>}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.memberId}</span>
+                          <span className="font-bold">
+                            {s.name}{" "}
+                            {s.memberId === currentUser?.id && (
+                              <Badge variant="secondary" className="ml-1 text-[10px]">
+                                You
+                              </Badge>
+                            )}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            {s.memberId}
+                          </span>
                         </div>
                       </div>
                     </TableCell>
@@ -103,14 +135,19 @@ function StaffPage() {
                     <TableCell>
                       <Badge
                         variant="secondary"
-                        className={`capitalize ${s.role === 'admin' ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'}`}
+                        className={`capitalize ${s.role === "admin" ? "bg-indigo-50 text-indigo-700" : "bg-emerald-50 text-emerald-700"}`}
                       >
                         {s.role}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10" onClick={() => setEditingStaff(s)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-primary/10"
+                          onClick={() => setEditingStaff(s)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
@@ -118,7 +155,10 @@ function StaffPage() {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           disabled={s.memberId === currentUser?.id}
-                          onClick={() => { if (confirm("Permanently delete this account?")) deleteM.mutate(s.memberId); }}
+                          onClick={() => {
+                            if (confirm("Permanently delete this account?"))
+                              deleteM.mutate(s.memberId);
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -134,26 +174,44 @@ function StaffPage() {
         {/* Mobile Card View */}
         <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
           {staffQ.isLoading ? (
-            <div className="py-10 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-primary/50" /></div>
+            <div className="py-10 text-center">
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary/50" />
+            </div>
           ) : staffQ.data?.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">No accounts found.</div>
           ) : (
             staffQ.data?.map((s) => (
-              <div key={s.memberId} className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm relative">
-                {s.memberId === currentUser?.id && <Badge variant="secondary" className="absolute top-3 right-3 text-[10px]">You</Badge>}
+              <div
+                key={s.memberId}
+                className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm relative"
+              >
+                {s.memberId === currentUser?.id && (
+                  <Badge variant="secondary" className="absolute top-3 right-3 text-[10px]">
+                    You
+                  </Badge>
+                )}
                 <div className="flex items-center gap-3 border-b pb-3">
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${s.role === 'admin' ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                    {s.role === 'admin' ? <Shield className="h-5 w-5" /> : <UserCog className="h-5 w-5" />}
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${s.role === "admin" ? "bg-indigo-100 text-indigo-600" : "bg-emerald-100 text-emerald-600"}`}
+                  >
+                    {s.role === "admin" ? (
+                      <Shield className="h-5 w-5" />
+                    ) : (
+                      <UserCog className="h-5 w-5" />
+                    )}
                   </div>
                   <div>
                     <div className="font-bold">{s.name}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.memberId}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                      {s.memberId}
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid gap-2 text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="h-4 w-4 shrink-0" /> <span className="truncate">{s.email}</span>
+                    <Mail className="h-4 w-4 shrink-0" />{" "}
+                    <span className="truncate">{s.email}</span>
                   </div>
                   {s.mobile && (
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -161,14 +219,22 @@ function StaffPage() {
                     </div>
                   )}
                   <div className="mt-1">
-                    <Badge variant="secondary" className={`capitalize ${s.role === 'admin' ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                    <Badge
+                      variant="secondary"
+                      className={`capitalize ${s.role === "admin" ? "bg-indigo-50 text-indigo-700" : "bg-emerald-50 text-emerald-700"}`}
+                    >
                       {s.role}
                     </Badge>
                   </div>
                 </div>
 
                 <div className="mt-2 flex justify-end gap-2 pt-2 border-t">
-                  <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setEditingStaff(s)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setEditingStaff(s)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
@@ -176,7 +242,9 @@ function StaffPage() {
                     size="sm"
                     className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
                     disabled={s.memberId === currentUser?.id}
-                    onClick={() => { if (confirm("Permanently delete this account?")) deleteM.mutate(s.memberId); }}
+                    onClick={() => {
+                      if (confirm("Permanently delete this account?")) deleteM.mutate(s.memberId);
+                    }}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -197,9 +265,24 @@ function StaffPage() {
   );
 }
 
-function StaffDialog({ open, onOpenChange, staff }: { open: boolean, onOpenChange: (o: boolean) => void, staff?: Member | null }) {
+function StaffDialog({
+  open,
+  onOpenChange,
+  staff,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  staff?: Member | null;
+}) {
   const qc = useQueryClient();
-  const [formData, setFormData] = useState({ memberId: "", name: "", email: "", mobile: "", password: "", role: "staff" as "staff" | "admin" });
+  const [formData, setFormData] = useState({
+    memberId: "",
+    name: "",
+    email: "",
+    mobile: "",
+    password: "",
+    role: "staff" as "staff" | "admin",
+  });
 
   // Sync form data when dialog opens or staff changes
   useEffect(() => {
@@ -211,7 +294,7 @@ function StaffDialog({ open, onOpenChange, staff }: { open: boolean, onOpenChang
           email: staff.email || "",
           mobile: staff.mobile || "",
           password: "",
-          role: (staff.role as "staff" | "admin") || "staff"
+          role: (staff.role as "staff" | "admin") || "staff",
         });
       } else {
         setFormData({ memberId: "", name: "", email: "", mobile: "", password: "", role: "staff" });
@@ -220,7 +303,8 @@ function StaffDialog({ open, onOpenChange, staff }: { open: boolean, onOpenChang
   }, [open, staff]);
 
   const mutation = useMutation({
-    mutationFn: (data: any) => staff ? staffApi.update(staff.memberId, data) : staffApi.create(data),
+    mutationFn: (data: any) =>
+      staff ? staffApi.update(staff.memberId, data) : staffApi.create(data),
     onSuccess: () => {
       toast.success(staff ? "Account updated" : "Team member added");
       qc.invalidateQueries({ queryKey: ["staff"] });
@@ -238,26 +322,59 @@ function StaffDialog({ open, onOpenChange, staff }: { open: boolean, onOpenChang
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <label className="text-xs font-semibold uppercase text-muted-foreground">Staff ID (Unique)</label>
-            <Input placeholder="STAFF01" value={formData.memberId} onChange={e => setFormData({ ...formData, memberId: e.target.value.toUpperCase() })} />
+            <label className="text-xs font-semibold uppercase text-muted-foreground">
+              Staff ID (Unique)
+            </label>
+            <Input
+              placeholder="STAFF01"
+              value={formData.memberId}
+              onChange={(e) => setFormData({ ...formData, memberId: e.target.value.toUpperCase() })}
+            />
           </div>
           <div className="grid gap-2">
-            <label className="text-xs font-semibold uppercase text-muted-foreground">Full Name</label>
-            <Input placeholder="John Doe" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+            <label className="text-xs font-semibold uppercase text-muted-foreground">
+              Full Name
+            </label>
+            <Input
+              placeholder="John Doe"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
           </div>
           <div className="grid gap-2">
-            <label className="text-xs font-semibold uppercase text-muted-foreground">Email Address</label>
-            <Input type="email" placeholder="john@example.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+            <label className="text-xs font-semibold uppercase text-muted-foreground">
+              Email Address
+            </label>
+            <Input
+              type="email"
+              placeholder="john@example.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
           </div>
           <div className="grid gap-2">
-            <label className="text-xs font-semibold uppercase text-muted-foreground">Mobile Number</label>
-            <Input placeholder="9988776655" value={formData.mobile} onChange={e => setFormData({ ...formData, mobile: e.target.value })} />
+            <label className="text-xs font-semibold uppercase text-muted-foreground">
+              Mobile Number
+            </label>
+            <Input
+              placeholder="9988776655"
+              value={formData.mobile}
+              onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+            />
           </div>
           <div className="grid gap-2">
-            <label className="text-xs font-semibold uppercase text-muted-foreground">{staff ? "Reset Password (optional)" : "Password"}</label>
+            <label className="text-xs font-semibold uppercase text-muted-foreground">
+              {staff ? "Reset Password (optional)" : "Password"}
+            </label>
             <div className="relative">
               <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input type="password" placeholder="••••••••" className="pl-9" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+              <Input
+                type="password"
+                placeholder="••••••••"
+                className="pl-9"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
             </div>
           </div>
           <div className="grid gap-2">
@@ -265,17 +382,17 @@ function StaffDialog({ open, onOpenChange, staff }: { open: boolean, onOpenChang
             <div className="flex gap-2">
               <Button
                 type="button"
-                variant={formData.role === 'staff' ? 'default' : 'outline'}
+                variant={formData.role === "staff" ? "default" : "outline"}
                 className="flex-1 gap-2"
-                onClick={() => setFormData({ ...formData, role: 'staff' })}
+                onClick={() => setFormData({ ...formData, role: "staff" })}
               >
                 <UserCog className="h-4 w-4" /> Staff
               </Button>
               <Button
                 type="button"
-                variant={formData.role === 'admin' ? 'default' : 'outline'}
+                variant={formData.role === "admin" ? "default" : "outline"}
                 className="flex-1 gap-2"
-                onClick={() => setFormData({ ...formData, role: 'admin' })}
+                onClick={() => setFormData({ ...formData, role: "admin" })}
               >
                 <Shield className="h-4 w-4" /> Admin
               </Button>
@@ -283,9 +400,17 @@ function StaffDialog({ open, onOpenChange, staff }: { open: boolean, onOpenChang
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button onClick={() => mutation.mutate(formData)} disabled={mutation.isPending}>
-            {mutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (staff ? "Save Changes" : "Create Account")}
+            {mutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : staff ? (
+              "Save Changes"
+            ) : (
+              "Create Account"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -2,19 +2,43 @@ import { useEffect, useState } from "react";
 import type { ScanResult } from "@/lib/messmate/types";
 import { Button } from "@/components/ui/button";
 import {
-  CheckCircle2, XCircle, CreditCard, CalendarX, Ban, Clock,
-  RotateCcw, AlertTriangle, UserX, RefreshCw, ArrowRight,
+  CheckCircle2,
+  XCircle,
+  CreditCard,
+  CalendarX,
+  Ban,
+  Clock,
+  RotateCcw,
+  AlertTriangle,
+  UserX,
+  RefreshCw,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const codeMeta: Record<string, { icon: React.ReactNode; hint: string }> = {
-  UNPAID:        { icon: <CreditCard className="h-16 w-16" />,    hint: "Ask member to clear their dues at the admin desk." },
-  EXPIRED:       { icon: <CalendarX className="h-16 w-16" />,     hint: "Subscription ended. Renew before next meal." },
-  NOT_IN_PLAN:   { icon: <Ban className="h-16 w-16" />,           hint: "This meal isn't part of the member's plan." },
-  WRONG_TIME:    { icon: <Clock className="h-16 w-16" />,         hint: "Outside the active meal window." },
-  ALREADY_USED:  { icon: <RotateCcw className="h-16 w-16" />,     hint: "This meal was already taken today." },
-  INVALID_TOKEN: { icon: <AlertTriangle className="h-16 w-16" />, hint: "QR expired or tampered. Ask member to refresh." },
-  NOT_FOUND:     { icon: <UserX className="h-16 w-16" />,         hint: "No active member matches this QR." },
+  UNPAID: {
+    icon: <CreditCard className="h-16 w-16" />,
+    hint: "Ask member to clear their dues at the admin desk.",
+  },
+  EXPIRED: {
+    icon: <CalendarX className="h-16 w-16" />,
+    hint: "Subscription ended. Renew before next meal.",
+  },
+  NOT_IN_PLAN: {
+    icon: <Ban className="h-16 w-16" />,
+    hint: "This meal isn't part of the member's plan.",
+  },
+  WRONG_TIME: { icon: <Clock className="h-16 w-16" />, hint: "Outside the active meal window." },
+  ALREADY_USED: {
+    icon: <RotateCcw className="h-16 w-16" />,
+    hint: "This meal was already taken today.",
+  },
+  INVALID_TOKEN: {
+    icon: <AlertTriangle className="h-16 w-16" />,
+    hint: "QR expired or tampered. Ask member to refresh.",
+  },
+  NOT_FOUND: { icon: <UserX className="h-16 w-16" />, hint: "No active member matches this QR." },
 };
 
 const AUTO_DISMISS_MS = 3500;
@@ -29,7 +53,10 @@ export function ScanResultScreen({
   onRetry?: () => void;
 }) {
   const allowed = result.status === "allowed";
-  const meta = codeMeta[result.code ?? ""] ?? { icon: <XCircle className="h-16 w-16" />, hint: result.reason ?? "Denied." };
+  const meta = codeMeta[result.code ?? ""] ?? {
+    icon: <XCircle className="h-16 w-16" />,
+    hint: result.reason ?? "Denied.",
+  };
   const [remaining, setRemaining] = useState(AUTO_DISMISS_MS);
 
   // Beep + vibrate on mount
@@ -40,7 +67,8 @@ export function ScanResultScreen({
         const ctx = new AC();
         const o = ctx.createOscillator();
         const g = ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
+        o.connect(g);
+        g.connect(ctx.destination);
         o.type = "sine";
         o.frequency.value = allowed ? 880 : 220;
         g.gain.setValueAtTime(0.001, ctx.currentTime);
@@ -59,8 +87,10 @@ export function ScanResultScreen({
     const start = Date.now();
     const t = setInterval(() => {
       const left = AUTO_DISMISS_MS - (Date.now() - start);
-      if (left <= 0) { clearInterval(t); onNext(); }
-      else setRemaining(left);
+      if (left <= 0) {
+        clearInterval(t);
+        onNext();
+      } else setRemaining(left);
     }, 80);
     return () => clearInterval(t);
   }, [allowed, onNext]);
@@ -71,7 +101,9 @@ export function ScanResultScreen({
       aria-live="assertive"
       className={cn(
         "fixed inset-0 z-50 flex flex-col text-white animate-in fade-in zoom-in-95 duration-200",
-        allowed ? "bg-gradient-to-b from-emerald-700 to-emerald-950" : "bg-gradient-to-b from-rose-700 to-rose-950"
+        allowed
+          ? "bg-gradient-to-b from-emerald-700 to-emerald-950"
+          : "bg-gradient-to-b from-rose-700 to-rose-950",
       )}
     >
       {/* Progress bar (success auto-dismiss) */}
@@ -94,7 +126,8 @@ export function ScanResultScreen({
             {allowed ? "ALLOWED" : "DENIED"}
           </h1>
           <p className="mt-1 text-sm uppercase tracking-[0.3em] opacity-70">
-            {result.meal}{result.code ? ` · ${result.code.replace(/_/g, " ")}` : ""}
+            {result.meal}
+            {result.code ? ` · ${result.code.replace(/_/g, " ")}` : ""}
           </p>
         </div>
 
@@ -102,13 +135,23 @@ export function ScanResultScreen({
           <div className="w-full max-w-md space-y-1 rounded-2xl bg-white/10 p-4 backdrop-blur">
             <div className="text-xl font-semibold">{result.member.name}</div>
             <div className="text-xs opacity-70">
-              {result.member.memberId}{result.member.mobile && <> · 📞 {result.member.mobile}</>}
+              {result.member.memberId}
+              {result.member.mobile && <> · 📞 {result.member.mobile}</>}
             </div>
             {allowed ? (
               <div className="mt-3 grid grid-cols-3 gap-3 border-t border-white/20 pt-3 text-left text-xs">
-                <div><div className="opacity-60">Plan</div><div className="font-semibold">{result.planLabel}</div></div>
-                <div><div className="opacity-60">Left today</div><div className="font-semibold">{result.mealsRemainingToday}</div></div>
-                <div><div className="opacity-60">Days left</div><div className="font-semibold">{result.daysRemainingInPlan}</div></div>
+                <div>
+                  <div className="opacity-60">Plan</div>
+                  <div className="font-semibold">{result.planLabel}</div>
+                </div>
+                <div>
+                  <div className="opacity-60">Left today</div>
+                  <div className="font-semibold">{result.mealsRemainingToday}</div>
+                </div>
+                <div>
+                  <div className="opacity-60">Days left</div>
+                  <div className="font-semibold">{result.daysRemainingInPlan}</div>
+                </div>
               </div>
             ) : (
               <p className="mt-3 border-t border-white/20 pt-3 text-sm">{result.reason}</p>
@@ -120,9 +163,7 @@ export function ScanResultScreen({
           </p>
         )}
 
-        {!allowed && (
-          <p className="max-w-md text-sm opacity-80">💡 {meta.hint}</p>
-        )}
+        {!allowed && <p className="max-w-md text-sm opacity-80">💡 {meta.hint}</p>}
       </div>
 
       <div className="flex flex-col gap-2 p-5 sm:flex-row sm:justify-center">
@@ -142,7 +183,7 @@ export function ScanResultScreen({
             "sm:w-64",
             allowed
               ? "bg-white text-emerald-900 hover:bg-white/90"
-              : "bg-white text-rose-900 hover:bg-white/90"
+              : "bg-white text-rose-900 hover:bg-white/90",
           )}
           onClick={onNext}
         >

@@ -3,7 +3,14 @@
 // Attaches the JWT access token stored in the auth store.
 
 import type {
-  Member, Plan, MealWindow, Meal, ScanResult, ScanLog, MealUsageDay, Payment,
+  Member,
+  Plan,
+  MealWindow,
+  Meal,
+  ScanResult,
+  ScanLog,
+  MealUsageDay,
+  Payment,
 } from "./types";
 
 const BASE_URL =
@@ -35,7 +42,12 @@ export class ApiError extends Error {
 
 async function request<T>(
   path: string,
-  init: RequestInit & { auth?: boolean; raw?: boolean; _retry?: boolean; query?: Record<string, any> } = {}
+  init: RequestInit & {
+    auth?: boolean;
+    raw?: boolean;
+    _retry?: boolean;
+    query?: Record<string, any>;
+  } = {},
 ): Promise<T> {
   const { auth = true, raw = false, _retry = false, headers, query, ...rest } = init;
   const h: Record<string, string> = { "Content-Type": "application/json", ...(headers as any) };
@@ -47,7 +59,9 @@ async function request<T>(
   let fullPath = path;
   if (query) {
     const q = new URLSearchParams();
-    Object.entries(query).forEach(([k, v]) => { if (v != null) q.set(k, String(v)); });
+    Object.entries(query).forEach(([k, v]) => {
+      if (v != null) q.set(k, String(v));
+    });
     fullPath += (path.includes("?") ? "&" : "?") + q.toString();
   }
 
@@ -78,7 +92,9 @@ async function request<T>(
 
   if (!res.ok) {
     let body: any = null;
-    try { body = await res.json(); } catch {}
+    try {
+      body = await res.json();
+    } catch {}
     throw new ApiError(body?.error || `Request failed (${res.status})`, res.status, body);
   }
   if (raw) return res as unknown as T;
@@ -89,12 +105,22 @@ async function request<T>(
 // ---------- Auth ----------
 export const authApi = {
   login: (memberId: string, password: string) =>
-    request<{ accessToken: string; user: { id: string; name: string; role: "admin" | "staff" | "member" } }>(
-      "/auth/login", { method: "POST", auth: false, body: JSON.stringify({ memberId, password }) }
-    ),
+    request<{
+      accessToken: string;
+      user: { id: string; name: string; role: "admin" | "staff" | "member" };
+    }>("/auth/login", {
+      method: "POST",
+      auth: false,
+      body: JSON.stringify({ memberId, password }),
+    }),
   me: () => request<Member>("/auth/me"),
   logout: () => request<{ ok: true }>("/auth/logout", { method: "POST", auth: false }),
-  register: (data: any) => request<{ ok: true; message: string }>("/auth/register", { method: "POST", auth: false, body: JSON.stringify(data) }),
+  register: (data: any) =>
+    request<{ ok: true; message: string }>("/auth/register", {
+      method: "POST",
+      auth: false,
+      body: JSON.stringify(data),
+    }),
   forgotPassword: (memberId: string) =>
     request<{ ok: boolean; message: string }>("/auth/forgot-password", {
       method: "POST",
@@ -110,9 +136,22 @@ export const authApi = {
 };
 
 // ---------- Members ----------
-export interface MemberListResponse { items: Member[]; total: number; page: number; limit: number; }
+export interface MemberListResponse {
+  items: Member[];
+  total: number;
+  page: number;
+  limit: number;
+}
 export const membersApi = {
-  list: (params: { search?: string; status?: string; planId?: string; page?: number; limit?: number } = {}) => {
+  list: (
+    params: {
+      search?: string;
+      status?: string;
+      planId?: string;
+      page?: number;
+      limit?: number;
+    } = {},
+  ) => {
     const q = new URLSearchParams();
     if (params.search) q.set("search", params.search);
     if (params.status && params.status !== "all") q.set("status", params.status);
@@ -123,20 +162,47 @@ export const membersApi = {
   },
   get: (id: string) => request<Member>(`/members/${id}`),
   create: (data: {
-    name: string; email: string; password: string; mobile?: string;
-    planId: string; meals: Meal[]; startDate: string; amountPaid?: number; paymentMethod?: string; role?: string;
+    name: string;
+    email: string;
+    password: string;
+    mobile?: string;
+    planId: string;
+    meals: Meal[];
+    startDate: string;
+    amountPaid?: number;
+    paymentMethod?: string;
+    role?: string;
   }) => request<Member>("/members", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: string, patch: Partial<{ name: string; email: string; mobile: string; password: string; photoUrl: string }>) =>
-    request<Member>(`/members/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
+  update: (
+    id: string,
+    patch: Partial<{
+      name: string;
+      email: string;
+      mobile: string;
+      password: string;
+      photoUrl: string;
+    }>,
+  ) => request<Member>(`/members/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   remove: (id: string) => request<{ ok: true }>(`/members/${id}`, { method: "DELETE" }),
-  renew: (id: string, data: { planId?: string; amountPaid?: number; paymentMethod?: string; applyAbsenceCredits?: boolean }) => 
-    request(`/members/${id}/renew`, { method: "PUT", body: JSON.stringify(data) }),
+  renew: (
+    id: string,
+    data: {
+      planId?: string;
+      amountPaid?: number;
+      paymentMethod?: string;
+      applyAbsenceCredits?: boolean;
+    },
+  ) => request(`/members/${id}/renew`, { method: "PUT", body: JSON.stringify(data) }),
   getAbsenceCredits: (id: string) =>
-    request<{ totalCreditDays: number; streaks: Array<{ start: string; end: string; length: number; credit: number }> }>(
-      `/members/${id}/absence-credits`
-    ),
-  addPayment: (id: string, amountPaid: number, paymentMethod = "Cash") => 
-    request(`/members/${id}/payment`, { method: "PUT", body: JSON.stringify({ amountPaid, paymentMethod }) }),
+    request<{
+      totalCreditDays: number;
+      streaks: Array<{ start: string; end: string; length: number; credit: number }>;
+    }>(`/members/${id}/absence-credits`),
+  addPayment: (id: string, amountPaid: number, paymentMethod = "Cash") =>
+    request(`/members/${id}/payment`, {
+      method: "PUT",
+      body: JSON.stringify({ amountPaid, paymentMethod }),
+    }),
   changePlan: (id: string, data: { planId: string; meals: Meal[]; startDate?: string }) =>
     request(`/members/${id}/plan`, { method: "PUT", body: JSON.stringify(data) }),
 };
@@ -145,8 +211,7 @@ export const membersApi = {
 export const paymentsApi = {
   list: (params: { limit?: number; offset?: number } = {}) =>
     request<Payment[]>("/payments", { query: params }),
-  remove: (id: string) =>
-    request<{ ok: true }>(`/payments/${id}`, { method: "DELETE" }),
+  remove: (id: string) => request<{ ok: true }>(`/payments/${id}`, { method: "DELETE" }),
 };
 
 // ---------- Config ----------
@@ -160,7 +225,10 @@ export const configApi = {
     request<{ ok: true }>(`/config/plans/${planId}`, { method: "DELETE" }),
   listWindows: () => request<MealWindow[]>("/config/windows"),
   updateWindow: (meal: Meal, startTime: string, endTime: string) =>
-    request<MealWindow>(`/config/windows/${meal}`, { method: "PUT", body: JSON.stringify({ startTime, endTime }) }),
+    request<MealWindow>(`/config/windows/${meal}`, {
+      method: "PUT",
+      body: JSON.stringify({ startTime, endTime }),
+    }),
 };
 
 // ---------- QR ----------
@@ -171,10 +239,23 @@ export const qrApi = {
 // ---------- Scan ----------
 export const scanApi = {
   validate: (qrToken: string, meal: Meal) =>
-    request<ScanResult>("/scan/validate", { method: "POST", body: JSON.stringify({ qrToken, meal }) }),
-  logs: (params: { date?: string; memberId?: string; status?: string; code?: string; limit?: number } = {}) => {
+    request<ScanResult>("/scan/validate", {
+      method: "POST",
+      body: JSON.stringify({ qrToken, meal }),
+    }),
+  logs: (
+    params: {
+      date?: string;
+      memberId?: string;
+      status?: string;
+      code?: string;
+      limit?: number;
+    } = {},
+  ) => {
     const q = new URLSearchParams();
-    Object.entries(params).forEach(([k, v]) => { if (v != null && v !== "") q.set(k, String(v)); });
+    Object.entries(params).forEach(([k, v]) => {
+      if (v != null && v !== "") q.set(k, String(v));
+    });
     return request<ScanLog[]>(`/scan/logs?${q.toString()}`);
   },
 };
@@ -182,7 +263,10 @@ export const scanApi = {
 // ---------- Usage / Reports ----------
 export const usageApi = {
   today: () => request<MealUsageDay[]>("/usage/today"),
-  summaryToday: () => request<{ Breakfast: number; Lunch: number; Dinner: number; total: number }>("/usage/summary/today"),
+  summaryToday: () =>
+    request<{ Breakfast: number; Lunch: number; Dinner: number; total: number }>(
+      "/usage/summary/today",
+    ),
   forMember: (memberId: string, params: { from?: string; to?: string } = {}) => {
     const q = new URLSearchParams();
     if (params.from) q.set("from", params.from);
@@ -192,36 +276,51 @@ export const usageApi = {
 };
 
 export const reportsApi = {
-  getDailyStats: () => request<{
-    new_members: number;
-    renewed_members: number;
-    expired_members: number;
-    collection: number;
-    new_list: Member[];
-    renewed_list: Member[];
-    expired_list: Member[];
-  }>("/reports/stats"),
-  getFinance: (params: { period?: 'day' | 'month' | 'year' | 'all'; date?: string } = {}) => 
+  getDailyStats: () =>
+    request<{
+      new_members: number;
+      renewed_members: number;
+      expired_members: number;
+      collection: number;
+      new_list: Member[];
+      renewed_list: Member[];
+      expired_list: Member[];
+    }>("/reports/stats"),
+  getFinance: (params: { period?: "day" | "month" | "year" | "all"; date?: string } = {}) =>
     request<{
       summary: { total_revenue: number; total_dues: number; tx_count: number };
       monthly: { month: string; revenue: number }[];
       methods: { name: string; value: number }[];
       plans: { name: string; value: number }[];
     }>("/reports/finance", { query: params }),
-  daily: (date?: string) => request<{
-    date: string; meals: Record<Meal, number>; allowed: number; denied: number; total: number;
-    denialBreakdown: Record<string, number>;
-  }>("/reports/daily", { query: { date } }),
-  weekly: () => request<{
-    days: { date: string; meals: number }[];
-    estimatedMonthlyRevenue: number;
-  }>("/reports/weekly"),
-  monthly: (month?: string) => request<{ 
-    month: string; totalMeals: number; days: number; meals: Record<Meal, number> 
-  }>(`/reports/monthly${month ? `?month=${month}` : ""}`),
-  yearly: (year?: string) => request<{ 
-    year: string; totalMeals: number; days: number; meals: Record<Meal, number> 
-  }>(`/reports/yearly${year ? `?year=${year}` : ""}`),
+  daily: (date?: string) =>
+    request<{
+      date: string;
+      meals: Record<Meal, number>;
+      allowed: number;
+      denied: number;
+      total: number;
+      denialBreakdown: Record<string, number>;
+    }>("/reports/daily", { query: { date } }),
+  weekly: () =>
+    request<{
+      days: { date: string; meals: number }[];
+      estimatedMonthlyRevenue: number;
+    }>("/reports/weekly"),
+  monthly: (month?: string) =>
+    request<{
+      month: string;
+      totalMeals: number;
+      days: number;
+      meals: Record<Meal, number>;
+    }>(`/reports/monthly${month ? `?month=${month}` : ""}`),
+  yearly: (year?: string) =>
+    request<{
+      year: string;
+      totalMeals: number;
+      days: number;
+      meals: Record<Meal, number>;
+    }>(`/reports/yearly${year ? `?year=${year}` : ""}`),
   expiring: (days = 7) => request<Member[]>(`/reports/expiring?days=${days}`),
   exportDailyCsv: async (date?: string) => {
     const tok = getToken();
@@ -236,7 +335,9 @@ export const reportsApi = {
 
 export const staffApi = {
   list: () => request<Member[]>("/staff"),
-  create: (data: Partial<Member> & { password?: string }) => request<Member>("/staff", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: string, data: Partial<Member> & { password?: string }) => request<Member>(`/staff/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  create: (data: Partial<Member> & { password?: string }) =>
+    request<Member>("/staff", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: string, data: Partial<Member> & { password?: string }) =>
+    request<Member>(`/staff/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   remove: (id: string) => request<{ ok: boolean }>(`/staff/${id}`, { method: "DELETE" }),
 };

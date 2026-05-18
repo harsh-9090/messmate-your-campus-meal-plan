@@ -9,12 +9,54 @@ export const MEAL_ICONS: Record<Meal, string> = {
 };
 
 export const PLAN_PRESETS: Plan[] = [
-  { planId: "full", label: "Full Board", meals: ["Breakfast", "Lunch", "Dinner"], pricePerMonth: 4500, durationMonths: 1, isActive: true },
-  { planId: "lunch-dinner", label: "Lunch + Dinner", meals: ["Lunch", "Dinner"], pricePerMonth: 3200, durationMonths: 1, isActive: true },
-  { planId: "breakfast-lunch", label: "Breakfast + Lunch", meals: ["Breakfast", "Lunch"], pricePerMonth: 3000, durationMonths: 1, isActive: true },
-  { planId: "lunch-only", label: "Lunch Only", meals: ["Lunch"], pricePerMonth: 1800, durationMonths: 1, isActive: true },
-  { planId: "dinner-only", label: "Dinner Only", meals: ["Dinner"], pricePerMonth: 1800, durationMonths: 1, isActive: true },
-  { planId: "breakfast-only", label: "Breakfast Only", meals: ["Breakfast"], pricePerMonth: 1500, durationMonths: 1, isActive: true },
+  {
+    planId: "full",
+    label: "Full Board",
+    meals: ["Breakfast", "Lunch", "Dinner"],
+    pricePerMonth: 4500,
+    durationMonths: 1,
+    isActive: true,
+  },
+  {
+    planId: "lunch-dinner",
+    label: "Lunch + Dinner",
+    meals: ["Lunch", "Dinner"],
+    pricePerMonth: 3200,
+    durationMonths: 1,
+    isActive: true,
+  },
+  {
+    planId: "breakfast-lunch",
+    label: "Breakfast + Lunch",
+    meals: ["Breakfast", "Lunch"],
+    pricePerMonth: 3000,
+    durationMonths: 1,
+    isActive: true,
+  },
+  {
+    planId: "lunch-only",
+    label: "Lunch Only",
+    meals: ["Lunch"],
+    pricePerMonth: 1800,
+    durationMonths: 1,
+    isActive: true,
+  },
+  {
+    planId: "dinner-only",
+    label: "Dinner Only",
+    meals: ["Dinner"],
+    pricePerMonth: 1800,
+    durationMonths: 1,
+    isActive: true,
+  },
+  {
+    planId: "breakfast-only",
+    label: "Breakfast Only",
+    meals: ["Breakfast"],
+    pricePerMonth: 1500,
+    durationMonths: 1,
+    isActive: true,
+  },
 ];
 
 export const DEFAULT_WINDOWS: MealWindow[] = [

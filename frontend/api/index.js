@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
     res.statusCode = webResponse.status;
     res.statusMessage = webResponse.statusText;
-    
+
     webResponse.headers.forEach((value, key) => {
       res.setHeader(key, value);
     });

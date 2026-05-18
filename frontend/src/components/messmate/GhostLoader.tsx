@@ -17,34 +17,44 @@ const sizeClasses = {
 
 export function GhostLoader({ className, size = "fullscreen" }: GhostLoaderProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center bg-background", sizeClasses[size], className)}>
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center bg-background",
+        sizeClasses[size],
+        className,
+      )}
+    >
       <div className="relative w-full h-full">
         <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
           <ambientLight intensity={0.5} />
           <directionalLight position={[10, 10, 5]} intensity={1.5} />
           <directionalLight position={[-10, -10, -5]} intensity={0.5} />
-          
-          <Float
-            speed={2} 
-            rotationIntensity={0.5} 
-            floatIntensity={1.5}
-            floatingRange={[-0.1, 0.1]}
-          >
+
+          <Float speed={2} rotationIntensity={0.5} floatIntensity={1.5} floatingRange={[-0.1, 0.1]}>
             <Center>
               <group>
                 {/* Minimalist 3D "Thali" / Plate */}
-                <Cylinder 
-                  args={[2.2, 2.2, 0.1, 64]} 
-                  rotation={[Math.PI / 2, 0, 0]} 
+                <Cylinder
+                  args={[2.2, 2.2, 0.1, 64]}
+                  rotation={[Math.PI / 2, 0, 0]}
                   position={[0, 0, -0.5]}
                 >
-                  <meshStandardMaterial color="hsl(var(--primary))" transparent opacity={0.15} roughness={0.2} metalness={0.8} />
+                  <meshStandardMaterial
+                    color="hsl(var(--primary))"
+                    transparent
+                    opacity={0.15}
+                    roughness={0.2}
+                    metalness={0.8}
+                  />
                 </Cylinder>
-                <Ring 
-                  args={[2.1, 2.3, 64]} 
-                  position={[0, 0, -0.45]}
-                >
-                  <meshStandardMaterial color="hsl(var(--primary))" transparent opacity={0.4} emissive="hsl(var(--primary))" emissiveIntensity={0.5} />
+                <Ring args={[2.1, 2.3, 64]} position={[0, 0, -0.45]}>
+                  <meshStandardMaterial
+                    color="hsl(var(--primary))"
+                    transparent
+                    opacity={0.4}
+                    emissive="hsl(var(--primary))"
+                    emissiveIntensity={0.5}
+                  />
                 </Ring>
 
                 {/* Floating Text Logo */}

@@ -68,7 +68,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-import { GhostLoader } from "@/components/messmate/GhostLoader";
+import { PwaSplashLoader } from "@/components/messmate/PwaSplashLoader";
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
@@ -147,7 +147,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
-  pendingComponent: () => <GhostLoader size="fullscreen" />,
+  pendingComponent: () => <PwaSplashLoader size="fullscreen" />,
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {

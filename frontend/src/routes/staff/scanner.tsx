@@ -8,11 +8,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScanResultScreen } from "@/components/messmate/ScanResult";
 import { MEALS, MEAL_ICONS } from "@/lib/messmate/constants";
-import { getActiveMeal, formatTime12h, formatTimestamp, todayISO } from "@/lib/messmate/dateHelpers";
+import {
+  getActiveMeal,
+  formatTime12h,
+  formatTimestamp,
+  todayISO,
+} from "@/lib/messmate/dateHelpers";
 import type { Meal, ScanResult } from "@/lib/messmate/types";
 import {
-  Camera, CameraOff, LogOut, UtensilsCrossed, ScanLine,
-  CheckCircle2, XCircle, Loader2, AlertTriangle, History, Settings2,
+  Camera,
+  CameraOff,
+  LogOut,
+  UtensilsCrossed,
+  ScanLine,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  AlertTriangle,
+  History,
+  Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -23,7 +37,11 @@ export const Route = createFileRoute("/staff/scanner")({
   head: () => ({
     meta: [
       { title: "Mess Scanner - Mom's Kitchen" },
-      { name: "description", content: "Staff scanner for mess hall: validate member QR codes against plan, time, and usage." },
+      {
+        name: "description",
+        content:
+          "Staff scanner for mess hall: validate member QR codes against plan, time, and usage.",
+      },
     ],
   }),
   component: ScannerPage,
@@ -43,7 +61,9 @@ function ScannerPage() {
   const activeFromTime = windows.length ? getActiveMeal(windows) : null;
 
   const [meal, setMeal] = useState<Meal>("Lunch");
-  useEffect(() => { if (activeFromTime) setMeal(activeFromTime); }, [activeFromTime]);
+  useEffect(() => {
+    if (activeFromTime) setMeal(activeFromTime);
+  }, [activeFromTime]);
 
   const [result, setResult] = useState<ScanResult | null>(null);
   const [cameraOn, setCameraOn] = useState(true); // auto-start
@@ -65,11 +85,14 @@ function ScannerPage() {
     onError: (e: any) => toast.error(e?.message ?? "Scan failed"),
   });
 
-  const handleDetect = useCallback((token: string) => {
-    if (scanM.isPending) return;
-    lastTokenRef.current = token;
-    scanM.mutate(token);
-  }, [scanM]);
+  const handleDetect = useCallback(
+    (token: string) => {
+      if (scanM.isPending) return;
+      lastTokenRef.current = token;
+      scanM.mutate(token);
+    },
+    [scanM],
+  );
 
   const handleNext = useCallback(() => {
     setResult(null);
@@ -110,19 +133,34 @@ function ScannerPage() {
             </div>
             <div>
               <div className="font-display text-base font-bold leading-none">Mess Scanner</div>
-              <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 mt-0.5">{authUser.name}</div>
+              <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 mt-0.5">
+                {authUser.name}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-success/40 bg-success/10 text-success font-bold">
+            <Badge
+              variant="outline"
+              className="border-success/40 bg-success/10 text-success font-bold"
+            >
               <CheckCircle2 className="mr-1 h-3 w-3" /> {allowedCount}
             </Badge>
-            <Badge variant="outline" className="border-destructive/40 bg-destructive/10 text-destructive font-bold">
+            <Badge
+              variant="outline"
+              className="border-destructive/40 bg-destructive/10 text-destructive font-bold"
+            >
               <XCircle className="mr-1 h-3 w-3" /> {deniedCount}
             </Badge>
             <ThemeToggle />
-            <Button variant="ghost" size="sm" asChild className="text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer">
-              <Link to="/login" onClick={() => logout()}><LogOut className="h-4 w-4" /></Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer"
+            >
+              <Link to="/login" onClick={() => logout()}>
+                <LogOut className="h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </div>
@@ -154,17 +192,34 @@ function ScannerPage() {
 
       {/* Main Grid: Stacks on mobile, side-by-side on desktop */}
       <main className="mx-auto max-w-xl md:max-w-5xl space-y-4 md:space-y-0 p-4 md:grid md:grid-cols-12 md:gap-6">
-        
         {/* LEFT COLUMN: Camera Scanner (Visible if activeTab === 'scan' on mobile) */}
-        <div className={`md:col-span-7 space-y-4 ${activeTab === "scan" ? "block" : "hidden md:block"}`}>
+        <div
+          className={`md:col-span-7 space-y-4 ${activeTab === "scan" ? "block" : "hidden md:block"}`}
+        >
           {/* Live Camera Scanner */}
           <Card className="overflow-hidden p-0 shadow-sm border">
             <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-2">
               <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                 <ScanLine className="h-4 w-4" /> Live QR Camera
               </div>
-              <Button size="sm" className="cursor-pointer" variant={cameraOn ? "destructive" : "default"} onClick={() => { setCamError(null); setCameraOn((v) => !v); }}>
-                {cameraOn ? <><CameraOff className="mr-1 h-4 w-4" /> Stop</> : <><Camera className="mr-1 h-4 w-4" /> Start</>}
+              <Button
+                size="sm"
+                className="cursor-pointer"
+                variant={cameraOn ? "destructive" : "default"}
+                onClick={() => {
+                  setCamError(null);
+                  setCameraOn((v) => !v);
+                }}
+              >
+                {cameraOn ? (
+                  <>
+                    <CameraOff className="mr-1 h-4 w-4" /> Stop
+                  </>
+                ) : (
+                  <>
+                    <Camera className="mr-1 h-4 w-4" /> Start
+                  </>
+                )}
               </Button>
             </div>
 
@@ -173,7 +228,10 @@ function ScannerPage() {
                 <CameraScanner
                   onDetect={handleDetect}
                   paused={scanM.isPending}
-                  onError={(m) => { setCamError(m); setCameraOn(false); }}
+                  onError={(m) => {
+                    setCamError(m);
+                    setCameraOn(false);
+                  }}
                 />
               ) : (
                 <div className="grid place-items-center bg-muted/20 p-12 text-center">
@@ -187,7 +245,9 @@ function ScannerPage() {
                     <>
                       <Camera className="mb-3 h-12 w-12 text-primary animate-pulse" />
                       <div className="font-display text-lg font-bold">Camera off</div>
-                      <p className="mt-1 text-sm text-muted-foreground">Start the camera to scan member QR codes.</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Start the camera to scan member QR codes.
+                      </p>
                     </>
                   )}
                 </div>
@@ -212,7 +272,9 @@ function ScannerPage() {
                   <div className="text-center">
                     <Loader2 className="mx-auto mb-2 h-10 w-10 animate-spin text-primary" />
                     <div className="font-display text-lg font-bold animate-pulse">Validating…</div>
-                    <p className="text-xs text-muted-foreground">Checking plan, expiry & time window</p>
+                    <p className="text-xs text-muted-foreground">
+                      Checking plan, expiry & time window
+                    </p>
                   </div>
                 </div>
               )}
@@ -225,12 +287,22 @@ function ScannerPage() {
         </div>
 
         {/* RIGHT COLUMN: Meal Selector & Today's Shift Logs (Visible if activeTab === 'shift' on mobile) */}
-        <div className={`md:col-span-5 space-y-4 ${activeTab === "shift" ? "block" : "hidden md:block"}`}>
+        <div
+          className={`md:col-span-5 space-y-4 ${activeTab === "shift" ? "block" : "hidden md:block"}`}
+        >
           {/* Meal Selector Card */}
           <Card className="p-4 shadow-sm border">
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Current Meal Slot</div>
-              <Badge className={activeFromTime === meal ? "bg-success text-success-foreground font-semibold" : "bg-muted text-muted-foreground font-semibold"}>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                Current Meal Slot
+              </div>
+              <Badge
+                className={
+                  activeFromTime === meal
+                    ? "bg-success text-success-foreground font-semibold"
+                    : "bg-muted text-muted-foreground font-semibold"
+                }
+              >
                 {activeFromTime === meal ? "Window OPEN" : "Window CLOSED"}
               </Badge>
             </div>
@@ -243,7 +315,9 @@ function ScannerPage() {
                     onClick={() => setMeal(m)}
                     className={cn(
                       "rounded-lg border p-2.5 text-left transition-all cursor-pointer",
-                      meal === m ? "border-primary bg-primary/5 shadow-glow" : "border-border hover:border-primary/40"
+                      meal === m
+                        ? "border-primary bg-primary/5 shadow-glow"
+                        : "border-border hover:border-primary/40",
                     )}
                   >
                     <div className="text-2xl">{MEAL_ICONS[m]}</div>
@@ -257,19 +331,27 @@ function ScannerPage() {
             </div>
             {windowForMeal && (
               <div className="mt-3 text-[10px] text-muted-foreground">
-                {meal} window: {formatTime12h(windowForMeal.startTime)} – {formatTime12h(windowForMeal.endTime)}
+                {meal} window: {formatTime12h(windowForMeal.startTime)} –{" "}
+                {formatTime12h(windowForMeal.endTime)}
               </div>
             )}
           </Card>
 
           {/* Today's Scans list (Desktop and Mobile shift logs tab vertical view) */}
-          <Card className={cn("p-4 shadow-sm border", activeTab === "shift" ? "block" : "hidden md:block")}>
+          <Card
+            className={cn(
+              "p-4 shadow-sm border",
+              activeTab === "shift" ? "block" : "hidden md:block",
+            )}
+          >
             <div className="mb-3 flex items-center gap-2 border-b pb-2">
               <History className="h-4 w-4 text-muted-foreground" />
               <div className="font-display text-base font-bold">Today's Shift Logs</div>
             </div>
             {todayLogs.length === 0 ? (
-              <p className="py-8 text-center text-xs text-muted-foreground">No scans recorded today.</p>
+              <p className="py-8 text-center text-xs text-muted-foreground">
+                No scans recorded today.
+              </p>
             ) : (
               <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
                 {todayLogs.map((l) => (
@@ -279,7 +361,7 @@ function ScannerPage() {
                       "flex items-center justify-between rounded-lg border p-3 text-xs bg-muted/5 hover:bg-muted/10 transition-all",
                       l.status === "allowed"
                         ? "border-success/30 bg-success/5 text-success"
-                        : "border-destructive/30 bg-destructive/5 text-destructive"
+                        : "border-destructive/30 bg-destructive/5 text-destructive",
                     )}
                   >
                     <div>
@@ -287,9 +369,17 @@ function ScannerPage() {
                       <div className="text-[10px] opacity-80 mt-0.5">
                         {l.meal} · {formatTimestamp(l.timestamp).split(",")[1]?.trim() ?? ""}
                       </div>
-                      {l.status === "denied" && <div className="text-[9px] font-semibold mt-0.5">{l.denialReason}</div>}
+                      {l.status === "denied" && (
+                        <div className="text-[9px] font-semibold mt-0.5">{l.denialReason}</div>
+                      )}
                     </div>
-                    <Badge variant={l.status === "allowed" ? "default" : "destructive"} className={cn("text-[9px] font-bold", l.status === "allowed" ? "bg-success text-success-foreground" : "")}>
+                    <Badge
+                      variant={l.status === "allowed" ? "default" : "destructive"}
+                      className={cn(
+                        "text-[9px] font-bold",
+                        l.status === "allowed" ? "bg-success text-success-foreground" : "",
+                      )}
+                    >
                       {l.status}
                     </Badge>
                   </div>
@@ -317,7 +407,9 @@ function CameraScanner({
   const scannerRef = useRef<any>(null);
   const lastRef = useRef<{ token: string; at: number } | null>(null);
   const pausedRef = useRef(paused);
-  useEffect(() => { pausedRef.current = paused; }, [paused]);
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   useEffect(() => {
     let cancelled = false;
@@ -333,11 +425,16 @@ function CameraScanner({
           (decoded: string) => {
             if (pausedRef.current) return;
             const now = Date.now();
-            if (lastRef.current && lastRef.current.token === decoded && now - lastRef.current.at < 2500) return;
+            if (
+              lastRef.current &&
+              lastRef.current.token === decoded &&
+              now - lastRef.current.at < 2500
+            )
+              return;
             lastRef.current = { token: decoded, at: now };
             onDetect(decoded);
           },
-          () => { }
+          () => {},
         );
       } catch (e: any) {
         const msg = e?.message || "Unable to access camera. Check permissions.";
@@ -348,7 +445,11 @@ function CameraScanner({
       cancelled = true;
       const s = scannerRef.current;
       if (s) {
-        try { s.stop().catch(() => { }).then(() => s.clear?.()); } catch { }
+        try {
+          s.stop()
+            .catch(() => {})
+            .then(() => s.clear?.());
+        } catch {}
         scannerRef.current = null;
       }
     };

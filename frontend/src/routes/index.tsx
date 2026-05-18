@@ -14,7 +14,7 @@ import {
   Users,
   Sun,
   Utensils,
-  Moon
+  Moon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -27,7 +27,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Mom's Kitchen - Best Mess in Pune" },
-      { name: "description", content: "Best mess in Pune, Serving delicious and hygienic food to students." },
+      {
+        name: "description",
+        content: "Best mess in Pune, Serving delicious and hygienic food to students.",
+      },
     ],
   }),
   component: LandingPage,
@@ -46,13 +49,13 @@ function LandingPage() {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+      transition: { staggerChildren: 0.1 },
+    },
   };
 
   const item = {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+    show: { opacity: 1, y: 0 },
   };
 
   return (
@@ -68,21 +71,42 @@ function LandingPage() {
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-6">
-              <a href="#about" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">About Us</a>
-              <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">How to Join</a>
-              <a href="#menu" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Today's Menu</a>
+              <a
+                href="#about"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              >
+                About Us
+              </a>
+              <a
+                href="#how-it-works"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              >
+                How to Join
+              </a>
+              <a
+                href="#menu"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              >
+                Today's Menu
+              </a>
               <ThemeToggle />
               <Link to="/login">
-                <Button variant="ghost" className="text-sm font-medium">Student Login</Button>
+                <Button variant="ghost" className="text-sm font-medium">
+                  Student Login
+                </Button>
               </Link>
               <Link to="/register">
-                <Button className="rounded-full px-6 shadow-lg shadow-primary/20">Register Now</Button>
+                <Button className="rounded-full px-6 shadow-lg shadow-primary/20">
+                  Register Now
+                </Button>
               </Link>
             </div>
             <div className="md:hidden flex items-center gap-2">
               <ThemeToggle />
               <Link to="/login">
-                <Button size="sm" variant="ghost" className="text-sm font-bold text-primary">Sign In</Button>
+                <Button size="sm" variant="ghost" className="text-sm font-bold text-primary">
+                  Sign In
+                </Button>
               </Link>
             </div>
           </div>
@@ -101,7 +125,9 @@ function LandingPage() {
                 className="space-y-8"
               >
                 <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
-                  <Badge variant="secondary" className="mr-2 bg-primary text-primary-foreground">STATUS</Badge>
+                  <Badge variant="secondary" className="mr-2 bg-primary text-primary-foreground">
+                    STATUS
+                  </Badge>
                   <span>
                     {activeMeal
                       ? `Kitchen is currently serving ${activeMeal}!`
@@ -113,17 +139,24 @@ function LandingPage() {
                   <span className="text-primary">Better Life.</span>
                 </h1>
                 <p className="max-w-lg text-lg text-muted-foreground sm:text-xl">
-                  Welcome to <span className="font-bold">Mom's Kitchen</span>. Enjoy nutritious, hygienic,
-                  and delicious meals served daily.
+                  Welcome to <span className="font-bold">Mom's Kitchen</span>. Enjoy nutritious,
+                  hygienic, and delicious meals served daily.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 pt-4">
                   <Link to="/register">
-                    <Button size="lg" className="h-14 rounded-full px-8 text-lg shadow-xl shadow-primary/25">
+                    <Button
+                      size="lg"
+                      className="h-14 rounded-full px-8 text-lg shadow-xl shadow-primary/25"
+                    >
                       Register as Member <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                   <a href="#menu">
-                    <Button size="lg" variant="outline" className="h-14 rounded-full px-8 text-lg border-2 group transition-all hover:bg-primary/5">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="h-14 rounded-full px-8 text-lg border-2 group transition-all hover:bg-primary/5"
+                    >
                       <Clock className="mr-2 h-5 w-5 text-primary transition-transform group-hover:rotate-12" />
                       View Meal Timings
                     </Button>
@@ -181,8 +214,12 @@ function LandingPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <div className="space-y-6">
-                <h2 className="text-primary font-bold uppercase tracking-widest text-sm">About Our Mess</h2>
-                <h3 className="text-4xl font-extrabold tracking-tight">Your health is our priority.</h3>
+                <h2 className="text-primary font-bold uppercase tracking-widest text-sm">
+                  About Our Mess
+                </h2>
+                <h3 className="text-4xl font-extrabold tracking-tight">
+                  Your health is our priority.
+                </h3>
                 <p className="text-muted-foreground text-lg">
                   Mom's Kitchen is dedicated to providing students with high-quality, balanced meals
                   that feel like home. We use fresh ingredients, maintain strict hygiene standards,
@@ -193,7 +230,7 @@ function LandingPage() {
                     "Standardized nutritional balance",
                     "Pure filtered water for cooking",
                     "Transparent member management",
-                    "Regular quality inspections"
+                    "Regular quality inspections",
                   ].map((text, i) => (
                     <li key={i} className="flex items-center gap-3 font-medium">
                       <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center">
@@ -243,7 +280,11 @@ function LandingPage() {
                     <div className="aspect-square rounded-[2rem] bg-primary/10 flex items-center justify-center p-6 text-center border-4 border-background">
                       <div className="space-y-1">
                         <div className="text-2xl font-bold text-primary">100%</div>
-                        <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Quality<br />Assurance</div>
+                        <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+                          Quality
+                          <br />
+                          Assurance
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -257,15 +298,29 @@ function LandingPage() {
         <section id="how-it-works" className="py-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-16">
             <div className="space-y-4">
-              <h2 className="text-primary font-bold uppercase tracking-widest text-sm">Onboarding</h2>
+              <h2 className="text-primary font-bold uppercase tracking-widest text-sm">
+                Onboarding
+              </h2>
               <h3 className="text-4xl font-extrabold tracking-tight">How to join the mess?</h3>
             </div>
             <div className="grid md:grid-cols-3 gap-12 relative">
               <div className="hidden md:block absolute top-12 left-1/4 right-1/4 h-px border-t-2 border-dashed border-border" />
               {[
-                { step: "01", title: "Register Online", desc: "Fill your details on this website to create your student account." },
-                { step: "02", title: "Verify & Pay", desc: "Visit the mess office to verify your ID and pay your monthly subscription." },
-                { step: "03", title: "Start Dining", desc: "Get your digital QR code and enjoy your meals instantly!" },
+                {
+                  step: "01",
+                  title: "Register Online",
+                  desc: "Fill your details on this website to create your student account.",
+                },
+                {
+                  step: "02",
+                  title: "Verify & Pay",
+                  desc: "Visit the mess office to verify your ID and pay your monthly subscription.",
+                },
+                {
+                  step: "03",
+                  title: "Start Dining",
+                  desc: "Get your digital QR code and enjoy your meals instantly!",
+                },
               ].map((s, i) => (
                 <div key={i} className="relative space-y-4">
                   <div className="h-24 w-24 rounded-full bg-background border-4 border-primary text-primary text-3xl font-bold flex items-center justify-center mx-auto shadow-xl relative z-10">
@@ -277,7 +332,9 @@ function LandingPage() {
               ))}
             </div>
             <Link to="/register">
-              <Button size="lg" className="rounded-full px-12">Register as a New Member</Button>
+              <Button size="lg" className="rounded-full px-12">
+                Register as a New Member
+              </Button>
             </Link>
           </div>
         </section>
@@ -293,41 +350,77 @@ function LandingPage() {
               <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
                 <div className="space-y-8">
                   <div className="space-y-4">
-                    <h2 className="text-primary font-bold uppercase tracking-widest text-xs sm:text-sm">Meal Times</h2>
-                    <h3 className="text-3xl sm:text-5xl font-extrabold tracking-tight">Daily Dining Schedule</h3>
+                    <h2 className="text-primary font-bold uppercase tracking-widest text-xs sm:text-sm">
+                      Meal Times
+                    </h2>
+                    <h3 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+                      Daily Dining Schedule
+                    </h3>
                     <p className="text-muted-foreground text-base sm:text-lg max-w-md">
-                      Punctuality ensures fresh food for everyone. Please visit the mess during
-                      the following windows.
+                      Punctuality ensures fresh food for everyone. Please visit the mess during the
+                      following windows.
                     </p>
                   </div>
                   <div className="space-y-4">
                     {[
-                      { meal: "Breakfast", label: "Breakfast", menu: "Nutritious start with milk, sprouts, and main dish.", icon: <Sun className="h-20 w-20" />, smallIcon: <Sun className="h-7 w-7" />, defaultTime: "08:00 AM - 09:30 AM" },
-                      { meal: "Lunch", label: "Lunch", menu: "Full thali with seasonal veg, dal, rice, and roti.", icon: <Utensils className="h-20 w-20" />, smallIcon: <Utensils className="h-7 w-7" />, defaultTime: "12:30 PM - 02:30 PM" },
-                      { meal: "Dinner", label: "Dinner", menu: "Light and healthy dinner to end your day right.", icon: <Moon className="h-20 w-20" />, smallIcon: <Moon className="h-7 w-7" />, defaultTime: "08:00 PM - 09:30 PM" },
+                      {
+                        meal: "Breakfast",
+                        label: "Breakfast",
+                        menu: "Nutritious start with milk, sprouts, and main dish.",
+                        icon: <Sun className="h-20 w-20" />,
+                        smallIcon: <Sun className="h-7 w-7" />,
+                        defaultTime: "08:00 AM - 09:30 AM",
+                      },
+                      {
+                        meal: "Lunch",
+                        label: "Lunch",
+                        menu: "Full thali with seasonal veg, dal, rice, and roti.",
+                        icon: <Utensils className="h-20 w-20" />,
+                        smallIcon: <Utensils className="h-7 w-7" />,
+                        defaultTime: "12:30 PM - 02:30 PM",
+                      },
+                      {
+                        meal: "Dinner",
+                        label: "Dinner",
+                        menu: "Light and healthy dinner to end your day right.",
+                        icon: <Moon className="h-20 w-20" />,
+                        smallIcon: <Moon className="h-7 w-7" />,
+                        defaultTime: "08:00 PM - 09:30 PM",
+                      },
                     ].map((m, i) => {
-                      const w = windowsQ.data?.find(x => x.meal === m.meal);
-                      const displayTime = w ? `${formatTime12h(w.startTime)} - ${formatTime12h(w.endTime)}` : m.defaultTime;
+                      const w = windowsQ.data?.find((x) => x.meal === m.meal);
+                      const displayTime = w
+                        ? `${formatTime12h(w.startTime)} - ${formatTime12h(w.endTime)}`
+                        : m.defaultTime;
                       const isLive = activeMeal === m.meal;
 
                       return (
-                        <div key={i} className={cn(
-                          "group relative rounded-2xl border transition-all overflow-hidden p-6",
-                          isLive
-                            ? "bg-primary/5 border-primary/30 shadow-glow"
-                            : "bg-muted/30 border-border/50 hover:bg-muted/50"
-                        )}>
+                        <div
+                          key={i}
+                          className={cn(
+                            "group relative rounded-2xl border transition-all overflow-hidden p-6",
+                            isLive
+                              ? "bg-primary/5 border-primary/30 shadow-glow"
+                              : "bg-muted/30 border-border/50 hover:bg-muted/50",
+                          )}
+                        >
                           <div className="flex flex-col sm:flex-row gap-6 items-start relative z-10">
-                            <div className={cn(
-                              "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm border transition-transform group-hover:scale-110",
-                              isLive ? "bg-primary text-primary-foreground border-primary" : "bg-primary/10 text-primary border-primary/20"
-                            )}>
+                            <div
+                              className={cn(
+                                "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm border transition-transform group-hover:scale-110",
+                                isLive
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-primary/10 text-primary border-primary/20",
+                              )}
+                            >
                               {m.smallIcon}
                             </div>
                             <div className="flex-1 space-y-2">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
-                                  <span className="text-2xl font-bold tracking-tight">{m.label}</span>
+                                  <span className="text-2xl font-bold tracking-tight">
+                                    {m.label}
+                                  </span>
                                   {isLive && (
                                     <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-success/20 text-success text-[10px] font-bold uppercase tracking-wider animate-pulse">
                                       <span className="h-1.5 w-1.5 rounded-full bg-success" />
@@ -335,10 +428,14 @@ function LandingPage() {
                                     </span>
                                   )}
                                 </div>
-                                <span className={cn(
-                                  "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
-                                  isLive ? "bg-primary text-primary-foreground border-primary" : "bg-primary/10 text-primary border-primary/20"
-                                )}>
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border",
+                                    isLive
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "bg-primary/10 text-primary border-primary/20",
+                                  )}
+                                >
                                   {displayTime}
                                 </span>
                               </div>
@@ -358,7 +455,9 @@ function LandingPage() {
                     <div className="p-8 space-y-6">
                       <div className="flex justify-between items-center">
                         <span className="text-2xl font-bold">Important Note</span>
-                        <Badge variant="outline" className="border-amber-500 text-amber-500">Notice</Badge>
+                        <Badge variant="outline" className="border-amber-500 text-amber-500">
+                          Notice
+                        </Badge>
                       </div>
                       <div className="space-y-4 text-muted-foreground text-sm leading-relaxed">
                         <p>• Digital QR code is mandatory for every meal.</p>
@@ -385,7 +484,9 @@ function LandingPage() {
             </div>
             <span className="font-display text-lg font-bold tracking-tight">Mom's Kitchen</span>
           </div>
-          <p className="text-muted-foreground text-sm">© 2026 Official Mom's Kitchen. Served with care.</p>
+          <p className="text-muted-foreground text-sm">
+            © 2026 Official Mom's Kitchen. Served with care.
+          </p>
         </div>
       </footer>
     </div>

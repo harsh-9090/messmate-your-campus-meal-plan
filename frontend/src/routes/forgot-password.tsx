@@ -13,7 +13,10 @@ export const Route = createFileRoute("/forgot-password")({
   head: () => ({
     meta: [
       { title: "Forgot Password - Mom's Kitchen" },
-      { name: "description", content: "Reset your Mom's Kitchen password securely via your registered email." },
+      {
+        name: "description",
+        content: "Reset your Mom's Kitchen password securely via your registered email.",
+      },
     ],
   }),
   component: ForgotPasswordPage,
@@ -87,7 +90,9 @@ function ForgotPasswordPage() {
           </div>
           <div>
             <div className="font-display text-2xl font-bold tracking-tight">Mom's Kitchen</div>
-            <div className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-bold">Secure Account Management</div>
+            <div className="text-[10px] uppercase tracking-widest text-sidebar-foreground/50 font-bold">
+              Secure Account Management
+            </div>
           </div>
         </motion.div>
 
@@ -98,11 +103,13 @@ function ForgotPasswordPage() {
           className="relative z-10 space-y-6"
         >
           <h1 className="font-display text-5xl font-extrabold leading-tight tracking-tight">
-            Forgot Your<br />
+            Forgot Your
+            <br />
             <span className="text-primary text-6xl">Password?</span>
           </h1>
           <p className="max-w-md text-sidebar-foreground/70 text-lg leading-relaxed">
-            No worries! Simply enter your Member ID or registered email address, and we will send a password reset link directly to your inbox.
+            No worries! Simply enter your Member ID or registered email address, and we will send a
+            password reset link directly to your inbox.
           </p>
         </motion.div>
 
@@ -125,14 +132,21 @@ function ForgotPasswordPage() {
           {!success ? (
             <>
               <div className="space-y-3">
-                <h2 className="font-display text-4xl lg:text-5xl font-extrabold tracking-tight">Recover Account</h2>
-                <p className="text-muted-foreground font-medium">Verify your identity to choose a new password.</p>
+                <h2 className="font-display text-4xl lg:text-5xl font-extrabold tracking-tight">
+                  Recover Account
+                </h2>
+                <p className="text-muted-foreground font-medium">
+                  Verify your identity to choose a new password.
+                </p>
               </div>
 
               <form className="space-y-6" onSubmit={handleSubmit}>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="mid" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">
+                    <Label
+                      htmlFor="mid"
+                      className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                    >
                       Member ID / Registered Email
                     </Label>
                     <Input
@@ -144,8 +158,16 @@ function ForgotPasswordPage() {
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98]" disabled={submitting}>
-                  {submitting ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
+                <Button
+                  type="submit"
+                  className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98]"
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-5 w-5" />
+                  )}
                   Send Reset Link
                 </Button>
               </form>
@@ -160,9 +182,12 @@ function ForgotPasswordPage() {
                 <Mail className="h-10 w-10 animate-bounce" />
               </div>
               <div className="space-y-3">
-                <h2 className="font-display text-3xl font-extrabold tracking-tight">Check Your Inbox</h2>
+                <h2 className="font-display text-3xl font-extrabold tracking-tight">
+                  Check Your Inbox
+                </h2>
                 <p className="text-muted-foreground font-medium text-sm leading-relaxed">
-                  We have dispatched a secure password reset link to your registered email address. Please click the link inside to set your new password.
+                  We have dispatched a secure password reset link to your registered email address.
+                  Please click the link inside to set your new password.
                 </p>
               </div>
               <p className="text-xs text-muted-foreground/60">
@@ -172,7 +197,10 @@ function ForgotPasswordPage() {
           )}
 
           <div className="pt-8 border-t border-border/50 text-center">
-            <Link to="/login" className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors"
+            >
               <ArrowLeft className="h-4 w-4" />
               Back to Sign in
             </Link>

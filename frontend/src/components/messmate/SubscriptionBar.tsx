@@ -3,7 +3,10 @@ import { daysElapsed, daysRemaining, formatDate } from "@/lib/messmate/dateHelpe
 import { differenceInCalendarDays, parseISO } from "date-fns";
 
 export function SubscriptionBar({ sub }: { sub: Subscription }) {
-  const totalDays = Math.max(1, differenceInCalendarDays(parseISO(sub.endDate), parseISO(sub.startDate)));
+  const totalDays = Math.max(
+    1,
+    differenceInCalendarDays(parseISO(sub.endDate), parseISO(sub.startDate)),
+  );
   const elapsed = Math.min(totalDays, daysElapsed(sub.startDate));
   const left = Math.max(0, daysRemaining(sub.endDate));
   const pct = (elapsed / totalDays) * 100;
@@ -12,7 +15,9 @@ export function SubscriptionBar({ sub }: { sub: Subscription }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>Day {elapsed} of {totalDays}</span>
+        <span>
+          Day {elapsed} of {totalDays}
+        </span>
         <span>{expired ? "Expired" : `${left} day${left === 1 ? "" : "s"} left`}</span>
       </div>
       <div className="relative h-3 overflow-hidden rounded-full bg-muted">

@@ -8,7 +8,19 @@ import { Download, Loader2, Utensils, Calendar } from "lucide-react";
 import { todayISO, daysRemaining, formatINR } from "@/lib/messmate/dateHelpers";
 import { format, parseISO } from "date-fns";
 import { useState, useMemo } from "react";
-import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from "recharts";
+import {
+  BarChart,
+  Bar,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/reports")({
@@ -18,8 +30,8 @@ export const Route = createFileRoute("/admin/reports")({
 
 const MEAL_COLORS = {
   Breakfast: "oklch(0.78 0.16 75)", // Warm amber
-  Lunch: "oklch(0.7 0.18 150)",     // emerald green
-  Dinner: "oklch(0.58 0.22 277)",    // Deep Indigo
+  Lunch: "oklch(0.7 0.18 150)", // emerald green
+  Dinner: "oklch(0.58 0.22 277)", // Deep Indigo
 };
 
 function ReportsPage() {
@@ -30,7 +42,10 @@ function ReportsPage() {
 
   // Main reports queries
   const weeklyQ = useQuery({ queryKey: ["reports", "weekly"], queryFn: () => reportsApi.weekly() });
-  const membersQ = useQuery({ queryKey: ["members", "all"], queryFn: () => membersApi.list({ limit: 500 }) });
+  const membersQ = useQuery({
+    queryKey: ["members", "all"],
+    queryFn: () => membersApi.list({ limit: 500 }),
+  });
 
   const dailyStatsQ = useQuery({
     queryKey: ["reports", "meals", "daily", selectedDay],
@@ -52,46 +67,73 @@ function ReportsPage() {
   });
 
   const members = membersQ.data?.items ?? [];
-  const weekly = (weeklyQ.data?.days ?? []).map((d) => ({ date: format(parseISO(d.date), "EEE"), meals: d.meals }));
+  const weekly = (weeklyQ.data?.days ?? []).map((d) => ({
+    date: format(parseISO(d.date), "EEE"),
+    meals: d.meals,
+  }));
 
-  const active = members.filter((m) => m.subscription.isPaid && daysRemaining(m.subscription.endDate) >= 0);
-  const totalRev = weeklyQ.data?.estimatedMonthlyRevenue ?? active.reduce((s, m) => s + m.subscription.pricePerMonth, 0);
-  const unpaidDues = members.filter((m) => !m.subscription.isPaid).reduce((s, m) => s + m.subscription.pricePerMonth, 0);
+  const active = members.filter(
+    (m) => m.subscription.isPaid && daysRemaining(m.subscription.endDate) >= 0,
+  );
+  const totalRev =
+    weeklyQ.data?.estimatedMonthlyRevenue ??
+    active.reduce((s, m) => s + m.subscription.pricePerMonth, 0);
+  const unpaidDues = members
+    .filter((m) => !m.subscription.isPaid)
+    .reduce((s, m) => s + m.subscription.pricePerMonth, 0);
   const totalMealsWeek = weekly.reduce((s, d) => s + d.meals, 0);
   const avgPerDay = (totalMealsWeek / 7).toFixed(1);
 
   // Compute active meals distribution stats based on period
-  const { breakfastCount, lunchCount, dinnerCount, totalMealsCount, isLoadingMeals } = useMemo(() => {
-    let b = 0, l = 0, d = 0, total = 0;
-    let loading = false;
+  const { breakfastCount, lunchCount, dinnerCount, totalMealsCount, isLoadingMeals } =
+    useMemo(() => {
+      let b = 0,
+        l = 0,
+        d = 0,
+        total = 0;
+      let loading = false;
 
-    if (period === "day") {
-      loading = dailyStatsQ.isLoading;
-      if (dailyStatsQ.data) {
-        b = dailyStatsQ.data.meals.Breakfast || 0;
-        l = dailyStatsQ.data.meals.Lunch || 0;
-        d = dailyStatsQ.data.meals.Dinner || 0;
-        total = dailyStatsQ.data.total || 0;
+      if (period === "day") {
+        loading = dailyStatsQ.isLoading;
+        if (dailyStatsQ.data) {
+          b = dailyStatsQ.data.meals.Breakfast || 0;
+          l = dailyStatsQ.data.meals.Lunch || 0;
+          d = dailyStatsQ.data.meals.Dinner || 0;
+          total = dailyStatsQ.data.total || 0;
+        }
+      } else if (period === "month") {
+        loading = monthlyStatsQ.isLoading;
+        if (monthlyStatsQ.data) {
+          b = monthlyStatsQ.data.meals?.Breakfast || 0;
+          l = monthlyStatsQ.data.meals?.Lunch || 0;
+          d = monthlyStatsQ.data.meals?.Dinner || 0;
+          total = monthlyStatsQ.data.totalMeals || 0;
+        }
+      } else if (period === "year") {
+        loading = yearlyStatsQ.isLoading;
+        if (yearlyStatsQ.data) {
+          b = yearlyStatsQ.data.meals?.Breakfast || 0;
+          l = yearlyStatsQ.data.meals?.Lunch || 0;
+          d = yearlyStatsQ.data.meals?.Dinner || 0;
+          total = yearlyStatsQ.data.totalMeals || 0;
+        }
       }
-    } else if (period === "month") {
-      loading = monthlyStatsQ.isLoading;
-      if (monthlyStatsQ.data) {
-        b = monthlyStatsQ.data.meals?.Breakfast || 0;
-        l = monthlyStatsQ.data.meals?.Lunch || 0;
-        d = monthlyStatsQ.data.meals?.Dinner || 0;
-        total = monthlyStatsQ.data.totalMeals || 0;
-      }
-    } else if (period === "year") {
-      loading = yearlyStatsQ.isLoading;
-      if (yearlyStatsQ.data) {
-        b = yearlyStatsQ.data.meals?.Breakfast || 0;
-        l = yearlyStatsQ.data.meals?.Lunch || 0;
-        d = yearlyStatsQ.data.meals?.Dinner || 0;
-        total = yearlyStatsQ.data.totalMeals || 0;
-      }
-    }
-    return { breakfastCount: b, lunchCount: l, dinnerCount: d, totalMealsCount: total, isLoadingMeals: loading };
-  }, [period, dailyStatsQ.data, dailyStatsQ.isLoading, monthlyStatsQ.data, monthlyStatsQ.isLoading, yearlyStatsQ.data, yearlyStatsQ.isLoading]);
+      return {
+        breakfastCount: b,
+        lunchCount: l,
+        dinnerCount: d,
+        totalMealsCount: total,
+        isLoadingMeals: loading,
+      };
+    }, [
+      period,
+      dailyStatsQ.data,
+      dailyStatsQ.isLoading,
+      monthlyStatsQ.data,
+      monthlyStatsQ.isLoading,
+      yearlyStatsQ.data,
+      yearlyStatsQ.isLoading,
+    ]);
 
   // Chart data formatting for distribution donut
   const distributionChartData = useMemo(() => {
@@ -99,7 +141,7 @@ function ReportsPage() {
       { name: "Breakfast", value: breakfastCount, color: MEAL_COLORS.Breakfast },
       { name: "Lunch", value: lunchCount, color: MEAL_COLORS.Lunch },
       { name: "Dinner", value: dinnerCount, color: MEAL_COLORS.Dinner },
-    ].filter(d => d.value > 0);
+    ].filter((d) => d.value > 0);
   }, [breakfastCount, lunchCount, dinnerCount]);
 
   const exportCsv = async () => {
@@ -120,7 +162,9 @@ function ReportsPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold">Reports</h1>
-          <p className="text-sm text-muted-foreground">Kitchen analytics & dynamic consumption dashboards</p>
+          <p className="text-sm text-muted-foreground">
+            Kitchen analytics & dynamic consumption dashboards
+          </p>
         </div>
         <Button onClick={exportCsv} variant="outline" className="cursor-pointer">
           <Download className="mr-1 h-4 w-4" /> Export Scan Logs CSV
@@ -213,23 +257,33 @@ function ReportsPage() {
             {/* Left side metrics */}
             <div className="md:col-span-5 grid grid-cols-2 gap-3">
               <div className="rounded-lg border p-4 bg-muted/10">
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">Breakfast</div>
-                <div className="font-display text-2xl font-bold mt-1 text-amber-500">{breakfastCount}</div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Breakfast
+                </div>
+                <div className="font-display text-2xl font-bold mt-1 text-amber-500">
+                  {breakfastCount}
+                </div>
                 <div className="text-[10px] text-muted-foreground mt-1">Members served</div>
               </div>
               <div className="rounded-lg border p-4 bg-muted/10">
                 <div className="text-xs uppercase tracking-wider text-muted-foreground">Lunch</div>
-                <div className="font-display text-2xl font-bold mt-1 text-emerald-500">{lunchCount}</div>
+                <div className="font-display text-2xl font-bold mt-1 text-emerald-500">
+                  {lunchCount}
+                </div>
                 <div className="text-[10px] text-muted-foreground mt-1">Members served</div>
               </div>
               <div className="rounded-lg border p-4 bg-muted/10">
                 <div className="text-xs uppercase tracking-wider text-muted-foreground">Dinner</div>
-                <div className="font-display text-2xl font-bold mt-1 text-indigo-500">{dinnerCount}</div>
+                <div className="font-display text-2xl font-bold mt-1 text-indigo-500">
+                  {dinnerCount}
+                </div>
                 <div className="text-[10px] text-muted-foreground mt-1">Members served</div>
               </div>
               <div className="rounded-lg border p-4 bg-primary/5 border-primary/20">
                 <div className="text-xs uppercase tracking-wider text-primary">Total Meals</div>
-                <div className="font-display text-2xl font-bold mt-1 text-primary">{totalMealsCount}</div>
+                <div className="font-display text-2xl font-bold mt-1 text-primary">
+                  {totalMealsCount}
+                </div>
                 <div className="text-[10px] text-primary/70 mt-1">Scanned check-ins</div>
               </div>
             </div>
@@ -273,14 +327,22 @@ function ReportsPage() {
 
       {/* Weekly consumption chart */}
       <Card className="p-5">
-        <h3 className="mb-4 font-display text-lg font-bold">Weekly Check-in Trends (last 7 days)</h3>
+        <h3 className="mb-4 font-display text-lg font-bold">
+          Weekly Check-in Trends (last 7 days)
+        </h3>
         <div className="h-72">
           <ResponsiveContainer>
             <BarChart data={weekly}>
               <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
               <XAxis dataKey="date" stroke="currentColor" fontSize={11} />
               <YAxis stroke="currentColor" fontSize={11} allowDecimals={false} />
-              <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8 }} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--popover)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                }}
+              />
               <Bar dataKey="meals" fill="var(--primary)" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -292,14 +354,24 @@ function ReportsPage() {
         <h3 className="mb-4 font-display text-lg font-bold">Revenue summary</h3>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border p-4">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Collected (active)</div>
-            <div className="font-display text-3xl font-bold text-success">{formatINR(totalRev)}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{active.length} paid active members</div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">
+              Collected (active)
+            </div>
+            <div className="font-display text-3xl font-bold text-success">
+              {formatINR(totalRev)}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {active.length} paid active members
+            </div>
           </div>
           <div className="rounded-lg border p-4">
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Pending</div>
-            <div className="font-display text-3xl font-bold text-destructive">{formatINR(unpaidDues)}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{members.filter((m) => !m.subscription.isPaid).length} unpaid members</div>
+            <div className="font-display text-3xl font-bold text-destructive">
+              {formatINR(unpaidDues)}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {members.filter((m) => !m.subscription.isPaid).length} unpaid members
+            </div>
           </div>
         </div>
       </Card>
