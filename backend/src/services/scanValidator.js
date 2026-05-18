@@ -143,7 +143,7 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
 
   const totalToday = sub.meals.length;
   const used = (usage.used_breakfast ? 1 : 0) + (usage.used_lunch ? 1 : 0) + (usage.used_dinner ? 1 : 0);
-  const daysLeft = Math.max(0, differenceInCalendarDays(end, now));
+  const daysLeft = sub.endDate ? Math.max(0, differenceInCalendarDays(new Date(sub.endDate), now)) : 0;
 
   return {
     status: "allowed", meal, member: memberInfo, planLabel: sub.planLabel,
