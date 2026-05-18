@@ -26,6 +26,7 @@ import {
   formatTimestamp,
   isWithinWindow,
   formatTime12h,
+  todayISO,
 } from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
 import type { Meal } from "@/lib/messmate/types";
@@ -105,7 +106,7 @@ function MemberPortal() {
   const myLogs = logsQ.data ?? [];
 
   // Build today's usage from logs
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = todayISO();
   const todaysUsed: Record<Meal, boolean> = { Breakfast: false, Lunch: false, Dinner: false };
   myLogs.forEach((l) => {
     if (l.date === todayStr && l.status === "allowed") todaysUsed[l.meal] = true;
