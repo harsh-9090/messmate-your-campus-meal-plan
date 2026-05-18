@@ -207,7 +207,7 @@ function MenuPlannerPage() {
   };
 
   return (
-    <div className="space-y-6 p-6 md:p-8 max-w-5xl mx-auto">
+    <div className="space-y-6 p-6 md:p-8">
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
