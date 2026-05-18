@@ -168,6 +168,22 @@
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
+
+  /* Premium scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--color-foreground) 15%, transparent);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--color-foreground) 30%, transparent);
+  }
 }
 
 @layer utilities {
