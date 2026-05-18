@@ -54,6 +54,8 @@ function MemberPortal() {
 
   const [activeTab, setActiveTab] = useState<"today" | "pass" | "account">("today");
 
+  const todayStr = todayISO();
+
   const meQ = useQuery({
     queryKey: ["member", authUser?.id],
     queryFn: () => membersApi.get(authUser!.id),
@@ -65,6 +67,11 @@ function MemberPortal() {
     queryFn: () => scanApi.logs({ limit: 14 }),
     enabled: !!authUser,
     refetchInterval: 15_000,
+  });
+  const menusQ = useQuery({
+    queryKey: ["menus", "day", todayStr],
+    queryFn: () => menusApi.list({ date: todayStr }),
+    enabled: !!authUser,
   });
 
   useEffect(() => {
@@ -106,17 +113,11 @@ function MemberPortal() {
   const myLogs = logsQ.data ?? [];
 
   // Build today's usage from logs
-  const todayStr = todayISO();
   const todaysUsed: Record<Meal, boolean> = { Breakfast: false, Lunch: false, Dinner: false };
   myLogs.forEach((l) => {
     if (l.date === todayStr && l.status === "allowed") todaysUsed[l.meal] = true;
   });
 
-  // Fetch today's menu
-  const menusQ = useQuery({
-    queryKey: ["menus", "day", todayStr],
-    queryFn: () => menusApi.list({ date: todayStr }),
-  });
   const menus = menusQ.data ?? [];
   const activeMeal = windows.find((w) => isWithinWindow(new Date(), w))?.meal;
 
