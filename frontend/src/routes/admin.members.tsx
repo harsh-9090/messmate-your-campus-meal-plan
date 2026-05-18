@@ -51,18 +51,22 @@ function MembersPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "expired" | "unpaid" | "pending">("all");
   const [planFilter, setPlanFilter] = useState("all");
+  const [sortBy, setSortBy] = useState<"created_at" | "member_id">("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [renewing, setRenewing] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
 
   const membersQ = useQuery({
-    queryKey: ["members", { search, status, planFilter, page }],
+    queryKey: ["members", { search, status, planFilter, sortBy, sortOrder, page }],
     queryFn: () =>
       membersApi.list({
         search,
         status,
         planId: planFilter === "all" ? undefined : planFilter,
+        sortBy,
+        sortOrder,
         page,
         limit: 50,
       }),
@@ -153,6 +157,26 @@ function MembersPage() {
                   {p.label}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={`${sortBy}-${sortOrder}`}
+            onValueChange={(val) => {
+              const [by, order] = val.split("-") as [any, any];
+              setSortBy(by);
+              setSortOrder(order);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[185px]">
+              <SelectValue placeholder="Sort By" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at-desc">Newly Joined</SelectItem>
+              <SelectItem value="created_at-asc">Oldest Joined</SelectItem>
+              <SelectItem value="member_id-asc">Member ID: Low to High</SelectItem>
+              <SelectItem value="member_id-desc">Member ID: High to Low</SelectItem>
             </SelectContent>
           </Select>
         </div>

@@ -17,8 +17,8 @@ const fmtDate = (d) => format(d, "yyyy-MM-dd");
 // list (admin)
 router.get("/", requireRole("admin"), async (req, res, next) => {
   try {
-    const { search = "", status, planId, page = 1, limit = 20 } = req.query;
-    const cacheKey = `messmate:member:list:${page}:${limit}:${search}:${status || "all"}:${planId || "all"}`;
+    const { search = "", status, planId, page = 1, limit = 20, sortBy = "created_at", sortOrder = "desc" } = req.query;
+    const cacheKey = `messmate:member:list:${page}:${limit}:${search}:${status || "all"}:${planId || "all"}:${sortBy}:${sortOrder}`;
     const cached = await getCache(cacheKey);
     if (cached) return res.json(cached);
 
@@ -51,10 +51,20 @@ router.get("/", requireRole("admin"), async (req, res, next) => {
     const offset = (pg - 1) * lim;
     params.push(lim, offset);
 
-    console.log("[DEBUG] Members List Query:", { whereSql, params });
+    // Sorting logic
+    let orderSql = "ORDER BY created_at DESC"; // Default: newly joined first
+    if (sortBy === "member_id") {
+      const order = sortOrder === "desc" ? "DESC" : "ASC";
+      orderSql = `ORDER BY member_id ${order}`;
+    } else if (sortBy === "created_at") {
+      const order = sortOrder === "asc" ? "ASC" : "DESC";
+      orderSql = `ORDER BY created_at ${order}`;
+    }
+
+    console.log("[DEBUG] Members List Query:", { whereSql, orderSql, params });
 
     const [items, total] = await Promise.all([
-      query(`SELECT * FROM members ${whereSql} ORDER BY member_id ASC LIMIT $${params.length - 1} OFFSET $${params.length}`, params),
+      query(`SELECT * FROM members ${whereSql} ${orderSql} LIMIT $${params.length - 1} OFFSET $${params.length}`, params),
       query(`SELECT COUNT(*)::int AS c FROM members ${whereSql}`, params.slice(0, -2)),
     ]);
     const result = {

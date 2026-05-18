@@ -150,12 +150,16 @@ export const membersApi = {
       planId?: string;
       page?: number;
       limit?: number;
+      sortBy?: string;
+      sortOrder?: string;
     } = {},
   ) => {
     const q = new URLSearchParams();
     if (params.search) q.set("search", params.search);
     if (params.status && params.status !== "all") q.set("status", params.status);
     if (params.planId && params.planId !== "all") q.set("planId", params.planId);
+    if (params.sortBy) q.set("sortBy", params.sortBy);
+    if (params.sortOrder) q.set("sortOrder", params.sortOrder);
     q.set("page", String(params.page ?? 1));
     q.set("limit", String(params.limit ?? 100));
     return request<MemberListResponse>(`/members?${q.toString()}`);
