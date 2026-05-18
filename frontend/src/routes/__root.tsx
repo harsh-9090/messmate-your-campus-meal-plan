@@ -117,7 +117,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "manifest",
-        href: "/manifest.webmanifest",
+        href: "/site.webmanifest",
       },
       {
         rel: "icon",
@@ -130,7 +130,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "apple-touch-icon",
-        href: "/icons/icon-192x192.png",
+        href: "/apple-touch-icon.png",
+      },
+      {
+        rel: "apple-touch-icon",
+        sizes: "180x180",
+        href: "/apple-touch-icon.png",
+      },
+      {
+        rel: "apple-touch-icon-precomposed",
+        href: "/apple-touch-icon-precomposed.png",
       },
     ],
   }),
@@ -155,6 +164,16 @@ function RootShell({ children }: { children: React.ReactNode }) {
                   document.documentElement.classList.add('dark');
                 }
               })();
+              
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                    console.log('ServiceWorker registration successful with scope: ', reg.scope);
+                  }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                  });
+                });
+              }
             `,
           }}
         />
