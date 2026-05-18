@@ -18,18 +18,18 @@ router.get("/stats", async (_req, res, next) => {
   try {
     const { rows } = await query(`
       WITH ist_today AS (
-        SELECT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date as today
+        SELECT CURRENT_DATE as today
       )
       SELECT 
         -- Counts
-        (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as new_members,
-        (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND (sub_renewed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today) AND sub_renewal_count > 0) as renewed_members,
+        (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND created_at::date = (SELECT today FROM ist_today)) as new_members,
+        (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND sub_renewed_at::date = (SELECT today FROM ist_today) AND sub_renewal_count > 0) as renewed_members,
         (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND sub_end_date = (SELECT today FROM ist_today)) as expired_members,
-        (SELECT COALESCE(SUM(amount), 0)::int FROM payments WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as collection,
+        (SELECT COALESCE(SUM(amount), 0)::int FROM payments WHERE created_at::date = (SELECT today FROM ist_today)) as collection,
         
         -- Details (as JSON arrays)
-        (SELECT COALESCE(json_agg(m.*), '[]') FROM members m WHERE role = 'member' AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today)) as new_list,
-        (SELECT COALESCE(json_agg(m.*), '[]') FROM members m WHERE role = 'member' AND (sub_renewed_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = (SELECT today FROM ist_today) AND sub_renewal_count > 0) as renewed_list,
+        (SELECT COALESCE(json_agg(m.*), '[]') FROM members m WHERE role = 'member' AND created_at::date = (SELECT today FROM ist_today)) as new_list,
+        (SELECT COALESCE(json_agg(m.*), '[]') FROM members m WHERE role = 'member' AND sub_renewed_at::date = (SELECT today FROM ist_today) AND sub_renewal_count > 0) as renewed_list,
         (SELECT COALESCE(json_agg(m.*), '[]') FROM members m WHERE role = 'member' AND sub_end_date = (SELECT today FROM ist_today)) as expired_list
     `);
     
@@ -257,13 +257,13 @@ router.get("/finance", requireRole("admin"), async (req, res, next) => {
 
     if (period === "day" && date) {
       params.push(date);
-      where = `WHERE (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata')::date = $${params.length}`;
+      where = `WHERE created_at::date = $${params.length}`;
     } else if (period === "month" && date) {
       params.push(date + "%"); // date: 2024-05
-      where = `WHERE TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM') LIKE $${params.length}`;
+      where = `WHERE TO_CHAR(created_at, 'YYYY-MM') LIKE $${params.length}`;
     } else if (period === "year" && date) {
       params.push(date + "%"); // date: 2024
-      where = `WHERE TO_CHAR(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata', 'YYYY') LIKE $${params.length}`;
+      where = `WHERE TO_CHAR(created_at, 'YYYY') LIKE $${params.length}`;
     }
 
     const { rows: summary } = await query(`
@@ -277,7 +277,7 @@ router.get("/finance", requireRole("admin"), async (req, res, next) => {
 
     const { rows: monthly } = await query(`
       SELECT 
-        TO_CHAR(date_trunc('month', created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Kolkata'), 'Mon YYYY') as month,
+        TO_CHAR(date_trunc('month', created_at), 'Mon YYYY') as month,
         SUM(amount)::int as revenue
       FROM payments
       ${where}
