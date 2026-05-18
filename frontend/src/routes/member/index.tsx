@@ -25,6 +25,7 @@ import {
   formatINR,
   formatTimestamp,
   isWithinWindow,
+  formatTime12h,
 } from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
 import type { Meal } from "@/lib/messmate/types";
@@ -271,7 +272,9 @@ function MemberPortal() {
                   const m = menus.find((x) => x.meal === mealType);
                   const isActive = activeMeal === mealType;
                   const w = windows.find((x) => x.meal === mealType);
-                  const timeStr = w ? `(${w.startTime} - ${w.endTime})` : "";
+                  const timeStr = w
+                    ? `(${formatTime12h(w.startTime)} - ${formatTime12h(w.endTime)})`
+                    : "";
 
                   return (
                     <div

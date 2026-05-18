@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import React, { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { menusApi } from "@/lib/messmate/api";
+import { menusApi, configApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { todayISO, formatDate, addDaysISO } from "@/lib/messmate/dateHelpers";
+import { todayISO, formatDate, addDaysISO, formatTime12h } from "@/lib/messmate/dateHelpers";
 import { cn } from "@/lib/utils";
 import type { Meal, Menu } from "@/lib/messmate/types";
 
@@ -63,6 +63,9 @@ function MenuPlannerPage() {
     queryKey: ["menus", "range", { startDate, endDate }],
     queryFn: () => menusApi.list({ startDate, endDate }),
   });
+
+  const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
+  const windows = windowsQ.data ?? [];
 
   const menusMap = useMemo(() => {
     const map = new Map<string, Menu[]>();
@@ -321,11 +324,12 @@ function MenuPlannerPage() {
                   <div>
                     <h3 className="font-display font-bold leading-tight">{meal}</h3>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                      {meal === "Breakfast"
-                        ? "7:00 AM - 11:00 AM"
-                        : meal === "Lunch"
-                          ? "11:00 AM - 4:00 PM"
-                          : "4:00 PM - 11:00 PM"}
+                      {(() => {
+                        const w = windows.find((x) => x.meal === meal);
+                        return w
+                          ? `${formatTime12h(w.startTime)} - ${formatTime12h(w.endTime)}`
+                          : "";
+                      })()}
                     </p>
                   </div>
                 </div>
