@@ -70,14 +70,15 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
   }
 
   const now = getISTDate();
-  const start = sub.startDate ? new Date(sub.startDate) : null;
-  const end = sub.endDate ? new Date(sub.endDate) : null;
-  if (!start || !end || now < start) {
+  const startDay = sub.startDate ? format(new Date(sub.startDate), "yyyy-MM-dd") : null;
+  const endDay = sub.endDate ? format(new Date(sub.endDate), "yyyy-MM-dd") : null;
+
+  if (!startDay || !endDay || date < startDay) {
     await logScan({ ...base, status: "denied", code: "EXPIRED", reason: "Plan not yet active" });
     return { status: "denied", code: "EXPIRED", reason: "Plan not yet active", member: memberInfo, meal };
   }
-  if (now > end) {
-    const daysAgo = differenceInCalendarDays(now, end);
+  if (date > endDay) {
+    const daysAgo = differenceInCalendarDays(getISTDate(), new Date(sub.endDate));
     const reason = `Plan expired ${daysAgo} day${daysAgo === 1 ? "" : "s"} ago`;
     await logScan({ ...base, status: "denied", code: "EXPIRED", reason });
     return { status: "denied", code: "EXPIRED", reason, member: memberInfo, meal };
