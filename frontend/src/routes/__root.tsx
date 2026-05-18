@@ -179,6 +179,69 @@ function RootShell({ children }: { children: React.ReactNode }) {
         />
       </head>
       <body>
+        <div
+          id="pwa-splash"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "#0f172a",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 99999,
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            userSelect: "none",
+            pointerEvents: "none",
+            transition: "opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "24px",
+            }}
+          >
+            <div style={{ position: "relative" }}>
+              <img
+                src="/apple-touch-icon.png"
+                alt="Mom's Kitchen Crest"
+                style={{
+                  height: "112px",
+                  width: "112px",
+                  borderRadius: "9999px",
+                  objectFit: "cover",
+                  border: "2px solid rgba(234, 179, 8, 0.4)",
+                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.55)",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <h1
+                style={{
+                  color: "rgba(234, 179, 8, 0.9)",
+                  fontWeight: 600,
+                  letterSpacing: "0.1em",
+                  fontSize: "14px",
+                  textTransform: "uppercase",
+                  margin: 0,
+                }}
+              >
+                Mom's Kitchen
+              </h1>
+            </div>
+          </div>
+        </div>
         {children}
         <Scripts />
       </body>
@@ -188,6 +251,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  React.useEffect(() => {
+    // Clean up splash screen once client app hydrates
+    const splash = document.getElementById("pwa-splash");
+    if (splash) {
+      splash.style.opacity = "0";
+      setTimeout(() => {
+        splash.remove();
+      }, 400);
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
