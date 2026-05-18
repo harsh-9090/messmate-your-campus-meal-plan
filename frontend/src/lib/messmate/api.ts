@@ -216,9 +216,12 @@ export const reportsApi = {
     days: { date: string; meals: number }[];
     estimatedMonthlyRevenue: number;
   }>("/reports/weekly"),
-  monthly: (month?: string) => request<{ month: string; totalMeals: number; days: number }>(
-    `/reports/monthly${month ? `?month=${month}` : ""}`
-  ),
+  monthly: (month?: string) => request<{ 
+    month: string; totalMeals: number; days: number; meals: Record<Meal, number> 
+  }>(`/reports/monthly${month ? `?month=${month}` : ""}`),
+  yearly: (year?: string) => request<{ 
+    year: string; totalMeals: number; days: number; meals: Record<Meal, number> 
+  }>(`/reports/yearly${year ? `?year=${year}` : ""}`),
   expiring: (days = 7) => request<Member[]>(`/reports/expiring?days=${days}`),
   exportDailyCsv: async (date?: string) => {
     const tok = getToken();

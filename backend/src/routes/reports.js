@@ -127,11 +127,49 @@ router.get("/monthly", async (req, res, next) => {
     if (cached) return res.json(cached);
 
     const { rows } = await query(
-      `SELECT COUNT(*)::int AS days, COALESCE(SUM(used_count),0)::int AS total
-         FROM meal_usage WHERE to_char(date, 'YYYY-MM') = $1`,
+      `SELECT 
+         COUNT(DISTINCT date)::int AS days,
+         COALESCE(SUM(CASE WHEN used_breakfast THEN 1 ELSE 0 END),0)::int AS b,
+         COALESCE(SUM(CASE WHEN used_lunch     THEN 1 ELSE 0 END),0)::int AS l,
+         COALESCE(SUM(CASE WHEN used_dinner    THEN 1 ELSE 0 END),0)::int AS d
+       FROM meal_usage WHERE to_char(date, 'YYYY-MM') = $1`,
       [month]
     );
-    const result = { month, totalMeals: rows[0].total, days: rows[0].days };
+    const u = rows[0];
+    const result = {
+      month,
+      days: u.days,
+      meals: { Breakfast: u.b, Lunch: u.l, Dinner: u.d },
+      totalMeals: u.b + u.l + u.d
+    };
+    await setCache(cacheKey, result, 86400); // 24 hours
+    res.json(result);
+  } catch (e) { next(e); }
+});
+
+router.get("/yearly", async (req, res, next) => {
+  try {
+    const year = req.query.year || format(getISTDate(), "yyyy");
+    const cacheKey = `messmate:report:yearly:${year}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
+    const { rows } = await query(
+      `SELECT 
+         COUNT(DISTINCT date)::int AS days,
+         COALESCE(SUM(CASE WHEN used_breakfast THEN 1 ELSE 0 END),0)::int AS b,
+         COALESCE(SUM(CASE WHEN used_lunch     THEN 1 ELSE 0 END),0)::int AS l,
+         COALESCE(SUM(CASE WHEN used_dinner    THEN 1 ELSE 0 END),0)::int AS d
+       FROM meal_usage WHERE to_char(date, 'YYYY') = $1`,
+      [year]
+    );
+    const u = rows[0];
+    const result = {
+      year,
+      days: u.days,
+      meals: { Breakfast: u.b, Lunch: u.l, Dinner: u.d },
+      totalMeals: u.b + u.l + u.d
+    };
     await setCache(cacheKey, result, 86400); // 24 hours
     res.json(result);
   } catch (e) { next(e); }
