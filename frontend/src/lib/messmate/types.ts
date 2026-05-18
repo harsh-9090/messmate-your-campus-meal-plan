@@ -94,3 +94,13 @@ export interface Payment {
   type: "initial" | "renewal" | "topup";
   createdAt: string;
 }
+
+export interface Menu {
+  id: number;
+  date: string; // YYYY-MM-DD
+  meal: Meal;
+  items: string[];
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}

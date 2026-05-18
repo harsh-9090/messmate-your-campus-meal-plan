@@ -110,3 +110,17 @@ ALTER TABLE scan_logs ADD CONSTRAINT scan_logs_member_id_fkey FOREIGN KEY (membe
 -- Migrations for forgot/reset password
 ALTER TABLE members ADD COLUMN IF NOT EXISTS reset_password_token TEXT;
 ALTER TABLE members ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMPTZ;
+
+-- Menus table
+CREATE TABLE IF NOT EXISTS menus (
+  id          SERIAL PRIMARY KEY,
+  date        DATE NOT NULL,
+  meal        TEXT NOT NULL CHECK (meal IN ('Breakfast','Lunch','Dinner')),
+  items       TEXT[] NOT NULL,
+  notes       TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (date, meal)
+);
+
+CREATE INDEX IF NOT EXISTS menus_date_idx ON menus(date);

@@ -11,6 +11,7 @@ import type {
   ScanLog,
   MealUsageDay,
   Payment,
+  Menu,
 } from "./types";
 
 const BASE_URL =
@@ -344,4 +345,17 @@ export const staffApi = {
   update: (id: string, data: Partial<Member> & { password?: string }) =>
     request<Member>(`/staff/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   remove: (id: string) => request<{ ok: boolean }>(`/staff/${id}`, { method: "DELETE" }),
+};
+
+export const menusApi = {
+  list: (params: { date?: string; startDate?: string; endDate?: string } = {}) => {
+    const q = new URLSearchParams();
+    if (params.date) q.set("date", params.date);
+    if (params.startDate) q.set("startDate", params.startDate);
+    if (params.endDate) q.set("endDate", params.endDate);
+    return request<Menu[]>(`/menus?${q.toString()}`);
+  },
+  save: (data: { date: string; meal: string; items: string[]; notes?: string }) =>
+    request<Menu>("/menus", { method: "POST", body: JSON.stringify(data) }),
+  remove: (id: number) => request<{ ok: boolean }>(`/menus/${id}`, { method: "DELETE" }),
 };

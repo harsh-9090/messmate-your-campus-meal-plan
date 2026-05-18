@@ -21,6 +21,7 @@ import { ThemeToggle } from "./ThemeToggle";
 
 const items = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+  { to: "/admin/menu", label: "Menu Planner", icon: UtensilsCrossed },
   { to: "/admin/members", label: "Members", icon: Users },
   { to: "/admin/payments", label: "Payments", icon: IndianRupee },
   { to: "/admin/finance", label: "Finance", icon: TrendingUp },

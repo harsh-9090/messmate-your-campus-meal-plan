@@ -14,6 +14,7 @@ import configRoutes from "./routes/config.js";
 import paymentRoutes from "./routes/payments.js";
 import staffRoutes from "./routes/staff.js";
 import cronRoutes from "./routes/cron.js";
+import menuRoutes from "./routes/menus.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 export const app = express();
@@ -37,6 +38,7 @@ v1.use("/config", configRoutes);
 v1.use("/payments", paymentRoutes);
 v1.use("/staff", staffRoutes);
 v1.use("/cron", cronRoutes);
+v1.use("/menus", menuRoutes);
 app.use("/api/v1", v1);
 
 app.use(errorHandler);

@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/messmate/auth";
-import { membersApi, scanApi, configApi } from "@/lib/messmate/api";
+import { membersApi, scanApi, configApi, menusApi } from "@/lib/messmate/api";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +109,14 @@ function MemberPortal() {
   myLogs.forEach((l) => {
     if (l.date === todayStr && l.status === "allowed") todaysUsed[l.meal] = true;
   });
+
+  // Fetch today's menu
+  const menusQ = useQuery({
+    queryKey: ["menus", "day", todayStr],
+    queryFn: () => menusApi.list({ date: todayStr }),
+  });
+  const menus = menusQ.data ?? [];
+  const activeMeal = windows.find((w) => isWithinWindow(new Date(), w))?.meal;
 
   const stateOf = (meal: Meal) => {
     if (!sub.meals.includes(meal)) return "not-in-plan" as const;
@@ -231,6 +240,91 @@ function MemberPortal() {
                   )}
                   <QRCanvas meals={sub.meals} />
                 </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Today's Menu */}
+          <Card className="p-4 sm:p-5 shadow-sm border-border bg-card">
+            <div className="mb-3 flex items-center justify-between">
+              <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
+                <span>🍽️</span> Today's Menu
+              </div>
+              <Badge
+                variant="secondary"
+                className="text-[10px] font-semibold tracking-wide bg-primary/10 text-primary"
+              >
+                Fresh & Hygienic
+              </Badge>
+            </div>
+            <div className="space-y-3">
+              {menusQ.isLoading ? (
+                <div className="py-6 text-center text-xs text-muted-foreground">
+                  Loading today's menu…
+                </div>
+              ) : menus.length === 0 ? (
+                <div className="py-6 text-center text-xs text-muted-foreground italic">
+                  No menu items configured for today yet.
+                </div>
+              ) : (
+                (["Breakfast", "Lunch", "Dinner"] as Meal[]).map((mealType) => {
+                  const m = menus.find((x) => x.meal === mealType);
+                  const isActive = activeMeal === mealType;
+                  const w = windows.find((x) => x.meal === mealType);
+                  const timeStr = w ? `(${w.startTime} - ${w.endTime})` : "";
+
+                  return (
+                    <div
+                      key={mealType}
+                      className={cn(
+                        "rounded-xl p-3 border transition-all duration-200",
+                        isActive
+                          ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary/20"
+                          : "bg-muted/10 border-muted/40 opacity-75",
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">
+                            {mealType === "Breakfast" ? "🍳" : mealType === "Lunch" ? "🍛" : "🍲"}
+                          </span>
+                          <span className="font-bold text-sm">{mealType}</span>
+                          <span className="text-[10px] text-muted-foreground font-normal">
+                            {timeStr}
+                          </span>
+                        </div>
+                        {isActive && (
+                          <Badge className="bg-primary hover:bg-primary text-[9px] font-extrabold tracking-wider px-2 py-0.5 animate-pulse">
+                            ACTIVE MEAL
+                          </Badge>
+                        )}
+                      </div>
+                      {m && m.items.length > 0 ? (
+                        <div className="space-y-1.5">
+                          <div className="flex flex-wrap gap-1">
+                            {m.items.map((item) => (
+                              <span
+                                key={item}
+                                className="bg-background/80 dark:bg-background/40 border border-border text-foreground px-2 py-0.5 rounded-full text-[11px] font-medium shadow-xs"
+                              >
+                                {item}
+                              </span>
+                            ))}
+                          </div>
+                          {m.notes && (
+                            <p className="text-[11px] text-primary dark:text-primary-foreground font-semibold italic mt-1 pl-1 border-l-2 border-primary/40">
+                              💡 {m.notes}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground/60 italic pl-1">
+                          No items added yet.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           </Card>
