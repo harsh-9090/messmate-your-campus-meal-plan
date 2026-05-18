@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScanResultScreen } from "@/components/messmate/ScanResult";
 import { MEALS, MEAL_ICONS } from "@/lib/messmate/constants";
-import { getActiveMeal, formatTime12h, formatTimestamp } from "@/lib/messmate/dateHelpers";
+import { getActiveMeal, formatTime12h, formatTimestamp, todayISO } from "@/lib/messmate/dateHelpers";
 import type { Meal, ScanResult } from "@/lib/messmate/types";
 import {
   Camera, CameraOff, LogOut, UtensilsCrossed, Send, ScanLine,
@@ -52,7 +52,7 @@ function ScannerPage() {
 
   const logsQ = useQuery({
     queryKey: ["scanner-logs", authUser?.id],
-    queryFn: () => scanApi.logs({ limit: 12 }),
+    queryFn: () => scanApi.logs({ date: todayISO(), limit: 12 }),
     refetchInterval: 5_000,
   });
 
