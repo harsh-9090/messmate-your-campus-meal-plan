@@ -108,7 +108,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // iOS PWA Capability
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "MessMate" },
+      { name: "apple-mobile-web-app-title", content: "Mom's Kitchen" },
     ],
     links: [
       {
@@ -130,16 +130,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "apple-touch-icon",
-        href: "/apple-touch-icon.png",
-      },
-      {
-        rel: "apple-touch-icon",
-        sizes: "180x180",
-        href: "/apple-touch-icon.png",
-      },
-      {
-        rel: "apple-touch-icon-precomposed",
-        href: "/apple-touch-icon-precomposed.png",
+        href: "/icons/icon-192x192.png",
       },
     ],
   }),
