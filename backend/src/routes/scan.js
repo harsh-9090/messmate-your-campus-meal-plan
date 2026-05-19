@@ -4,13 +4,60 @@ import { format } from "date-fns";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { scanLimiter } from "../middleware/rateLimiter.js";
 import { verifyQRToken } from "../services/qrService.js";
-import { query, rowToMember } from "../db/index.js";
+import { query, rowToMember, stripPassword } from "../db/index.js";
 import { validateAndRecord } from "../services/scanValidator.js";
 
 import { getCache, setCache } from "../db/redis.js";
 
 const router = Router();
 router.use(verifyToken);
+
+// GET /scan/lookup - staff/admin only
+router.get("/lookup", requireRole("staff", "admin"), async (req, res, next) => {
+  try {
+    const { query: searchVal } = req.query;
+    if (!searchVal) return res.status(400).json({ error: "Search query is required" });
+
+    // Search by member_id (exact match) or mobile (exact match)
+    const { rows } = await query(
+      `SELECT * FROM members 
+       WHERE role = 'member' AND is_active = TRUE AND (member_id = $1 OR mobile = $1)`,
+      [searchVal.trim()]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "No active member found with this ID or contact number" });
+    
+    const member = rowToMember(rows[0]);
+    res.json(stripPassword(member));
+  } catch (e) { next(e); }
+});
+
+// POST /scan/manual - staff/admin only
+router.post("/manual", requireRole("staff", "admin"),
+  body("memberId").isString().notEmpty(),
+  body("meal").isIn(["Breakfast", "Lunch", "Dinner"]),
+  async (req, res, next) => {
+    try {
+      const errs = validationResult(req);
+      if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
+
+      const { memberId, meal } = req.body;
+      const { rows } = await query(
+        `SELECT * FROM members WHERE member_id = $1 AND is_active = TRUE`,
+        [memberId]
+      );
+      if (!rows[0]) return res.status(404).json({ error: "Active member not found" });
+
+      const member = rowToMember(rows[0]);
+      
+      const result = await validateAndRecord({
+        member,
+        meal,
+        scannedBy: req.user.sub,
+        deviceInfo: `${req.headers["user-agent"] || ""} (Manual Check-in)`,
+      });
+      res.json(result);
+    } catch (e) { next(e); }
+  });
 
 // POST /scan/validate  - staff/admin only
 router.post("/validate",

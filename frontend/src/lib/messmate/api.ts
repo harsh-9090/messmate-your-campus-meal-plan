@@ -257,6 +257,13 @@ export const scanApi = {
       method: "POST",
       body: JSON.stringify({ qrToken, meal }),
     }),
+  lookup: (query: string) =>
+    request<Member>(`/scan/lookup?query=${encodeURIComponent(query)}`),
+  manualValidate: (memberId: string, meal: Meal) =>
+    request<ScanResult>("/scan/manual", {
+      method: "POST",
+      body: JSON.stringify({ memberId, meal }),
+    }),
   logs: (
     params: {
       date?: string;

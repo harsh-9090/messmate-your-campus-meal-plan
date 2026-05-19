@@ -14,7 +14,7 @@ import {
   formatTimestamp,
   todayISO,
 } from "@/lib/messmate/dateHelpers";
-import type { Meal, ScanResult } from "@/lib/messmate/types";
+import type { Meal, ScanResult, Member } from "@/lib/messmate/types";
 import {
   Camera,
   CameraOff,
@@ -27,6 +27,7 @@ import {
   AlertTriangle,
   History,
   Settings2,
+  Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -70,6 +71,10 @@ function ScannerPage() {
   const [camError, setCamError] = useState<string | null>(null);
   const lastTokenRef = useRef<string | null>(null);
 
+  const [searchVal, setSearchVal] = useState("");
+  const [lookupMember, setLookupMember] = useState<Member | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
   const logsQ = useQuery({
     queryKey: ["scanner-logs", authUser?.id],
     queryFn: () => scanApi.logs({ date: todayISO(), limit: 12 }),
@@ -83,6 +88,33 @@ function ScannerPage() {
       qc.invalidateQueries({ queryKey: ["scanner-logs"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Scan failed"),
+  });
+
+  const handleLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchVal.trim()) return;
+    setIsSearching(true);
+    setLookupMember(null);
+    try {
+      const data = await scanApi.lookup(searchVal);
+      setLookupMember(data);
+      toast.success("Member found!");
+    } catch (err: any) {
+      toast.error(err.message || "No active member found with this ID or contact number");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const manualScanM = useMutation({
+    mutationFn: (memberId: string) => scanApi.manualValidate(memberId, meal),
+    onSuccess: (r) => {
+      setResult(r);
+      setLookupMember(null);
+      setSearchVal("");
+      qc.invalidateQueries({ queryKey: ["scanner-logs"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Manual check-in failed"),
   });
 
   const handleDetect = useCallback(
@@ -285,6 +317,82 @@ function ScannerPage() {
             <div className="px-4 py-2 text-center text-[11px] text-muted-foreground border-t">
               Hold the QR steady inside the box · auto-detects in ~1s
             </div>
+          </Card>
+
+          {/* Manual Member Lookup & Check-in */}
+          <Card className="p-4 shadow-sm border">
+            <div className="flex items-center gap-2 border-b pb-2 mb-3">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <div className="font-display text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Manual Member Lookup
+              </div>
+            </div>
+            
+            <form onSubmit={handleLookup} className="flex gap-2">
+              <Input
+                placeholder="Enter Student ID (e.g. MK001) or Mobile..."
+                value={searchVal}
+                onChange={(e) => setSearchVal(e.target.value)}
+                disabled={isSearching || manualScanM.isPending}
+                className="flex-1 text-xs"
+              />
+              <Button type="submit" disabled={isSearching || manualScanM.isPending || !searchVal.trim()} size="sm" className="cursor-pointer">
+                {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Lookup"}
+              </Button>
+            </form>
+
+            {lookupMember && (
+              <div className="mt-4 p-4 border rounded-xl bg-muted/20 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200 text-xs">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm">{lookupMember.name}</h4>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      ID: {lookupMember.memberId} {lookupMember.mobile && `· 📞 ${lookupMember.mobile}`}
+                    </p>
+                  </div>
+                  <Badge variant={lookupMember.isActive ? "default" : "destructive"} className={cn("text-[9px] font-bold", lookupMember.isActive ? "bg-success text-success-foreground" : "")}>
+                    {lookupMember.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+
+                <div className="border-t border-b py-2 space-y-1 text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Current Plan:</span>
+                    <span className="font-semibold">{lookupMember.subscription?.planLabel || "No Plan"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Status:</span>
+                    <span className={cn("font-bold", lookupMember.subscription?.isPaid ? "text-success" : "text-destructive")}>
+                      {lookupMember.subscription?.isPaid ? "Paid" : `Payment Due (Grace Period / Outstanding ₹${lookupMember.subscription?.dueAmount})`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Covered Meals:</span>
+                    <span className="font-semibold">{(lookupMember.subscription?.meals || []).join(", ") || "None"}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div>
+                    Selected Slot: <strong className="text-primary font-bold">{meal}</strong>
+                  </div>
+                  <Button
+                    size="sm"
+                    disabled={manualScanM.isPending}
+                    onClick={() => manualScanM.mutate(lookupMember.memberId)}
+                    className="cursor-pointer text-[10px]"
+                  >
+                    {manualScanM.isPending ? (
+                      <>
+                        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> Checking…
+                      </>
+                    ) : (
+                      "Approve Check-in"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </Card>
         </div>
 
