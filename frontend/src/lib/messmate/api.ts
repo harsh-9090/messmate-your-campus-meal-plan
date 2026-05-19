@@ -108,11 +108,20 @@ export const authApi = {
   login: (memberId: string, password: string) =>
     request<{
       accessToken: string;
-      user: { id: string; name: string; role: "admin" | "staff" | "member" };
+      user: { id: string; name: string; role: "admin" | "staff" | "member"; emailVerified?: boolean };
     }>("/auth/login", {
       method: "POST",
       auth: false,
       body: JSON.stringify({ memberId, password }),
+    }),
+  verifyEmail: (otp: string) =>
+    request<{ ok: true; message: string }>("/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ otp }),
+    }),
+  resendVerification: () =>
+    request<{ ok: true; message: string }>("/auth/resend-verification", {
+      method: "POST",
     }),
   me: () => request<Member>("/auth/me"),
   logout: () => request<{ ok: true }>("/auth/logout", { method: "POST", auth: false }),

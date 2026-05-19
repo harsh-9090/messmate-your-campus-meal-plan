@@ -45,6 +45,7 @@ export function rowToMember(r) {
     sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
     sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewed_at, sub_renewal_count,
     password_hash, created_at, updated_at,
+    email_verified,
   } = r;
   return {
     memberId: member_id,
@@ -52,6 +53,7 @@ export function rowToMember(r) {
     photoUrl: photo_url,
     role,
     isActive: is_active,
+    emailVerified: email_verified,
     passwordHash: password_hash, // callers strip when needed
     subscription: {
       planId: sub_plan_id,

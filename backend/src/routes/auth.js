@@ -6,10 +6,10 @@ import { query, rowToMember, stripPassword } from "../db/index.js";
 import { nextMemberId } from "../services/memberIdService.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import { delByPattern, blacklistToken, isTokenBlacklisted } from "../db/redis.js";
+import { delByPattern, blacklistToken, isTokenBlacklisted, getCache, setCache, delCache } from "../db/redis.js";
 import { addDays, format } from "date-fns";
 import crypto from "node:crypto";
-import { sendPasswordResetEmail, sendRegistrationReceivedEmail } from "../services/notificationService.js";
+import { sendPasswordResetEmail, sendRegistrationReceivedEmail, sendVerificationOTPEmail } from "../services/notificationService.js";
 
 const fmtDate = (d) => format(d, "yyyy-MM-dd");
 
@@ -58,7 +58,7 @@ router.post("/login",
         httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
-      res.json({ accessToken: signAccess(m), user: { id: m.memberId, name: m.name, role: m.role } });
+      res.json({ accessToken: signAccess(m), user: { id: m.memberId, name: m.name, role: m.role, emailVerified: m.emailVerified } });
     } catch (e) { next(e); }
   });
 
@@ -246,5 +246,68 @@ router.post("/reset-password",
     } catch (e) { next(e); }
   }
 );
+
+router.post("/verify-email", verifyToken,
+  body("otp").isString().trim().isLength({ min: 6, max: 6 }),
+  async (req, res, next) => {
+    try {
+      const errs = validationResult(req);
+      if (!errs.isEmpty()) return res.status(400).json({ error: "Verification code must be 6 digits" });
+
+      const { otp } = req.body;
+      const memberId = req.user.sub;
+
+      const m = await findUser(memberId, { activeOnly: false });
+      if (!m) return res.status(404).json({ error: "User not found" });
+
+      if (m.emailVerified) {
+        return res.status(400).json({ error: "Email already verified" });
+      }
+
+      const cachedOtp = await getCache(`messmate:member:${memberId}:email-otp`);
+      if (!cachedOtp || cachedOtp !== otp) {
+        return res.status(400).json({ error: "Invalid or expired verification code" });
+      }
+
+      // Update email_verified to true in Postgres
+      await query(
+        `UPDATE members SET email_verified = TRUE, updated_at = NOW() WHERE member_id = $1`,
+        [memberId]
+      );
+
+      // Delete OTP from Redis
+      await delCache(`messmate:member:${memberId}:email-otp`);
+      // Delete user details cache
+      await delCache([`messmate:member:${memberId}`, `messmate:member:${memberId}:subscription`]);
+      await delByPattern("member:list");
+
+      res.json({ ok: true, message: "Email verified successfully!" });
+    } catch (e) { next(e); }
+  }
+);
+
+router.post("/resend-verification", verifyToken, async (req, res, next) => {
+  try {
+    const memberId = req.user.sub;
+
+    const m = await findUser(memberId, { activeOnly: false });
+    if (!m) return res.status(404).json({ error: "User not found" });
+
+    if (m.emailVerified) {
+      return res.status(400).json({ error: "Email already verified" });
+    }
+
+    // Generate new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await setCache(`messmate:member:${memberId}:email-otp`, otp, 120); // 2 minutes
+
+    // Send email
+    sendVerificationOTPEmail({ memberId: m.memberId, name: m.name, email: m.email }, otp).catch((err) => {
+      console.error("[NOTIFY-ERROR] Failed to send verification email background:", err.message);
+    });
+
+    res.json({ ok: true, message: "Verification code resent successfully!" });
+  } catch (e) { next(e); }
+});
 
 export default router;

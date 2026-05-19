@@ -253,3 +253,42 @@ export async function sendPlanActivatedEmail(member, planDetails) {
     console.error(`[NOTIFY-ERROR] Failed to send plan activation email to ${member.email}:`, err.message);
   }
 }
+
+export async function sendVerificationOTPEmail(member, otp) {
+  console.log(`[NOTIFY] Preparing verification OTP email for ${member.memberId} (${member.email})`);
+
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+      <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px;">
+        <h2 style="color: #0f766e; margin: 0; font-size: 24px;">Verify Your Email Address ✉️</h2>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 5px;">Mom's Kitchen Portal Verification</p>
+      </div>
+      <p>Hello <strong>${member.name}</strong>,</p>
+      <p>Your account (ID: <strong>${member.memberId}</strong>) has been approved by the mess administrator.</p>
+      <p>Please use the following 6-digit verification code to activate your account and start using your meal plan:</p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <div style="background-color: #f1f5f9; color: #0f766e; font-size: 32px; font-weight: bold; letter-spacing: 6px; padding: 15px 30px; border-radius: 8px; display: inline-block; border: 1px dashed #0f766e;">
+          ${otp}
+        </div>
+      </div>
+      
+      <p style="font-size: 13px; color: #6b7280; text-align: center;">This code is valid for <strong>2 minutes</strong>. If you did not register for Mom's Kitchen, you can safely ignore this email.</p>
+      
+      <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 25px 0;" />
+      <p style="font-size: 12px; color: #6b7280; text-align: center; margin: 0;">Mom's Kitchen Administration</p>
+    </div>
+  `;
+
+  try {
+    await sendEmail({
+      to: member.email,
+      subject: `Your Mom's Kitchen Verification Code: ${otp}`,
+      html,
+    });
+    console.log(`[NOTIFY] Verification OTP email sent to ${member.email}`);
+  } catch (err) {
+    console.error(`[NOTIFY-ERROR] Failed to send verification OTP email to ${member.email}:`, err.message);
+  }
+}
+

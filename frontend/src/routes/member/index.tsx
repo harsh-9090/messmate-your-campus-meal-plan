@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/messmate/auth";
-import { membersApi, scanApi, configApi, menusApi } from "@/lib/messmate/api";
+import { membersApi, scanApi, configApi, menusApi, authApi } from "@/lib/messmate/api";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { QRCanvas } from "@/components/messmate/QRCanvas";
 import { SubscriptionBar } from "@/components/messmate/SubscriptionBar";
 import { MealChip } from "@/components/messmate/MealChip";
 import { PlanBadge } from "@/components/messmate/PlanBadge";
+import { toast } from "sonner";
 import {
   Lock,
   AlertTriangle,
@@ -19,6 +20,9 @@ import {
   UtensilsCrossed,
   CreditCard,
   QrCode,
+  Mail,
+  ArrowRight,
+  Loader2,
 } from "lucide-react";
 import {
   daysRemaining,
@@ -110,6 +114,11 @@ function MemberPortal() {
   }
 
   const me = meQ.data;
+
+  if (!me.emailVerified) {
+    return <EmailVerificationPanel member={me} onVerified={() => meQ.refetch()} />;
+  }
+
   const sub = me.subscription;
 
   // Calculate grace period: 3 days from start
@@ -468,3 +477,120 @@ function MemberPortal() {
     </div>
   );
 }
+
+function EmailVerificationPanel({ member, onVerified }: { member: any; onVerified: () => void }) {
+  const [otp, setOtp] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const logout = useAuth((s) => s.logout);
+  const navigate = useNavigate();
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit verification code.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await authApi.verifyEmail(otp);
+      toast.success("Email verified successfully! Welcome to Mom's Kitchen.");
+      onVerified();
+    } catch (err: any) {
+      toast.error(err?.message || "Invalid or expired verification code.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      await authApi.resendVerification();
+      toast.success("Verification code resent to your email!");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to resend verification code.");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md bg-card border rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+        
+        {/* Heritage Forest Green Top Bar decoration */}
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-primary" />
+
+        <div className="flex flex-col items-center text-center">
+          <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-6 text-primary animate-pulse">
+            <Mail className="h-8 w-8" />
+          </div>
+          
+          <h2 className="text-2xl font-bold tracking-tight text-foreground mb-2">
+            Verify Your Email
+          </h2>
+          
+          <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+            We have sent a 6-digit verification code to <span className="font-semibold text-foreground">{member.email}</span>. Please enter it below to activate your meal plan.
+          </p>
+
+          <form onSubmit={handleVerify} className="w-full space-y-5">
+            <div className="space-y-2 text-left">
+              <label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                Verification Code
+              </label>
+              <input
+                type="text"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                placeholder="Enter 6-digit code"
+                className="w-full text-center tracking-[0.5em] text-2xl font-bold rounded-xl border border-input bg-background px-3 py-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:tracking-normal placeholder:text-sm placeholder:font-normal"
+                disabled={submitting}
+              />
+              <div className="text-[11px] text-muted-foreground text-center">
+                OTP is valid for <span className="font-semibold text-foreground">2 minutes</span>.
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full h-12 rounded-xl text-base font-semibold" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...
+                </>
+              ) : (
+                <>
+                  Verify Code <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-between w-full gap-4 pt-4 border-t text-sm">
+            <button
+              onClick={handleResend}
+              disabled={resending || submitting}
+              className="text-primary hover:underline font-medium focus:outline-none disabled:opacity-50"
+            >
+              {resending ? "Sending code..." : "Resend code"}
+            </button>
+            
+            <button
+              onClick={async () => {
+                await logout();
+                navigate({ to: "/login" });
+              }}
+              className="text-destructive hover:underline font-medium flex items-center gap-1 focus:outline-none"
+            >
+              <LogOut className="h-4 w-4" /> Sign out
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+

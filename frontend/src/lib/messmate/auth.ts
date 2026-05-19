@@ -7,6 +7,7 @@ interface AuthUser {
   id: string;
   name: string;
   role: "admin" | "staff" | "member";
+  emailVerified?: boolean;
 }
 
 interface AuthState {

@@ -6,7 +6,7 @@ import { query, rowToMember, stripPassword } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { getCache, setCache, delCache, delByPattern } from "../db/redis.js";
 import { nextMemberId } from "../services/memberIdService.js";
-import { sendPlanActivatedEmail } from "../services/notificationService.js";
+import { sendPlanActivatedEmail, sendVerificationOTPEmail } from "../services/notificationService.js";
 import { calculateAbsenceCredits } from "../services/absenceService.js";
 
 const router = Router();
@@ -319,6 +319,15 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
 
     // Dispatch plan activation email asynchronously
     const updatedMember = rows[0];
+    if (updatedMember.email_verified === false) {
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 120);
+      sendVerificationOTPEmail(
+        { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
+        otp
+      ).catch(err => console.error("[NOTIFY-ERROR] Failed to send verification email background:", err.message));
+    }
+
     sendPlanActivatedEmail(
       { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
       {
@@ -366,6 +375,15 @@ router.put("/:id/payment", requireRole("admin"),
 
       // Dispatch plan activation email asynchronously
       const updatedMember = rows[0];
+      if (updatedMember.email_verified === false) {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 120);
+        sendVerificationOTPEmail(
+          { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
+          otp
+        ).catch(err => console.error("[NOTIFY-ERROR] Failed to send verification email background:", err.message));
+      }
+
       sendPlanActivatedEmail(
         { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
         {

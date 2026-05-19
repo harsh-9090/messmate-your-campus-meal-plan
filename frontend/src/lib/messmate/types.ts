@@ -41,6 +41,7 @@ export interface Member {
   photoUrl?: string;
   role: Role;
   isActive: boolean;
+  emailVerified: boolean;
   subscription: Subscription;
   createdAt: string;
 }

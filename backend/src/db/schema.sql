@@ -124,3 +124,8 @@ CREATE TABLE IF NOT EXISTS menus (
 );
 
 CREATE INDEX IF NOT EXISTS menus_date_idx ON menus(date);
+
+-- Migration for email verification status
+ALTER TABLE members ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+UPDATE members SET email_verified = TRUE WHERE is_active = TRUE OR role IN ('admin', 'staff');
+
