@@ -185,7 +185,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
           style={{
             position: "fixed",
             inset: 0,
-            background: "#0f172a",
+            background: "#0e4b3c",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -215,7 +215,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
                   width: "112px",
                   borderRadius: "9999px",
                   objectFit: "cover",
-                  border: "2px solid rgba(234, 179, 8, 0.4)",
+                  border: "2px solid rgba(242, 235, 217, 0.4)",
                   boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.55)",
                 }}
               />
@@ -230,7 +230,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
             >
               <h1
                 style={{
-                  color: "rgba(234, 179, 8, 0.9)",
+                  color: "rgba(242, 235, 217, 0.95)",
                   fontWeight: 600,
                   letterSpacing: "0.1em",
                   fontSize: "14px",

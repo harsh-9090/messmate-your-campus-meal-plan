@@ -17,35 +17,35 @@ export function PwaSplashLoader({ className, size = "fullscreen" }: PwaSplashLoa
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center bg-[#0f172a] select-none pointer-events-none",
+        "flex flex-col items-center justify-center bg-[#0e4b3c] select-none pointer-events-none",
         sizeClasses[size],
         className,
       )}
     >
       <div className="flex flex-col items-center justify-center space-y-6">
         <div className="relative">
-          {/* Subtle surrounding gold glow rings */}
-          <div className="absolute inset-0 rounded-full bg-yellow-500/10 blur-xl animate-pulse scale-110" />
-          <div className="absolute -inset-2 rounded-full border border-yellow-500/20 animate-ping opacity-75 [animation-duration:3s]" />
-          <div className="absolute -inset-4 rounded-full border border-yellow-500/10 animate-ping opacity-50 [animation-duration:4s]" />
+          {/* Subtle surrounding cream glow rings */}
+          <div className="absolute inset-0 rounded-full bg-[#f2ebd9]/10 blur-xl animate-pulse scale-110" />
+          <div className="absolute -inset-2 rounded-full border border-[#f2ebd9]/20 animate-ping opacity-75 [animation-duration:3s]" />
+          <div className="absolute -inset-4 rounded-full border border-[#f2ebd9]/10 animate-ping opacity-50 [animation-duration:4s]" />
 
-          {/* Premium centered gold circular crest */}
+          {/* Premium centered brand circular crest */}
           <img
             src="/apple-touch-icon.png"
             alt="Mom's Kitchen Crest"
-            className="relative h-32 w-32 rounded-full object-cover shadow-2xl border-2 border-yellow-500/40 animate-pulse [animation-duration:2s]"
+            className="relative h-32 w-32 rounded-full object-cover shadow-2xl border-2 border-[#f2ebd9]/40 animate-pulse [animation-duration:2s]"
           />
         </div>
 
         {/* Elegant typography & loading indicator */}
         <div className="flex flex-col items-center space-y-2">
-          <h1 className="text-yellow-500/90 font-semibold tracking-widest text-sm uppercase font-display animate-pulse [animation-duration:2.5s]">
+          <h1 className="text-[#f2ebd9]/95 font-semibold tracking-widest text-sm uppercase font-display animate-pulse [animation-duration:2.5s]">
             Mom's Kitchen
           </h1>
           <div className="flex items-center gap-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500/40 animate-bounce [animation-delay:-0.3s]" />
-            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500/60 animate-bounce [animation-delay:-0.15s]" />
-            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500/80 animate-bounce" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#f2ebd9]/40 animate-bounce [animation-delay:-0.3s]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#f2ebd9]/60 animate-bounce [animation-delay:-0.15s]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#f2ebd9]/85 animate-bounce" />
           </div>
         </div>
       </div>

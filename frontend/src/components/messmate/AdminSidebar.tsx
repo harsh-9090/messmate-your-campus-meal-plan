@@ -38,10 +38,12 @@ function SidebarContent({ onNavItemClick }: { onNavItemClick?: () => void }) {
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex items-center gap-2 px-6 py-5">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-primary text-white">
-          <UtensilsCrossed className="h-5 w-5" />
-        </div>
+      <div className="flex items-center gap-3 px-6 py-5">
+        <img
+          src="/apple-touch-icon.png"
+          alt="Mom's Kitchen Logo"
+          className="h-10 w-10 rounded-full border border-primary/20 object-cover shadow-sm bg-primary/10"
+        />
         <div>
           <div className="font-display text-lg font-bold leading-none">Mom's Kitchen</div>
           <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50">
