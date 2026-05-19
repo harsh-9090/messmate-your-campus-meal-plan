@@ -76,6 +76,59 @@ router.get("/", requireRole("admin"), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// export (admin)
+router.get("/export", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { rows } = await query(`SELECT * FROM members WHERE role = 'member' ORDER BY name ASC`);
+    
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", "attachment; filename=messmate_members.csv");
+
+    const headers = [
+      "Member ID", "Name", "Email", "Mobile", "Status", "Meal Plan",
+      "Allowed Meals", "Start Date", "End Date", "Price", "Paid Amount",
+      "Due Amount", "Payment Status"
+    ];
+    
+    const escapeCsv = (str) => `"${String(str || "").replace(/"/g, '""')}"`;
+
+    const csvLines = [headers.map(escapeCsv).join(",")];
+
+    for (const r of rows) {
+      const m = rowToMember(r);
+      const status = m.isActive ? "Active" : "Inactive";
+      const mealsStr = m.subscription.meals.join(" & ");
+      
+      const startDate = m.subscription.startDate ? format(new Date(m.subscription.startDate), "yyyy-MM-dd") : "N/A";
+      const endDate = m.subscription.endDate ? format(new Date(m.subscription.endDate), "yyyy-MM-dd") : "N/A";
+      
+      const paymentStatus = m.subscription.isPaid 
+        ? "Paid" 
+        : (m.subscription.amountPaid > 0 ? "Partially Paid" : "Unpaid");
+
+      csvLines.push([
+        m.memberId,
+        m.name,
+        m.email,
+        m.mobile || "N/A",
+        status,
+        m.subscription.planLabel || "N/A",
+        mealsStr || "N/A",
+        startDate,
+        endDate,
+        m.subscription.pricePerMonth || 0,
+        m.subscription.amountPaid || 0,
+        m.subscription.dueAmount || 0,
+        paymentStatus
+      ].map(escapeCsv).join(","));
+    }
+
+    res.send(csvLines.join("\n"));
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.get("/:id", async (req, res, next) => {
   try {
     if (req.user.role !== "admin" && req.user.sub !== req.params.id)

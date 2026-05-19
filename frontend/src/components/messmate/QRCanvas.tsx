@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import QRCode from "qrcode";
 import { qrApi } from "@/lib/messmate/api";
+import { useAuth } from "@/lib/messmate/auth";
 import { Loader2, ShieldCheck } from "lucide-react";
 
 interface Props {
@@ -22,9 +23,10 @@ const getAutoSelectedMeal = (allowedMeals: string[]): string => {
   return allowedMeals[0] || "Breakfast";
 };
 
-const getCachedQRTokens = () => {
+const getCachedQRTokens = (userId: string) => {
+  if (!userId) return null;
   try {
-    const cached = localStorage.getItem("messmate:today:qr_tokens");
+    const cached = localStorage.getItem(`messmate:today:qr_tokens:${userId}`);
     if (!cached) return null;
     const { date, data } = JSON.parse(cached);
     const todayStr = new Date().toISOString().split("T")[0];
@@ -38,6 +40,8 @@ const getCachedQRTokens = () => {
 };
 
 export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 }: Props) {
+  const authUser = useAuth((s) => s.user);
+  const userId = authUser?.id || "";
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Dynamically auto-select current active meal type
@@ -56,18 +60,20 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
   }, []);
 
   const { data, isError, isLoading } = useQuery({
-    queryKey: ["qr-token-daily"],
+    queryKey: ["qr-token-daily", userId],
     queryFn: async () => {
       try {
         const res = await qrApi.token();
         const todayStr = new Date().toISOString().split("T")[0];
-        localStorage.setItem("messmate:today:qr_tokens", JSON.stringify({
-          date: todayStr,
-          data: res
-        }));
+        if (userId) {
+          localStorage.setItem(`messmate:today:qr_tokens:${userId}`, JSON.stringify({
+            date: todayStr,
+            data: res
+          }));
+        }
         return res;
       } catch (err) {
-        const cached = getCachedQRTokens();
+        const cached = getCachedQRTokens(userId);
         if (cached) {
           console.warn("Network failed. Using cached offline QR passes.");
           return cached;
@@ -75,10 +81,11 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
         throw err;
       }
     },
-    initialData: () => getCachedQRTokens() || undefined,
+    initialData: () => getCachedQRTokens(userId) || undefined,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 60 * 6, // 6 hours local cache since date is static
     retry: 1,
+    enabled: !!userId,
   });
 
   const selectedToken = data?.tokens?.[selectedMeal];

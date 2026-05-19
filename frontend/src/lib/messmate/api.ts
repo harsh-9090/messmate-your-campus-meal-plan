@@ -210,6 +210,15 @@ export const membersApi = {
     }),
   changePlan: (id: string, data: { planId: string; meals: Meal[]; startDate?: string }) =>
     request(`/members/${id}/plan`, { method: "PUT", body: JSON.stringify(data) }),
+  exportCsv: async () => {
+    const tok = getToken();
+    const res = await fetch(`${BASE_URL}/members/export`, {
+      headers: tok ? { Authorization: `Bearer ${tok}` } : {},
+      credentials: "include",
+    });
+    if (!res.ok) throw new ApiError("Export failed", res.status);
+    return res.blob();
+  },
 };
 
 // ---------- Payments ----------

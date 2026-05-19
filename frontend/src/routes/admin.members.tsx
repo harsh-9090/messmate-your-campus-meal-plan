@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2 } from "lucide-react";
+import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download } from "lucide-react";
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
 import {
   todayISO,
@@ -93,6 +93,29 @@ function MembersPage() {
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["members"] });
 
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      // @ts-ignore
+      const blob = await membersApi.exportCsv();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `messmate_members_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Members data exported successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to export member records");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const renewM = useMutation({
     mutationFn: (id: string) => membersApi.renew(id, {}),
     onSuccess: () => {
@@ -117,9 +140,19 @@ function MembersPage() {
             {membersQ.isLoading ? "Loading…" : `${total} member${total === 1 ? "" : "s"}`}
           </p>
         </div>
-        <Button onClick={() => setAdding(true)} disabled={!plans.length}>
-          <Plus className="mr-1 h-4 w-4" /> Add Member
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportCSV} disabled={exporting}>
+            {exporting ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-1 h-4 w-4" />
+            )}
+            Export CSV
+          </Button>
+          <Button onClick={() => setAdding(true)} disabled={!plans.length}>
+            <Plus className="mr-1 h-4 w-4" /> Add Member
+          </Button>
+        </div>
       </header>
 
       <Card className="p-4">
