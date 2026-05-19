@@ -723,7 +723,7 @@ function AddMemberDialog({
             <Label>Full name</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Email</Label>
               <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -773,7 +773,7 @@ function AddMemberDialog({
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <Label>Start date</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
