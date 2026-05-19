@@ -249,8 +249,24 @@ function ReportsPage() {
         </div>
 
         {isLoadingMeals ? (
-          <div className="grid h-64 place-items-center text-muted-foreground">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="grid gap-6 md:grid-cols-12 animate-pulse">
+            {/* Left side skeletons */}
+            <div className="md:col-span-5 grid grid-cols-2 gap-3">
+              {[1, 2, 3, 4].map((n) => (
+                <div key={n} className="rounded-lg border p-4 bg-muted/10 space-y-2">
+                  <div className="h-3 w-16 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                  <div className="h-6 w-12 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                  <div className="h-2 w-20 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                </div>
+              ))}
+            </div>
+            {/* Right side skeleton */}
+            <div className="md:col-span-7 rounded-lg border p-6 flex flex-col items-center justify-center min-h-[220px]">
+              <div className="w-full flex justify-between items-center mb-3">
+                <div className="h-3 w-32 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+              </div>
+              <div className="h-36 w-36 rounded-full border-8 border-dashed border-emerald-950/10 dark:border-emerald-950/20" />
+            </div>
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-12">

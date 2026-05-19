@@ -121,6 +121,29 @@ function ScannerPage() {
   const handleDetect = useCallback(
     (token: string) => {
       if (scanM.isPending) return;
+
+      // Haptics & Sound feedback on instant capture
+      try {
+        const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+        if (AC) {
+          const ctx = new AC();
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.connect(g);
+          g.connect(ctx.destination);
+          o.type = "sine";
+          o.frequency.value = 1200;
+          g.gain.setValueAtTime(0.001, ctx.currentTime);
+          g.gain.exponentialRampToValueAtTime(0.1, ctx.currentTime + 0.01);
+          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+          o.start();
+          o.stop(ctx.currentTime + 0.08);
+        }
+      } catch {}
+      if (navigator.vibrate) {
+        navigator.vibrate(25);
+      }
+
       lastTokenRef.current = token;
       scanM.mutate(token);
     },

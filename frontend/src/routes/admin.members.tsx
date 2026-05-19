@@ -220,8 +220,25 @@ function MembersPage() {
           /* Mobile Card View */
           <div className="grid grid-cols-1 gap-4 p-4">
             {membersQ.isLoading && (
-              <div className="py-10 text-center">
-                <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+              <div className="space-y-4 py-2">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="p-4 border rounded-2xl space-y-3 bg-muted/20 animate-pulse">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-emerald-950/10 dark:bg-emerald-950/20" />
+                        <div className="space-y-1.5">
+                          <div className="h-4 w-28 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                          <div className="h-3 w-16 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                        </div>
+                      </div>
+                      <div className="h-6 w-16 rounded-full bg-emerald-950/10 dark:bg-emerald-950/20" />
+                    </div>
+                    <div className="border-t pt-3 flex justify-between">
+                      <div className="h-4 w-20 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                      <div className="h-4 w-12 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
             {membersQ.isError && (
@@ -385,11 +402,39 @@ function MembersPage() {
               </thead>
               <tbody>
                 {membersQ.isLoading && (
-                  <tr>
-                    <td colSpan={7} className="py-10 text-center">
-                      <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
-                    </td>
-                  </tr>
+                  <>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <tr key={n} className="border-t animate-pulse">
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-emerald-950/10 dark:bg-emerald-950/20" />
+                            <div className="space-y-1">
+                              <div className="h-4 w-24 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                              <div className="h-3 w-16 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-4 w-28 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-4 w-12 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-4.5 w-16 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-4 w-16 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-6 w-16 rounded-full bg-emerald-950/10 dark:bg-emerald-950/20" />
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <div className="ml-auto h-8 w-16 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                        </td>
+                      </tr>
+                    ))}
+                  </>
                 )}
                 {membersQ.isError && (
                   <tr>

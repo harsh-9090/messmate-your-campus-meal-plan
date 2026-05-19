@@ -53,6 +53,18 @@ function MemberPortal() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<"today" | "pass" | "account">("today");
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const todayStr = todayISO();
 
@@ -131,6 +143,12 @@ function MemberPortal() {
 
   return (
     <div className="min-h-screen bg-background pb-12">
+      {!isOnline && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-4 py-2.5 text-center text-xs font-semibold flex items-center justify-center gap-2 shadow-sm border-b border-white/10 animate-in slide-in-from-top duration-300">
+          <span className="inline-block h-2 w-2 rounded-full bg-white animate-pulse shrink-0" />
+          <span>Running Offline — Showing cached passes. Your offline code remains fully valid.</span>
+        </div>
+      )}
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-2xl md:max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
