@@ -34,6 +34,8 @@ def main():
         ("favicon.png", (32, 32)),
         ("icons/icon-192x192.png", (192, 192)),
         ("icons/icon-512x512.png", (512, 512)),
+        ("icons/logo.png", (512, 512)),
+        ("images/logo.png", (512, 512)),
     ]
 
     for filename, size in icon_specs:
