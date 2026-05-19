@@ -291,7 +291,7 @@ function RegisterPage() {
                     id="email"
                     type="email"
                     required
-                    placeholder="name@college.edu"
+                    placeholder="Email Address"
                     className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -370,7 +370,7 @@ function RegisterPage() {
                   />
                 </div>
               </div>
-              
+
               {formData.password.length > 0 && (
                 <div className="text-[11px] space-y-1.5 p-3 rounded-2xl bg-muted/40 border border-border/40 transition-all">
                   <div className="font-bold text-muted-foreground uppercase tracking-widest text-[9px] mb-1 ml-0.5">

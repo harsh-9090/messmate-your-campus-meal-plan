@@ -163,7 +163,7 @@ function LoginPage() {
                 </Label>
                 <Input
                   id="mid"
-                  placeholder="e.g. STU001 or name@college.edu"
+                  placeholder="e.g. MK001 or name@gmail.com"
                   autoComplete="username"
                   className="h-14 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
                   value={memberId}
