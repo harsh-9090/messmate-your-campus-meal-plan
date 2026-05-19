@@ -128,9 +128,11 @@ function ScannerPage() {
       <header className="sticky top-0 z-10 border-b bg-sidebar text-sidebar-foreground shadow-sm">
         <div className="mx-auto flex max-w-xl md:max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-primary text-white">
-              <UtensilsCrossed className="h-4 w-4" />
-            </div>
+            <img
+              src="/apple-touch-icon.png"
+              alt="Mom's Kitchen Logo"
+              className="h-9 w-9 rounded-full border border-primary/20 object-cover shadow-sm bg-primary/10"
+            />
             <div>
               <div className="font-display text-base font-bold leading-none">Mess Scanner</div>
               <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 mt-0.5">

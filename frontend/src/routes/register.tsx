@@ -133,9 +133,11 @@ function RegisterPage() {
       {/* Mobile-only Branding Header */}
       <div className="lg:hidden absolute top-0 left-0 right-0 p-6 flex items-center justify-between z-20">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
-            <UtensilsCrossed className="h-5 w-5" />
-          </div>
+          <img
+            src="/apple-touch-icon.png"
+            alt="Mom's Kitchen Logo"
+            className="h-10 w-10 rounded-full border border-primary/20 object-cover shadow-lg shadow-primary/10 transition-transform group-hover:scale-105 bg-primary/5"
+          />
           <span className="font-display text-xl font-bold tracking-tight">Mom's Kitchen</span>
         </Link>
         <div className="flex items-center gap-2">
@@ -168,9 +170,11 @@ function RegisterPage() {
           animate={{ opacity: 1, x: 0 }}
           className="relative z-10 flex items-center gap-3"
         >
-          <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary text-white shadow-lg shadow-primary/20">
-            <UtensilsCrossed className="h-6 w-6" />
-          </div>
+          <img
+            src="/apple-touch-icon.png"
+            alt="Mom's Kitchen Logo"
+            className="h-11 w-11 rounded-full border border-primary/20 object-cover shadow-lg shadow-primary/10 bg-primary/5"
+          />
           <div className="font-display text-2xl font-bold tracking-tight">Mom's Kitchen</div>
         </motion.div>
 

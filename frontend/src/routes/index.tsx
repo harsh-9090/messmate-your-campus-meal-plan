@@ -64,9 +64,11 @@ function LandingPage() {
       <nav className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-              <UtensilsCrossed className="h-5 w-5" />
-            </div>
+            <img
+              src="/apple-touch-icon.png"
+              alt="Mom's Kitchen Logo"
+              className="h-10 w-10 rounded-full border border-primary/20 object-cover shadow-lg shadow-primary/10 bg-primary/5"
+            />
             <span className="font-display text-xl font-bold tracking-tight">Mom's Kitchen</span>
           </div>
           <div className="flex items-center gap-4">
@@ -479,9 +481,11 @@ function LandingPage() {
       <footer className="border-t border-border py-12">
         <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20 text-primary">
-              <UtensilsCrossed className="h-4 w-4" />
-            </div>
+            <img
+              src="/apple-touch-icon.png"
+              alt="Mom's Kitchen Logo"
+              className="h-8 w-8 rounded-full border border-primary/20 object-cover shadow-md bg-primary/5"
+            />
             <span className="font-display text-lg font-bold tracking-tight">Mom's Kitchen</span>
           </div>
           <p className="text-muted-foreground text-sm">
