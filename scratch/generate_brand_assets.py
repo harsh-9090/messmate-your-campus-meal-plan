@@ -13,15 +13,15 @@ def main():
     src = Image.open(source_path).convert("RGBA")
     print(f"Loaded source image {src.size}")
 
-    # Let's crop it to a square first (the image is slightly wider than tall)
+    # Let's crop it to a tighter square to zoom in on the crest (making the content larger and clearer)
     w, h = src.size
-    side = min(w, h)
+    side = 570  # Tighter square centered directly on the circular crest
     left = (w - side) // 2
     top = (h - side) // 2
     right = left + side
     bottom = top + side
     square_src = src.crop((left, top, right, bottom))
-    print(f"Cropped to square of size {square_src.size}")
+    print(f"Cropped to zoomed square of size {square_src.size}")
 
     # Ensure output dirs exist
     os.makedirs(os.path.join(public_dir, "icons"), exist_ok=True)
