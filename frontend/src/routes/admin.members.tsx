@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download } from "lucide-react";
+import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download, CreditCard } from "lucide-react";
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
 import {
   todayISO,
@@ -56,6 +56,7 @@ function MembersPage() {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
   const [renewing, setRenewing] = useState<Member | null>(null);
+  const [paying, setPaying] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
 
   const membersQ = useQuery({
@@ -354,6 +355,16 @@ function MembersPage() {
                     </div>
 
                     <div className="mt-2 flex justify-end gap-2 pt-2 border-t">
+                      {!m.subscription.isPaid && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0 border-primary text-primary hover:bg-primary/10"
+                          onClick={() => setPaying(m)}
+                        >
+                          <CreditCard className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -530,6 +541,17 @@ function MembersPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-1">
+                            {!m.subscription.isPaid && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-primary hover:text-primary hover:bg-primary/10"
+                                onClick={() => setPaying(m)}
+                                title="Record Payment"
+                              >
+                                <CreditCard className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                             <Button size="sm" variant="ghost" onClick={() => setEditing(m)}>
                               <Edit3 className="h-3.5 w-3.5" />
                             </Button>
@@ -636,6 +658,13 @@ function MembersPage() {
           member={renewing}
           plans={plans}
           onClose={() => setRenewing(null)}
+          onSaved={invalidate}
+        />
+      )}
+      {paying && (
+        <RecordPaymentDialog
+          member={paying}
+          onClose={() => setPaying(null)}
           onSaved={invalidate}
         />
       )}
@@ -844,16 +873,11 @@ function EditMemberDialog({
   const [mobile, setMobile] = useState(member.mobile ?? "");
   const [planId, setPlanId] = useState(member.subscription.planId);
   const [meals, setMeals] = useState<Meal[]>(member.subscription.meals);
-  const [addPayment, setAddPayment] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
 
   const saveM = useMutation({
     mutationFn: async () => {
       await membersApi.update(member.memberId, { name, email, mobile: mobile || undefined });
       await membersApi.changePlan(member.memberId, { planId, meals });
-      if (parseInt(addPayment) > 0) {
-        await membersApi.addPayment(member.memberId, parseInt(addPayment), paymentMethod);
-      }
     },
     onSuccess: () => {
       toast.success("Member updated");
@@ -918,53 +942,6 @@ function EditMemberDialog({
                 {m}
               </label>
             ))}
-          </div>
-          <div className="rounded-md border p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">Payment Status</div>
-                <div className="text-xs text-muted-foreground">
-                  {member.subscription.isPaid ? "Fully Paid" : "Balance Due"}
-                </div>
-              </div>
-              <div className="text-right text-xs">
-                <div>Total: ₹{member.subscription.pricePerMonth}</div>
-                <div>Paid: ₹{member.subscription.amountPaid}</div>
-                {member.subscription.dueAmount > 0 && (
-                  <div className="font-bold text-destructive">
-                    Due: ₹{member.subscription.dueAmount}
-                  </div>
-                )}
-              </div>
-            </div>
-            {!member.subscription.isPaid && (
-              <div className="mt-2 space-y-2 border-t pt-2">
-                <div className="flex items-center gap-2">
-                  <Label className="w-24 whitespace-nowrap text-xs">Add Amount</Label>
-                  <Input
-                    type="number"
-                    placeholder="Enter amount..."
-                    value={addPayment}
-                    onChange={(e) => setAddPayment(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="w-24 whitespace-nowrap text-xs">Method</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger className="h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_METHODS.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          {m}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         <DialogFooter>
@@ -1169,3 +1146,102 @@ function RenewMemberDialog({
     </Dialog>
   );
 }
+
+function RecordPaymentDialog({
+  member,
+  onClose,
+  onSaved,
+}: {
+  member: Member;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [amount, setAmount] = useState(member.subscription.dueAmount.toString());
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
+
+  const savePayment = useMutation({
+    mutationFn: async () => {
+      const amtVal = parseInt(amount);
+      if (isNaN(amtVal) || amtVal <= 0) {
+        throw new Error("Please enter a valid amount greater than 0");
+      }
+      await membersApi.addPayment(member.memberId, amtVal, paymentMethod);
+    },
+    onSuccess: () => {
+      toast.success("Payment recorded successfully");
+      onSaved();
+      onClose();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to record payment"),
+  });
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-md w-[95vw] rounded-2xl">
+        <DialogHeader>
+          <DialogTitle>Record Payment for {member.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          {/* Summary Card */}
+          <div className="rounded-xl bg-muted/50 p-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Current Plan:</span>
+              <span className="font-medium">{member.subscription.planLabel || "No active plan"}</span>
+            </div>
+            <div className="flex justify-between text-sm border-t pt-2 border-muted/80">
+              <span className="text-muted-foreground">Plan Cost:</span>
+              <span className="font-semibold">₹{member.subscription.pricePerMonth}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Already Paid:</span>
+              <span className="text-success font-semibold">₹{member.subscription.amountPaid}</span>
+            </div>
+            <div className="flex justify-between text-sm border-t border-dashed pt-2 border-muted-foreground/20 font-bold text-destructive">
+              <span>Remaining Balance:</span>
+              <span>₹{member.subscription.dueAmount}</span>
+            </div>
+          </div>
+
+          {/* Form Fields */}
+          <div className="space-y-3">
+            <div>
+              <Label>Payment Amount (₹)</Label>
+              <Input
+                type="number"
+                placeholder="Enter amount..."
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                max={member.subscription.dueAmount}
+                min={1}
+              />
+            </div>
+            <div>
+              <Label>Payment Method</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {m}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => savePayment.mutate()} disabled={savePayment.isPending}>
+            {savePayment.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Record Payment
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
