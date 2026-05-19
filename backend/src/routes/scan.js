@@ -99,6 +99,22 @@ router.post("/validate",
         member.subscription = subscription;
       }
 
+      if (decoded.isMismatch) {
+        const reason = `It is currently the ${meal} window, but this QR code is for ${decoded.tokenMeal}`;
+        await query(
+          `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by)
+           VALUES ($1, $2, $3, $4, NOW(), 'denied', 'WRONG_MEAL_QR', $5, $6)`,
+          [memberId, member ? member.name : null, meal, format(new Date(), "yyyy-MM-dd"), reason, req.user.sub]
+        );
+        return res.status(200).json({
+          status: "denied",
+          code: "WRONG_MEAL_QR",
+          reason,
+          meal,
+          member: member ? { memberId: member.memberId, name: member.name } : null
+        });
+      }
+
       const result = await validateAndRecord({
         member, meal, scannedBy: req.user.sub, deviceInfo: req.headers["user-agent"],
       });

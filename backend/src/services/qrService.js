@@ -49,7 +49,7 @@ export async function verifyQRToken(token, expectedMeal) {
     
     // Enforce matching meal type
     if (decoded.meal !== expectedMeal) {
-      return null;
+      return { isMismatch: true, tokenMeal: decoded.meal, userId: decoded.userId };
     }
     
     return decoded;
