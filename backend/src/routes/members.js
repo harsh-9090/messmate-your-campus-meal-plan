@@ -14,6 +14,12 @@ router.use(verifyToken);
 
 const fmtDate = (d) => format(d, "yyyy-MM-dd");
 
+const getISTDate = () => {
+  const now = new Date();
+  const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+  return new Date(utc + (3600000 * 5.5)); // Force UTC+5.30 (Indian Standard Time)
+};
+
 // list (admin)
 router.get("/", requireRole("admin"), async (req, res, next) => {
   try {
@@ -170,7 +176,7 @@ router.post("/",
     .withMessage("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"),
   body("planId").isString(),
   body("meals").isArray({ min: 1 }),
-  body("startDate").isISO8601(),
+  body("startDate").optional().isISO8601(),
   async (req, res, next) => {
     try {
       const errs = validationResult(req);
@@ -178,7 +184,7 @@ router.post("/",
       const { name, email, password, mobile = null, planId, meals, startDate, amountPaid = 0, paymentMethod = "Cash", role = "member" } = req.body;
 
       const plan = (await query(`SELECT * FROM plans WHERE plan_id = $1`, [planId])).rows[0];
-      const start = new Date(startDate);
+      const start = startDate ? new Date(startDate) : getISTDate();
       const duration = plan?.duration_months ?? 1;
       const end = addDays(start, duration * 30 - 1);
       const id = await nextMemberId();

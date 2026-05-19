@@ -669,6 +669,16 @@ function AddMemberDialog({
   const amountPaidNum = parseInt(amountPaid) || 0;
   const dueAmount = Math.max(0, price - amountPaidNum);
 
+  const calculatedEndDate = useMemo(() => {
+    const startStr = startDate || todayISO();
+    if (!startStr) return "";
+    const start = new Date(startStr);
+    if (isNaN(start.getTime())) return "";
+    const duration = selectedPlan?.durationMonths ?? 1;
+    const end = new Date(start.getTime() + (duration * 30 - 1) * 24 * 60 * 60 * 1000);
+    return end.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  }, [startDate, selectedPlan]);
+
   const onPlanChange = (id: string) => {
     setPlanId(id);
     const p = plans.find((x) => x.planId === id);
@@ -684,7 +694,7 @@ function AddMemberDialog({
         mobile: mobile || undefined,
         planId,
         meals,
-        startDate,
+        startDate: startDate || todayISO(),
         amountPaid: amountPaidNum,
         paymentMethod,
       }),
@@ -697,6 +707,7 @@ function AddMemberDialog({
       setMobile("");
       setAmountPaid("");
       setPaymentMethod("Cash");
+      setStartDate(todayISO());
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
@@ -766,6 +777,9 @@ function AddMemberDialog({
             <div>
               <Label>Start date</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <div className="text-[10px] text-muted-foreground mt-1">
+                Expiry: <span className="font-semibold text-foreground">{calculatedEndDate || "Not calculated"}</span>
+              </div>
             </div>
             <div>
               <Label>Amount Paid (Total: ₹{price})</Label>
