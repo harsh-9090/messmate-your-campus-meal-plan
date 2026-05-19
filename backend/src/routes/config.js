@@ -2,8 +2,110 @@ import { Router } from "express";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { query } from "../db/index.js";
 import { getCache, setCache, delCache } from "../db/redis.js";
+import { body, param, validationResult } from "express-validator";
 
 const router = Router();
+
+const validate = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: "Validation failed", details: errors.array() });
+  }
+  next();
+};
+
+const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/;
+
+const planCreateSchema = [
+  body("planId")
+    .trim()
+    .notEmpty()
+    .withMessage("planId is required")
+    .isAlphanumeric("en-US", { ignore: "-_" })
+    .withMessage("planId must be alphanumeric containing hyphens or underscores"),
+  body("label")
+    .trim()
+    .notEmpty()
+    .withMessage("label is required"),
+  body("meals")
+    .isArray({ min: 1 })
+    .withMessage("meals must be an array containing at least one item")
+    .custom((value) => {
+      const allowed = ["Breakfast", "Lunch", "Dinner"];
+      if (!value.every((meal) => allowed.includes(meal))) {
+        throw new Error("Meals can only contain: Breakfast, Lunch, Dinner");
+      }
+      return true;
+    }),
+  body("pricePerMonth")
+    .isInt({ min: 0 })
+    .withMessage("pricePerMonth must be a non-negative integer"),
+  body("durationMonths")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("durationMonths must be an integer >= 1"),
+  body("isActive")
+    .optional()
+    .isBoolean()
+    .withMessage("isActive must be a boolean"),
+  validate
+];
+
+const planUpdateSchema = [
+  param("planId")
+    .trim()
+    .notEmpty()
+    .isAlphanumeric("en-US", { ignore: "-_" })
+    .withMessage("planId must be alphanumeric containing hyphens or underscores"),
+  body("label")
+    .optional()
+    .trim()
+    .notEmpty()
+    .withMessage("label cannot be empty"),
+  body("meals")
+    .optional()
+    .isArray({ min: 1 })
+    .withMessage("meals must be an array containing at least one item")
+    .custom((value) => {
+      const allowed = ["Breakfast", "Lunch", "Dinner"];
+      if (!value.every((meal) => allowed.includes(meal))) {
+        throw new Error("Meals can only contain: Breakfast, Lunch, Dinner");
+      }
+      return true;
+    }),
+  body("pricePerMonth")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("pricePerMonth must be a non-negative integer"),
+  body("durationMonths")
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage("durationMonths must be an integer >= 1"),
+  body("isActive")
+    .optional()
+    .isBoolean()
+    .withMessage("isActive must be a boolean"),
+  validate
+];
+
+const windowUpdateSchema = [
+  param("meal")
+    .isIn(["Breakfast", "Lunch", "Dinner"])
+    .withMessage("meal must be Breakfast, Lunch, or Dinner"),
+  body("startTime")
+    .trim()
+    .notEmpty()
+    .withMessage("startTime is required")
+    .matches(timeRegex)
+    .withMessage("startTime must match 24h format (HH:MM or HH:MM:SS)"),
+  body("endTime")
+    .trim()
+    .notEmpty()
+    .withMessage("endTime is required")
+    .matches(timeRegex)
+    .withMessage("endTime must match 24h format (HH:MM or HH:MM:SS)"),
+  validate
+];
 
 // --- Plans (Public) ---
 router.get("/plans", async (_req, res, next) => {
@@ -38,7 +140,7 @@ router.use(verifyToken);
 
 // --- Admin Plan Actions ---
 
-router.post("/plans", requireRole("admin"), async (req, res, next) => {
+router.post("/plans", requireRole("admin"), planCreateSchema, async (req, res, next) => {
   try {
     const { planId, label, meals, pricePerMonth, durationMonths = 1, isActive = true } = req.body;
     const { rows } = await query(
@@ -54,7 +156,7 @@ router.post("/plans", requireRole("admin"), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/plans/:planId", requireRole("admin"), async (req, res, next) => {
+router.put("/plans/:planId", requireRole("admin"), planUpdateSchema, async (req, res, next) => {
   try {
     const allowed = { label: "label", meals: "meals", pricePerMonth: "price_per_month", durationMonths: "duration_months", isActive: "is_active" };
     const sets = []; const params = [];
@@ -99,7 +201,7 @@ router.get("/windows", async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.put("/windows/:meal", requireRole("admin"), async (req, res, next) => {
+router.put("/windows/:meal", requireRole("admin"), windowUpdateSchema, async (req, res, next) => {
   try {
     const { startTime, endTime } = req.body;
     const { rows } = await query(

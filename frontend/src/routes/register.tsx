@@ -49,6 +49,15 @@ function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const checks = {
+    length: formData.password.length >= 8,
+    uppercase: /[A-Z]/.test(formData.password),
+    lowercase: /[a-z]/.test(formData.password),
+    number: /\d/.test(formData.password),
+    special: /[@$!%*?&]/.test(formData.password),
+  };
+  const allPassed = Object.values(checks).every(Boolean);
+
   const { data: plans, isLoading: loadingPlans } = useQuery({
     queryKey: ["plans"],
     queryFn: () => configApi.listPlans(),
@@ -60,12 +69,12 @@ function RegisterPage() {
       toast.error("Please select a meal plan");
       return;
     }
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
+    if (!allPassed) {
+      toast.error("Password must meet all security requirements");
       return;
     }
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -361,12 +370,42 @@ function RegisterPage() {
                   />
                 </div>
               </div>
+              
+              {formData.password.length > 0 && (
+                <div className="text-[11px] space-y-1.5 p-3 rounded-2xl bg-muted/40 border border-border/40 transition-all">
+                  <div className="font-bold text-muted-foreground uppercase tracking-widest text-[9px] mb-1 ml-0.5">
+                    Password Requirements
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-medium">
+                    <div className={`flex items-center gap-1.5 transition-colors ${checks.length ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${checks.length ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                      <span>At least 8 characters</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${checks.uppercase ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${checks.uppercase ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                      <span>One uppercase letter</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${checks.lowercase ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${checks.lowercase ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                      <span>One lowercase letter</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${checks.number ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${checks.number ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                      <span>One number</span>
+                    </div>
+                    <div className={`flex items-center gap-1.5 transition-colors ${checks.special ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${checks.special ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                      <span>One special char (@$!%*?&)</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <Button
               type="submit"
               className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 mt-2 transition-all active:scale-[0.98]"
-              disabled={submitting}
+              disabled={submitting || (formData.password.length > 0 && !allPassed)}
             >
               {submitting ? (
                 <Loader2 className="mr-2 h-6 w-6 animate-spin" />

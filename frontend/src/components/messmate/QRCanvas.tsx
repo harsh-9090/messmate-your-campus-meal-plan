@@ -22,18 +22,63 @@ const getAutoSelectedMeal = (allowedMeals: string[]): string => {
   return allowedMeals[0] || "Breakfast";
 };
 
+const getCachedQRTokens = () => {
+  try {
+    const cached = localStorage.getItem("messmate:today:qr_tokens");
+    if (!cached) return null;
+    const { date, data } = JSON.parse(cached);
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (date === todayStr) {
+      return data;
+    }
+  } catch (e) {
+    console.error("Failed to read cached QR tokens", e);
+  }
+  return null;
+};
+
 export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Dynamically auto-select current active meal type
   const [selectedMeal, setSelectedMeal] = useState(() => getAutoSelectedMeal(meals));
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const { data, isError, isLoading } = useQuery({
     queryKey: ["qr-token-daily"],
-    queryFn: () => qrApi.token(),
+    queryFn: async () => {
+      try {
+        const res = await qrApi.token();
+        const todayStr = new Date().toISOString().split("T")[0];
+        localStorage.setItem("messmate:today:qr_tokens", JSON.stringify({
+          date: todayStr,
+          data: res
+        }));
+        return res;
+      } catch (err) {
+        const cached = getCachedQRTokens();
+        if (cached) {
+          console.warn("Network failed. Using cached offline QR passes.");
+          return cached;
+        }
+        throw err;
+      }
+    },
+    initialData: () => getCachedQRTokens() || undefined,
     refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 60 * 6, // 6 hours local cache since date is static
-    retry: 2,
+    retry: 1,
   });
 
   const selectedToken = data?.tokens?.[selectedMeal];
@@ -92,11 +137,17 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
         )}
       </div>
 
-      {/* Verified Secure Footer Badge */}
-      <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-success bg-success/5 border border-success/15 px-3 py-1 rounded-full">
-        <ShieldCheck className="h-3.5 w-3.5" />
-        <span>Today's Pass · Secure Static QR</span>
-      </div>
+      {/* Verified Secure Footer Badge / Offline Alert */}
+      {!isOnline ? (
+        <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 px-3 py-1 rounded-full animate-pulse">
+          <span>Running Offline · Showing Cached Pass</span>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-success bg-success/5 border border-success/15 px-3 py-1 rounded-full">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          <span>Today's Pass · Secure Static QR</span>
+        </div>
+      )}
     </div>
   );
 }

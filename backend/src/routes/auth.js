@@ -6,7 +6,7 @@ import { query, rowToMember, stripPassword } from "../db/index.js";
 import { nextMemberId } from "../services/memberIdService.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import { delByPattern } from "../db/redis.js";
+import { delByPattern, blacklistToken, isTokenBlacklisted } from "../db/redis.js";
 import { addDays, format } from "date-fns";
 import crypto from "node:crypto";
 import { sendPasswordResetEmail, sendRegistrationReceivedEmail } from "../services/notificationService.js";
@@ -66,7 +66,12 @@ router.post("/register",
   body("name").isString().trim().notEmpty(),
   body("email").isEmail().normalizeEmail(),
   body("mobile").isString().trim().notEmpty(),
-  body("password").isString().isLength({ min: 6 }),
+  body("password")
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    .withMessage("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"),
   async (req, res, next) => {
     try {
       const errs = validationResult(req);
@@ -117,6 +122,10 @@ router.post("/register",
 router.post("/refresh", async (req, res) => {
   const rt = req.cookies?.rt;
   if (!rt) return res.status(401).json({ error: "No refresh token" });
+
+  const isBlacklisted = await isTokenBlacklisted(rt);
+  if (isBlacklisted) return res.status(401).json({ error: "Invalid refresh" });
+
   try {
     const payload = jwt.verify(rt, process.env.JWT_REFRESH_SECRET);
     const m = await findUser(payload.sub);
@@ -125,7 +134,28 @@ router.post("/refresh", async (req, res) => {
   } catch { res.status(401).json({ error: "Invalid refresh" }); }
 });
 
-router.post("/logout", (_req, res) => { res.clearCookie("rt"); res.json({ ok: true }); });
+router.post("/logout", async (req, res, next) => {
+  try {
+    const rt = req.cookies?.rt;
+    if (rt) {
+      try {
+        const decoded = jwt.decode(rt);
+        if (decoded && decoded.exp) {
+          const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+          if (ttl > 0) {
+            await blacklistToken(rt, ttl);
+          }
+        }
+      } catch (err) {
+        console.error("[AUTH] Error blacklisting token on logout:", err.message);
+      }
+    }
+    res.clearCookie("rt");
+    res.json({ ok: true });
+  } catch (e) {
+    next(e);
+  }
+});
 
 router.get("/me", verifyToken, async (req, res) => {
   const m = await findUser(req.user.sub, { activeOnly: false });
@@ -180,7 +210,12 @@ router.post("/reset-password",
   authLimiter,
   body("memberId").isString().trim().notEmpty(),
   body("token").isString().trim().notEmpty(),
-  body("newPassword").isString().isLength({ min: 6 }),
+  body("newPassword")
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    .withMessage("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"),
   async (req, res, next) => {
     try {
       const errs = validationResult(req);

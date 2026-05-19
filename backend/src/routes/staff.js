@@ -1,5 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
+import { body, validationResult } from "express-validator";
 import { query, rowToMember, stripPassword } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { delByPattern } from "../db/redis.js";
@@ -19,9 +20,21 @@ router.get("/", async (req, res, next) => {
 });
 
 // Create new staff/admin
-router.post("/", async (req, res, next) => {
-  try {
-    const { name, email, password, mobile = null, role = "staff" } = req.body;
+router.post("/",
+  body("name").isString().trim().notEmpty(),
+  body("email").isEmail(),
+  body("password")
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    .withMessage("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"),
+  async (req, res, next) => {
+    try {
+      const errs = validationResult(req);
+      if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
+
+      const { name, email, password, mobile = null, role = "staff" } = req.body;
     
     // Check if email exists
     const existing = await query(`SELECT 1 FROM members WHERE email = $1`, [email]);
@@ -42,9 +55,22 @@ router.post("/", async (req, res, next) => {
 });
 
 // Update staff/admin
-router.put("/:id", async (req, res, next) => {
-  try {
-    const { name, email, mobile, role, password, memberId } = req.body;
+router.put("/:id",
+  body("name").optional().isString().trim().notEmpty(),
+  body("email").optional().isEmail(),
+  body("password")
+    .optional()
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    .withMessage("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"),
+  async (req, res, next) => {
+    try {
+      const errs = validationResult(req);
+      if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
+
+      const { name, email, mobile, role, password, memberId } = req.body;
     const sets = [];
     const params = [];
 

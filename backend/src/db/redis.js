@@ -99,4 +99,36 @@ export async function delByPattern(group) {
   }
 }
 
+
+/**
+ * Blacklists a refresh token by setting it in Redis with a TTL.
+ * @param {string} token
+ * @param {number} ttlSeconds
+ */
+export async function blacklistToken(token, ttlSeconds) {
+  if (!isConnected) return;
+  try {
+    await client.setEx(`messmate:blacklist:${token}`, ttlSeconds, "1");
+  } catch (err) {
+    console.error(`[Redis] Blacklist error for token:`, err.message);
+  }
+}
+
+/**
+ * Checks if a refresh token has been blacklisted.
+ * @param {string} token
+ * @returns {Promise<boolean>}
+ */
+export async function isTokenBlacklisted(token) {
+  if (!isConnected) return false;
+  try {
+    const exists = await client.exists(`messmate:blacklist:${token}`);
+    return exists === 1;
+  } catch (err) {
+    console.error(`[Redis] Check blacklist error:`, err.message);
+    return false;
+  }
+}
+
 export { client };
+

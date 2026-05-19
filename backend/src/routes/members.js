@@ -109,7 +109,12 @@ router.post("/",
   requireRole("admin"),
   body("name").isString().trim().notEmpty(),
   body("email").isEmail(),
-  body("password").isString().isLength({ min: 6 }),
+  body("password")
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    .withMessage("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"),
   body("planId").isString(),
   body("meals").isArray({ min: 1 }),
   body("startDate").isISO8601(),
@@ -153,9 +158,23 @@ router.post("/",
     } catch (e) { next(e); }
   });
 
-router.put("/:id", requireRole("admin"), async (req, res, next) => {
-  try {
-    const allowed = { name: "name", email: "email", mobile: "mobile", role: "role", photoUrl: "photo_url" };
+router.put("/:id",
+  requireRole("admin"),
+  body("name").optional().isString().trim().notEmpty(),
+  body("email").optional().isEmail(),
+  body("password")
+    .optional()
+    .isString()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    .withMessage("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"),
+  async (req, res, next) => {
+    try {
+      const errs = validationResult(req);
+      if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
+
+      const allowed = { name: "name", email: "email", mobile: "mobile", role: "role", photoUrl: "photo_url" };
     const sets = [];
     const params = [];
     for (const [k, col] of Object.entries(allowed)) {
