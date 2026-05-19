@@ -36,6 +36,7 @@ def main():
         ("icons/icon-512x512.png", (512, 512)),
         ("icons/logo.png", (512, 512)),
         ("images/logo.png", (512, 512)),
+        ("icons/apple-touch-icon.png", (180, 180)),
     ]
 
     for filename, size in icon_specs:
