@@ -270,7 +270,7 @@ function MemberPortal() {
                             ))}
                           </div>
                           {m.notes && (
-                            <p className="text-[11px] text-primary dark:text-primary-foreground font-semibold italic mt-1 pl-1 border-l-2 border-primary/40">
+                            <p className="text-[11px] text-primary font-semibold italic mt-1 pl-1 border-l-2 border-primary/40">
                               💡 {m.notes}
                             </p>
                           )}
