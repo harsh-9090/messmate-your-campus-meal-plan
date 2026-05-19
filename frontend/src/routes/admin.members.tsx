@@ -840,6 +840,7 @@ function EditMemberDialog({
   onSaved: () => void;
 }) {
   const [name, setName] = useState(member.name);
+  const [email, setEmail] = useState(member.email);
   const [mobile, setMobile] = useState(member.mobile ?? "");
   const [planId, setPlanId] = useState(member.subscription.planId);
   const [meals, setMeals] = useState<Meal[]>(member.subscription.meals);
@@ -848,7 +849,7 @@ function EditMemberDialog({
 
   const saveM = useMutation({
     mutationFn: async () => {
-      await membersApi.update(member.memberId, { name, mobile: mobile || undefined });
+      await membersApi.update(member.memberId, { name, email, mobile: mobile || undefined });
       await membersApi.changePlan(member.memberId, { planId, meals });
       if (parseInt(addPayment) > 0) {
         await membersApi.addPayment(member.memberId, parseInt(addPayment), paymentMethod);
@@ -869,10 +870,14 @@ function EditMemberDialog({
           <DialogTitle>Edit {member.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
             <div>
-              <Label>Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
+              <Label>Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div>
               <Label>Mobile</Label>

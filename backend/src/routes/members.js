@@ -233,29 +233,58 @@ router.put("/:id",
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
 
+      const existingRes = await query("SELECT email, email_verified FROM members WHERE member_id = $1", [req.params.id]);
+      if (!existingRes.rows[0]) return res.status(404).json({ error: "Not found" });
+      const existing = existingRes.rows[0];
+
       const allowed = { name: "name", email: "email", mobile: "mobile", role: "role", photoUrl: "photo_url" };
-    const sets = [];
-    const params = [];
-    for (const [k, col] of Object.entries(allowed)) {
-      if (k in req.body) { params.push(req.body[k]); sets.push(`${col} = $${params.length}`); }
-    }
-    if (req.body.password) {
-      params.push(await bcrypt.hash(req.body.password, 12));
-      sets.push(`password_hash = $${params.length}`);
-    }
-    if (!sets.length) return res.status(400).json({ error: "No updatable fields" });
-    sets.push(`updated_at = NOW()`);
-    params.push(req.params.id);
-    const { rows } = await query(
-      `UPDATE members SET ${sets.join(", ")} WHERE member_id = $${params.length} RETURNING *`,
-      params
-    );
-    if (!rows[0]) return res.status(404).json({ error: "Not found" });
-    
-    await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
-    await delByPattern("member:list");
-    
-    res.json(stripPassword(rowToMember(rows[0])));
+      const sets = [];
+      const params = [];
+      let emailChanged = false;
+
+      if (req.body.email && req.body.email.trim().toLowerCase() !== (existing.email || "").trim().toLowerCase()) {
+        emailChanged = true;
+      }
+
+      for (const [k, col] of Object.entries(allowed)) {
+        if (k in req.body) {
+          params.push(req.body[k]);
+          sets.push(`${col} = $${params.length}`);
+        }
+      }
+      if (req.body.password) {
+        params.push(await bcrypt.hash(req.body.password, 12));
+        sets.push(`password_hash = $${params.length}`);
+      }
+
+      if (emailChanged) {
+        sets.push(`email_verified = FALSE`);
+      }
+
+      if (!sets.length) return res.status(400).json({ error: "No updatable fields" });
+      sets.push(`updated_at = NOW()`);
+      params.push(req.params.id);
+      const { rows } = await query(
+        `UPDATE members SET ${sets.join(", ")} WHERE member_id = $${params.length} RETURNING *`,
+        params
+      );
+      if (!rows[0]) return res.status(404).json({ error: "Not found" });
+
+      const updatedMember = rows[0];
+
+      if (emailChanged) {
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 300);
+        sendVerificationOTPEmail(
+          { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
+          otp
+        ).catch(err => console.error("[NOTIFY-ERROR] Failed to send verification email background:", err.message));
+      }
+      
+      await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
+      await delByPattern("member:list");
+      
+      res.json(stripPassword(rowToMember(rows[0])));
   } catch (e) { next(e); }
 });
 
