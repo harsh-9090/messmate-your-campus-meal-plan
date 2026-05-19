@@ -551,7 +551,7 @@ function EmailVerificationPanel({ member, onVerified }: { member: any; onVerifie
                 disabled={submitting}
               />
               <div className="text-[11px] text-muted-foreground text-center">
-                OTP is valid for <span className="font-semibold text-foreground">2 minutes</span>.
+                OTP is valid for <span className="font-semibold text-foreground">5 minutes</span>.
               </div>
             </div>
 

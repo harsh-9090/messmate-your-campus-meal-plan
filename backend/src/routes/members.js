@@ -321,7 +321,7 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
     const updatedMember = rows[0];
     if (updatedMember.email_verified === false) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 120);
+      await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 300);
       sendVerificationOTPEmail(
         { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
         otp
@@ -377,7 +377,7 @@ router.put("/:id/payment", requireRole("admin"),
       const updatedMember = rows[0];
       if (updatedMember.email_verified === false) {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 120);
+        await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 300);
         sendVerificationOTPEmail(
           { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
           otp

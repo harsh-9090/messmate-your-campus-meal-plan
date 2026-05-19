@@ -273,7 +273,7 @@ export async function sendVerificationOTPEmail(member, otp) {
         </div>
       </div>
       
-      <p style="font-size: 13px; color: #6b7280; text-align: center;">This code is valid for <strong>2 minutes</strong>. If you did not register for Mom's Kitchen, you can safely ignore this email.</p>
+      <p style="font-size: 13px; color: #6b7280; text-align: center;">This code is valid for <strong>5 minutes</strong>. If you did not register for Mom's Kitchen, you can safely ignore this email.</p>
       
       <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 25px 0;" />
       <p style="font-size: 12px; color: #6b7280; text-align: center; margin: 0;">Mom's Kitchen Administration</p>

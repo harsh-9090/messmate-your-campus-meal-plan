@@ -299,7 +299,7 @@ router.post("/resend-verification", verifyToken, async (req, res, next) => {
 
     // Generate new OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    await setCache(`messmate:member:${memberId}:email-otp`, otp, 120); // 2 minutes
+    await setCache(`messmate:member:${memberId}:email-otp`, otp, 300); // 5 minutes
 
     // Send email
     sendVerificationOTPEmail({ memberId: m.memberId, name: m.name, email: m.email }, otp).catch((err) => {
