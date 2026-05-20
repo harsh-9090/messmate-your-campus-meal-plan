@@ -173,6 +173,22 @@ export async function sendRegistrationReceivedEmail(member) {
   }
 }
 
+const formatDateOnly = (d) => {
+  if (!d) return "";
+  if (typeof d === "string") {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    const datePart = d.split("T")[0];
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart;
+  }
+  const dateObj = d instanceof Date ? d : new Date(d);
+  if (isNaN(dateObj.getTime())) return String(d);
+  
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const day = String(dateObj.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export async function sendPlanActivatedEmail(member, planDetails) {
   console.log(`[NOTIFY] Preparing plan activation email for ${member.memberId} (${member.email})`);
 
@@ -183,6 +199,9 @@ export async function sendPlanActivatedEmail(member, planDetails) {
   const dueMessage = planDetails.dueAmount > 0 
     ? `<p style="margin: 0; font-size: 13px; color: #ef4444; font-weight: bold;">Pending Balance Due: ₹${planDetails.dueAmount}</p>` 
     : `<p style="margin: 0; font-size: 13px; color: #10b981; font-weight: bold;">Plan fully paid! No dues remaining.</p>`;
+
+  const formattedStart = formatDateOnly(planDetails.startDate);
+  const formattedEnd = formatDateOnly(planDetails.endDate);
 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #d1fae5; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
@@ -207,11 +226,11 @@ export async function sendPlanActivatedEmail(member, planDetails) {
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #475569;"><strong>Valid From:</strong></td>
-            <td style="padding: 6px 0; color: #1e293b;">${planDetails.startDate}</td>
+            <td style="padding: 6px 0; color: #1e293b;">${formattedStart}</td>
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #475569;"><strong>Valid Until:</strong></td>
-            <td style="padding: 6px 0; color: #1e293b;">${planDetails.endDate}</td>
+            <td style="padding: 6px 0; color: #1e293b;">${formattedEnd}</td>
           </tr>
           <tr>
             <td style="padding: 6px 0; color: #475569;"><strong>Total Price:</strong></td>
