@@ -415,11 +415,11 @@ function NotificationDialog({
 
           <div className="grid gap-2">
             <label className="text-xs font-semibold uppercase text-muted-foreground">Announcement Type</label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 type="button"
                 variant={formData.type === "general" ? "default" : "outline"}
-                className="flex-1 gap-2"
+                className="flex-1 gap-2 justify-center"
                 onClick={() => setFormData({ ...formData, type: "general" })}
               >
                 <Megaphone className="h-4 w-4" /> General Notice
@@ -427,7 +427,7 @@ function NotificationDialog({
               <Button
                 type="button"
                 variant={formData.type === "holiday" ? "default" : "outline"}
-                className="flex-1 gap-2 hover:border-amber-500/50"
+                className="flex-1 gap-2 justify-center hover:border-amber-500/50"
                 onClick={() => {
                   // For holiday, pre-fill holiday date matching today's YYYY-MM-DD
                   const todayStr = new Date().toISOString().split("T")[0];
@@ -465,7 +465,7 @@ function NotificationDialog({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="grid gap-1">
               <label className="text-[10px] font-bold uppercase text-muted-foreground">Display Starts</label>
               <Input
