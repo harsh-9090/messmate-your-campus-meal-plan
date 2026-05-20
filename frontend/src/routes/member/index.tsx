@@ -33,14 +33,31 @@ import {
   todayISO,
 } from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
-import type { Meal } from "@/lib/messmate/types";
+import type { Meal, DashboardNotification } from "@/lib/messmate/types";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
 
-const formatHolidayDate = (dateStr: string) => {
+const formatHolidayDate = (n: DashboardNotification) => {
   try {
+    const dateStr = n.holidayDate || "";
+    
+    // Calculate which meals are blocked
+    const blockedList: string[] = [];
+    if (n.blockBreakfast) blockedList.push("Breakfast");
+    if (n.blockLunch) blockedList.push("Lunch");
+    if (n.blockDinner) blockedList.push("Dinner");
+
+    let mealSuffix = "";
+    if (blockedList.length === 3) {
+      mealSuffix = "";
+    } else if (blockedList.length > 0) {
+      mealSuffix = ` (${blockedList.join(", ")})`;
+    } else {
+      return "Mess is Open (No meals blocked)";
+    }
+
     if (dateStr === todayISO()) {
-      return "Mess is Closed Today";
+      return `Mess is Closed Today${mealSuffix}`;
     }
     const [year, month, day] = dateStr.split("-").map(Number);
     const date = new Date(year, month - 1, day);
@@ -52,9 +69,9 @@ const formatHolidayDate = (dateStr: string) => {
     else if (dayNum === 2 || dayNum === 22) suffix = "nd";
     else if (dayNum === 3 || dayNum === 23) suffix = "rd";
 
-    return `Mess is Closed on ${dayNum}${suffix} of ${monthName}`;
+    return `Mess is Closed on ${dayNum}${suffix} of ${monthName}${mealSuffix}`;
   } catch (e) {
-    return `Mess is Closed: ${dateStr}`;
+    return `Mess is Closed: ${n.holidayDate}`;
   }
 };
 
@@ -271,7 +288,7 @@ function MemberPortal() {
                       isHoliday ? "bg-red-600 dark:bg-red-800" : "bg-blue-600 dark:bg-blue-800"
                     )}
                   >
-                    {isHoliday && n.holidayDate ? formatHolidayDate(n.holidayDate) : "Announcement"}
+                    {isHoliday && n.holidayDate ? formatHolidayDate(n) : "Announcement"}
                   </div>
 
                   {/* Card Body content below the header */}

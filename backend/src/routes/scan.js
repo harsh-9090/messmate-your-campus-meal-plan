@@ -42,15 +42,21 @@ router.post("/manual", requireRole("staff", "admin"),
 
       const { memberId, meal } = req.body;
 
-      // Check if today is a scheduled active holiday
+      // Check if today is a scheduled active holiday and blocks this specific meal
       const todayStr = getISTDateStr();
       const holidayRes = await query(
         `SELECT content FROM dashboard_notifications 
-         WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE LIMIT 1`,
-        [todayStr]
+         WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE
+           AND (
+             ($2 = 'Breakfast' AND block_breakfast = TRUE) OR
+             ($2 = 'Lunch' AND block_lunch = TRUE) OR
+             ($2 = 'Dinner' AND block_dinner = TRUE)
+           )
+         LIMIT 1`,
+        [todayStr, meal]
       );
       if (holidayRes.rows.length > 0) {
-        const reason = `Mess is closed today: ${holidayRes.rows[0].content}`;
+        const reason = `Mess is closed today for ${meal}: ${holidayRes.rows[0].content}`;
         await query(
           `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by)
            VALUES ($1, $2, $3, $4, NOW(), 'denied', 'MESS_CLOSED', $5, $6)`,
@@ -95,15 +101,21 @@ router.post("/validate",
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
       const { qrToken, meal } = req.body;
 
-      // Check if today is a scheduled active holiday
+      // Check if today is a scheduled active holiday and blocks this specific meal
       const todayStr = getISTDateStr();
       const holidayRes = await query(
         `SELECT content FROM dashboard_notifications 
-         WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE LIMIT 1`,
-        [todayStr]
+         WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE
+           AND (
+             ($2 = 'Breakfast' AND block_breakfast = TRUE) OR
+             ($2 = 'Lunch' AND block_lunch = TRUE) OR
+             ($2 = 'Dinner' AND block_dinner = TRUE)
+           )
+         LIMIT 1`,
+        [todayStr, meal]
       );
       if (holidayRes.rows.length > 0) {
-        const reason = `Mess is closed today: ${holidayRes.rows[0].content}`;
+        const reason = `Mess is closed today for ${meal}: ${holidayRes.rows[0].content}`;
         let memberId = null;
         let memberName = null;
         try {

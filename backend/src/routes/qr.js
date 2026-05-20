@@ -11,17 +11,6 @@ router.get("/token", async (req, res, next) => {
   try {
     const memberId = req.user.sub;
     
-    // Check if today is a scheduled active holiday
-    const todayStr = getISTDateStr();
-    const holidayRes = await query(
-      `SELECT content FROM dashboard_notifications 
-       WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE LIMIT 1`,
-      [todayStr]
-    );
-    if (holidayRes.rows.length > 0) {
-      return res.status(403).json({ error: "MESS_CLOSED", reason: holidayRes.rows[0].content });
-    }
-    
     // Fetch user's active plan subscription meals
     const { rows } = await query(
       `SELECT sub_meals FROM members WHERE member_id = $1 AND is_active = TRUE`,
@@ -33,17 +22,43 @@ router.get("/token", async (req, res, next) => {
     }
     
     const allowedMeals = rows[0].sub_meals || [];
+    
+    // Check if today is a scheduled active holiday and which meals are blocked
+    const todayStr = getISTDateStr();
+    const holidayRes = await query(
+      `SELECT content, block_breakfast, block_lunch, block_dinner
+       FROM dashboard_notifications 
+       WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE`,
+      [todayStr]
+    );
+    
+    const blockedMeals = new Set();
+    let holidayReason = "Mess is closed";
+    for (const row of holidayRes.rows) {
+      holidayReason = row.content;
+      if (row.block_breakfast) blockedMeals.add("Breakfast");
+      if (row.block_lunch) blockedMeals.add("Lunch");
+      if (row.block_dinner) blockedMeals.add("Dinner");
+    }
+    
+    // If all allowed meals in user's subscription are blocked, deny access
+    if (allowedMeals.length > 0 && allowedMeals.every(m => blockedMeals.has(m))) {
+      return res.status(403).json({ error: "MESS_CLOSED", reason: holidayReason });
+    }
+    
     const tokens = {};
     
     // Generate static daily token for each allowed meal in the user's plan
     for (const meal of ["Breakfast", "Lunch", "Dinner"]) {
-      if (allowedMeals.includes(meal)) {
+      if (allowedMeals.includes(meal) && !blockedMeals.has(meal)) {
         tokens[meal] = generateQRToken(memberId, meal).token;
       }
     }
     
     res.json({
       tokens,
+      blockedMeals: Array.from(blockedMeals),
+      holidayReason,
       date: getISTDateStr()
     });
   } catch (e) {

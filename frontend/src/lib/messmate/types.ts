@@ -115,6 +115,9 @@ export interface DashboardNotification {
   startTime: string;
   endTime: string;
   isActive: boolean;
+  blockBreakfast?: boolean;
+  blockLunch?: boolean;
+  blockDinner?: boolean;
   createdAt: string;
   updatedAt: string;
 }

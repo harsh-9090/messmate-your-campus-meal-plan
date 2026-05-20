@@ -19,7 +19,8 @@ const formatSqlDate = (d) => {
 router.get("/", async (req, res, next) => {
   try {
     const { rows } = await query(
-      `SELECT id, title, content, type, holiday_date, start_time, end_time, is_active
+      `SELECT id, title, content, type, holiday_date, start_time, end_time, is_active,
+              block_breakfast, block_lunch, block_dinner
        FROM dashboard_notifications
        WHERE is_active = TRUE
          AND NOW() BETWEEN start_time AND end_time
@@ -34,6 +35,9 @@ router.get("/", async (req, res, next) => {
       startTime: r.start_time,
       endTime: r.end_time,
       isActive: r.is_active,
+      blockBreakfast: r.block_breakfast,
+      blockLunch: r.block_lunch,
+      blockDinner: r.block_dinner,
       createdAt: r.created_at,
       updatedAt: r.updated_at
     })));
@@ -44,7 +48,8 @@ router.get("/", async (req, res, next) => {
 router.get("/all", requireRole("admin"), async (req, res, next) => {
   try {
     const { rows } = await query(
-      `SELECT id, title, content, type, holiday_date, start_time, end_time, is_active, created_at, updated_at
+      `SELECT id, title, content, type, holiday_date, start_time, end_time, is_active,
+              block_breakfast, block_lunch, block_dinner, created_at, updated_at
        FROM dashboard_notifications
        ORDER BY start_time DESC`
     );
@@ -57,6 +62,9 @@ router.get("/all", requireRole("admin"), async (req, res, next) => {
       startTime: r.start_time,
       endTime: r.end_time,
       isActive: r.is_active,
+      blockBreakfast: r.block_breakfast,
+      blockLunch: r.block_lunch,
+      blockDinner: r.block_dinner,
       createdAt: r.created_at,
       updatedAt: r.updated_at
     })));
@@ -66,7 +74,10 @@ router.get("/all", requireRole("admin"), async (req, res, next) => {
 // POST /notifications -> create notification (Admin only)
 router.post("/", requireRole("admin"), async (req, res, next) => {
   try {
-    const { title, content, type, holidayDate = null, startTime, endTime, isActive = true } = req.body;
+    const {
+      title, content, type, holidayDate = null, startTime, endTime, isActive = true,
+      blockBreakfast = true, blockLunch = true, blockDinner = true
+    } = req.body;
 
     if (!title || !content || !type || !startTime || !endTime) {
       return res.status(400).json({ error: "title, content, type, startTime, and endTime are required" });
@@ -82,10 +93,11 @@ router.post("/", requireRole("admin"), async (req, res, next) => {
 
     const { rows } = await query(
       `INSERT INTO dashboard_notifications 
-        (title, content, type, holiday_date, start_time, end_time, is_active, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        (title, content, type, holiday_date, start_time, end_time, is_active,
+         block_breakfast, block_lunch, block_dinner, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
        RETURNING *`,
-      [title, content, type, holidayDate, startTime, endTime, isActive]
+      [title, content, type, holidayDate, startTime, endTime, isActive, blockBreakfast, blockLunch, blockDinner]
     );
 
     const r = rows[0];
@@ -98,6 +110,9 @@ router.post("/", requireRole("admin"), async (req, res, next) => {
       startTime: r.start_time,
       endTime: r.end_time,
       isActive: r.is_active,
+      blockBreakfast: r.block_breakfast,
+      blockLunch: r.block_lunch,
+      blockDinner: r.block_dinner,
       createdAt: r.created_at,
       updatedAt: r.updated_at
     });
@@ -108,7 +123,10 @@ router.post("/", requireRole("admin"), async (req, res, next) => {
 router.put("/:id", requireRole("admin"), async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { title, content, type, holidayDate = null, startTime, endTime, isActive } = req.body;
+    const {
+      title, content, type, holidayDate = null, startTime, endTime, isActive,
+      blockBreakfast, blockLunch, blockDinner
+    } = req.body;
 
     // Check if notification exists
     const check = await query(`SELECT * FROM dashboard_notifications WHERE id = $1`, [id]);
@@ -121,6 +139,9 @@ router.put("/:id", requireRole("admin"), async (req, res, next) => {
     const newStartTime = startTime ?? check.rows[0].start_time;
     const newEndTime = endTime ?? check.rows[0].end_time;
     const newIsActive = isActive ?? check.rows[0].is_active;
+    const newBlockBreakfast = blockBreakfast ?? check.rows[0].block_breakfast;
+    const newBlockLunch = blockLunch ?? check.rows[0].block_lunch;
+    const newBlockDinner = blockDinner ?? check.rows[0].block_dinner;
 
     if (!['general', 'holiday'].includes(newType)) {
       return res.status(400).json({ error: "type must be 'general' or 'holiday'" });
@@ -133,9 +154,14 @@ router.put("/:id", requireRole("admin"), async (req, res, next) => {
     const { rows } = await query(
       `UPDATE dashboard_notifications
        SET title = $1, content = $2, type = $3, holiday_date = $4,
-           start_time = $5, end_time = $6, is_active = $7, updated_at = NOW()
-       WHERE id = $8 RETURNING *`,
-      [newTitle, newContent, newType, newHolidayDate, newStartTime, newEndTime, newIsActive, id]
+           start_time = $5, end_time = $6, is_active = $7,
+           block_breakfast = $8, block_lunch = $9, block_dinner = $10,
+           updated_at = NOW()
+       WHERE id = $11 RETURNING *`,
+      [
+        newTitle, newContent, newType, newHolidayDate, newStartTime, newEndTime, newIsActive,
+        newBlockBreakfast, newBlockLunch, newBlockDinner, id
+      ]
     );
 
     const r = rows[0];
@@ -148,6 +174,9 @@ router.put("/:id", requireRole("admin"), async (req, res, next) => {
       startTime: r.start_time,
       endTime: r.end_time,
       isActive: r.is_active,
+      blockBreakfast: r.block_breakfast,
+      blockLunch: r.block_lunch,
+      blockDinner: r.block_dinner,
       createdAt: r.created_at,
       updatedAt: r.updated_at
     });

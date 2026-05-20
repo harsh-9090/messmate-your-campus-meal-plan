@@ -138,6 +138,9 @@ CREATE TABLE IF NOT EXISTS dashboard_notifications (
   start_time     TIMESTAMPTZ NOT NULL,
   end_time       TIMESTAMPTZ NOT NULL,
   is_active      BOOLEAN NOT NULL DEFAULT TRUE,
+  block_breakfast BOOLEAN NOT NULL DEFAULT TRUE,
+  block_lunch     BOOLEAN NOT NULL DEFAULT TRUE,
+  block_dinner    BOOLEAN NOT NULL DEFAULT TRUE,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

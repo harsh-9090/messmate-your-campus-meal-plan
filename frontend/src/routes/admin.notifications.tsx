@@ -149,9 +149,17 @@ function NotificationsPage() {
                     </TableCell>
                     <TableCell>
                       {n.holidayDate ? (
-                        <div className="flex items-center gap-1.5 text-sm text-foreground">
-                          <Calendar className="h-4 w-4 text-amber-500" />
-                          <span className="font-medium">{n.holidayDate}</span>
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-1.5 text-sm text-foreground">
+                            <Calendar className="h-4 w-4 text-amber-500" />
+                            <span className="font-medium">{n.holidayDate}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {n.blockBreakfast && <Badge variant="outline" className="text-[9px] px-1 py-0 border-red-200 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300">Breakfast</Badge>}
+                            {n.blockLunch && <Badge variant="outline" className="text-[9px] px-1 py-0 border-red-200 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300">Lunch</Badge>}
+                            {n.blockDinner && <Badge variant="outline" className="text-[9px] px-1 py-0 border-red-200 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300">Dinner</Badge>}
+                            {!n.blockBreakfast && !n.blockLunch && !n.blockDinner && <span className="text-[9px] text-muted-foreground font-semibold">(No meals blocked)</span>}
+                          </div>
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-xs">—</span>
@@ -255,9 +263,18 @@ function NotificationsPage() {
                 </p>
 
                 {n.holidayDate && (
-                  <div className="flex items-center gap-1.5 text-xs text-foreground bg-amber-50 dark:bg-amber-950/20 px-2.5 py-1.5 rounded-lg border border-amber-200 dark:border-amber-900/30">
-                    <Calendar className="h-3.5 w-3.5 text-amber-500" />
-                    <span>Holiday Date: <strong className="font-bold">{n.holidayDate}</strong></span>
+                  <div className="flex flex-col gap-2 text-xs text-foreground bg-amber-50 dark:bg-amber-950/20 px-2.5 py-2 rounded-lg border border-amber-200 dark:border-amber-900/30">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-amber-500" />
+                      <span>Holiday Date: <strong className="font-bold">{n.holidayDate}</strong></span>
+                    </div>
+                    <div className="flex flex-wrap gap-1 items-center">
+                      <span className="text-[10px] text-muted-foreground mr-1">Blocked:</span>
+                      {n.blockBreakfast && <Badge variant="outline" className="text-[8px] px-1 py-0 border-red-200 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300">Breakfast</Badge>}
+                      {n.blockLunch && <Badge variant="outline" className="text-[8px] px-1 py-0 border-red-200 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300">Lunch</Badge>}
+                      {n.blockDinner && <Badge variant="outline" className="text-[8px] px-1 py-0 border-red-200 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300">Dinner</Badge>}
+                      {!n.blockBreakfast && !n.blockLunch && !n.blockDinner && <span className="text-[8px] text-muted-foreground font-semibold">(None)</span>}
+                    </div>
                   </div>
                 )}
 
@@ -338,6 +355,9 @@ function NotificationDialog({
     startTime: "",
     endTime: "",
     isActive: true,
+    blockBreakfast: true,
+    blockLunch: true,
+    blockDinner: true,
   });
 
   // Sync form data when dialog opens or notification changes
@@ -352,6 +372,9 @@ function NotificationDialog({
           startTime: toDatetimeLocal(notification.startTime),
           endTime: toDatetimeLocal(notification.endTime),
           isActive: notification.isActive ?? true,
+          blockBreakfast: notification.blockBreakfast ?? true,
+          blockLunch: notification.blockLunch ?? true,
+          blockDinner: notification.blockDinner ?? true,
         });
       } else {
         const now = new Date();
@@ -364,6 +387,9 @@ function NotificationDialog({
           startTime: toDatetimeLocal(now.toISOString()),
           endTime: toDatetimeLocal(twoDaysLater.toISOString()),
           isActive: true,
+          blockBreakfast: true,
+          blockLunch: true,
+          blockDinner: true,
         });
       }
     }
@@ -448,7 +474,7 @@ function NotificationDialog({
               <div className="flex items-start gap-2.5">
                 <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                 <div className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                  <strong>Holiday QR code blocking active:</strong> Subscribed members will NOT be allowed to generate QR dining codes or validate meal scans on this date.
+                  <strong>Holiday QR code blocking active:</strong> Subscribed members will NOT be allowed to generate QR dining codes or validate meal scans for the selected blocked meals.
                 </div>
               </div>
               <div className="grid gap-1 mt-3">
@@ -461,6 +487,42 @@ function NotificationDialog({
                   onChange={(e) => setFormData({ ...formData, holidayDate: e.target.value })}
                   className="bg-background border-amber-300 dark:border-amber-800 focus-visible:ring-amber-500"
                 />
+              </div>
+
+              {/* Blocked Meals Checkboxes */}
+              <div className="grid gap-2 mt-3 pt-2 border-t border-amber-200/50">
+                <label className="text-[10px] font-bold uppercase text-amber-700 dark:text-amber-400">
+                  Meals to Block
+                </label>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-amber-900 dark:text-amber-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.blockBreakfast}
+                      onChange={(e) => setFormData({ ...formData, blockBreakfast: e.target.checked })}
+                      className="rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                    />
+                    Breakfast
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-amber-900 dark:text-amber-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.blockLunch}
+                      onChange={(e) => setFormData({ ...formData, blockLunch: e.target.checked })}
+                      className="rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                    />
+                    Lunch
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-amber-900 dark:text-amber-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.blockDinner}
+                      onChange={(e) => setFormData({ ...formData, blockDinner: e.target.checked })}
+                      className="rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                    />
+                    Dinner
+                  </label>
+                </div>
               </div>
             </div>
           )}

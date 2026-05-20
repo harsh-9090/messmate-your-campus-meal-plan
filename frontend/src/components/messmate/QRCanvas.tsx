@@ -140,6 +140,11 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
               ? error?.details?.reason || "Mess is closed today"
               : "QR unavailable - check connection"}
           </div>
+        ) : data?.blockedMeals?.includes(selectedMeal) ? (
+          <div className="grid h-full w-full place-items-center px-4 text-center text-xs font-semibold text-destructive">
+            {selectedMeal} is closed today<br />
+            <span className="text-[10px] text-muted-foreground mt-1 block">({data?.holidayReason || "Holiday"})</span>
+          </div>
         ) : !selectedToken ? (
           <div className="grid h-full w-full place-items-center px-4 text-center text-xs font-medium text-muted-foreground">
             No active pass for {selectedMeal}
