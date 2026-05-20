@@ -3,7 +3,7 @@ import { body, validationResult } from "express-validator";
 import { format } from "date-fns";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { scanLimiter } from "../middleware/rateLimiter.js";
-import { verifyQRToken } from "../services/qrService.js";
+import { verifyQRToken, getISTDateStr } from "../services/qrService.js";
 import { query, rowToMember, stripPassword } from "../db/index.js";
 import { validateAndRecord } from "../services/scanValidator.js";
 
@@ -41,6 +41,30 @@ router.post("/manual", requireRole("staff", "admin"),
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
 
       const { memberId, meal } = req.body;
+
+      // Check if today is a scheduled active holiday
+      const todayStr = getISTDateStr();
+      const holidayRes = await query(
+        `SELECT content FROM dashboard_notifications 
+         WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE LIMIT 1`,
+        [todayStr]
+      );
+      if (holidayRes.rows.length > 0) {
+        const reason = `Mess is closed today: ${holidayRes.rows[0].content}`;
+        await query(
+          `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by)
+           VALUES ($1, $2, $3, $4, NOW(), 'denied', 'MESS_CLOSED', $5, $6)`,
+          [memberId, null, meal, todayStr, reason, req.user.sub]
+        );
+        return res.status(200).json({
+          status: "denied",
+          code: "MESS_CLOSED",
+          reason,
+          meal,
+          member: { memberId }
+        });
+      }
+
       const { rows } = await query(
         `SELECT * FROM members WHERE member_id = $1 AND is_active = TRUE`,
         [memberId]
@@ -70,6 +94,41 @@ router.post("/validate",
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
       const { qrToken, meal } = req.body;
+
+      // Check if today is a scheduled active holiday
+      const todayStr = getISTDateStr();
+      const holidayRes = await query(
+        `SELECT content FROM dashboard_notifications 
+         WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE LIMIT 1`,
+        [todayStr]
+      );
+      if (holidayRes.rows.length > 0) {
+        const reason = `Mess is closed today: ${holidayRes.rows[0].content}`;
+        let memberId = null;
+        let memberName = null;
+        try {
+          const decoded = await verifyQRToken(qrToken, meal);
+          if (decoded) {
+            memberId = decoded.userId;
+            const mRes = await query(`SELECT name FROM members WHERE member_id = $1`, [memberId]);
+            memberName = mRes.rows[0]?.name || null;
+          }
+        } catch {}
+
+        await query(
+          `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by)
+           VALUES ($1, $2, $3, $4, NOW(), 'denied', 'MESS_CLOSED', $5, $6)`,
+          [memberId, memberName, meal, todayStr, reason, req.user.sub]
+        );
+        return res.status(200).json({
+          status: "denied",
+          code: "MESS_CLOSED",
+          reason,
+          meal,
+          member: memberId ? { memberId, name: memberName } : null
+        });
+      }
+
       const decoded = await verifyQRToken(qrToken, meal);
       if (!decoded) {
         await query(

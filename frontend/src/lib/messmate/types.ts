@@ -105,3 +105,17 @@ export interface Menu {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface DashboardNotification {
+  id: number;
+  title: string;
+  content: string;
+  type: "general" | "holiday";
+  holidayDate: string | null;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+

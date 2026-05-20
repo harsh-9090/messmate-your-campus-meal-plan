@@ -11,6 +11,17 @@ router.get("/token", async (req, res, next) => {
   try {
     const memberId = req.user.sub;
     
+    // Check if today is a scheduled active holiday
+    const todayStr = getISTDateStr();
+    const holidayRes = await query(
+      `SELECT content FROM dashboard_notifications 
+       WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE LIMIT 1`,
+      [todayStr]
+    );
+    if (holidayRes.rows.length > 0) {
+      return res.status(403).json({ error: "MESS_CLOSED", reason: holidayRes.rows[0].content });
+    }
+    
     // Fetch user's active plan subscription meals
     const { rows } = await query(
       `SELECT sub_meals FROM members WHERE member_id = $1 AND is_active = TRUE`,

@@ -129,3 +129,20 @@ CREATE INDEX IF NOT EXISTS menus_date_idx ON menus(date);
 ALTER TABLE members ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
 UPDATE members SET email_verified = TRUE WHERE is_active = TRUE OR role IN ('admin', 'staff');
 
+CREATE TABLE IF NOT EXISTS dashboard_notifications (
+  id             SERIAL PRIMARY KEY,
+  title          TEXT NOT NULL,
+  content        TEXT NOT NULL,
+  type           TEXT NOT NULL CHECK (type IN ('general', 'holiday')),
+  holiday_date   DATE,
+  start_time     TIMESTAMPTZ NOT NULL,
+  end_time       TIMESTAMPTZ NOT NULL,
+  is_active      BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS dashboard_notifications_active_idx ON dashboard_notifications(is_active);
+CREATE INDEX IF NOT EXISTS dashboard_notifications_time_idx ON dashboard_notifications(start_time, end_time);
+
+

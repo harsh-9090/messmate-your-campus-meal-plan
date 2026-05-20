@@ -12,6 +12,7 @@ import type {
   MealUsageDay,
   Payment,
   Menu,
+  DashboardNotification,
 } from "./types";
 
 const BASE_URL =
@@ -384,3 +385,14 @@ export const menusApi = {
     request<Menu>("/menus", { method: "POST", body: JSON.stringify(data) }),
   remove: (id: number) => request<{ ok: boolean }>(`/menus/${id}`, { method: "DELETE" }),
 };
+
+export const notificationsApi = {
+  list: () => request<DashboardNotification[]>("/notifications"),
+  listAll: () => request<DashboardNotification[]>("/notifications/all"),
+  create: (data: Partial<DashboardNotification>) =>
+    request<DashboardNotification>("/notifications", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: number, data: Partial<DashboardNotification>) =>
+    request<DashboardNotification>(`/notifications/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  remove: (id: number) => request<{ ok: boolean }>(`/notifications/${id}`, { method: "DELETE" }),
+};
+

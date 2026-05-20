@@ -1,0 +1,167 @@
+import { Router } from "express";
+import { query } from "../db/index.js";
+import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
+
+const router = Router();
+router.use(verifyToken);
+
+const formatSqlDate = (d) => {
+  if (d instanceof Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  return d;
+};
+
+// GET /notifications -> list currently active notifications for dashboard banner display
+router.get("/", async (req, res, next) => {
+  try {
+    const { rows } = await query(
+      `SELECT id, title, content, type, holiday_date, start_time, end_time, is_active
+       FROM dashboard_notifications
+       WHERE is_active = TRUE
+         AND NOW() BETWEEN start_time AND end_time
+       ORDER BY start_time ASC`
+    );
+    res.json(rows.map(r => ({
+      id: r.id,
+      title: r.title,
+      content: r.content,
+      type: r.type,
+      holidayDate: r.holiday_date ? formatSqlDate(r.holiday_date) : null,
+      startTime: r.start_time,
+      endTime: r.end_time,
+      isActive: r.is_active,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    })));
+  } catch (e) { next(e); }
+});
+
+// GET /notifications/all -> list all notifications (Admin only)
+router.get("/all", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { rows } = await query(
+      `SELECT id, title, content, type, holiday_date, start_time, end_time, is_active, created_at, updated_at
+       FROM dashboard_notifications
+       ORDER BY start_time DESC`
+    );
+    res.json(rows.map(r => ({
+      id: r.id,
+      title: r.title,
+      content: r.content,
+      type: r.type,
+      holidayDate: r.holiday_date ? formatSqlDate(r.holiday_date) : null,
+      startTime: r.start_time,
+      endTime: r.end_time,
+      isActive: r.is_active,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    })));
+  } catch (e) { next(e); }
+});
+
+// POST /notifications -> create notification (Admin only)
+router.post("/", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { title, content, type, holidayDate = null, startTime, endTime, isActive = true } = req.body;
+
+    if (!title || !content || !type || !startTime || !endTime) {
+      return res.status(400).json({ error: "title, content, type, startTime, and endTime are required" });
+    }
+
+    if (!['general', 'holiday'].includes(type)) {
+      return res.status(400).json({ error: "type must be 'general' or 'holiday'" });
+    }
+
+    if (type === 'holiday' && !holidayDate) {
+      return res.status(400).json({ error: "holidayDate is required when type is 'holiday'" });
+    }
+
+    const { rows } = await query(
+      `INSERT INTO dashboard_notifications 
+        (title, content, type, holiday_date, start_time, end_time, is_active, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+       RETURNING *`,
+      [title, content, type, holidayDate, startTime, endTime, isActive]
+    );
+
+    const r = rows[0];
+    res.status(201).json({
+      id: r.id,
+      title: r.title,
+      content: r.content,
+      type: r.type,
+      holidayDate: r.holiday_date ? formatSqlDate(r.holiday_date) : null,
+      startTime: r.start_time,
+      endTime: r.end_time,
+      isActive: r.is_active,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    });
+  } catch (e) { next(e); }
+});
+
+// PUT /notifications/:id -> update notification (Admin only)
+router.put("/:id", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { title, content, type, holidayDate = null, startTime, endTime, isActive } = req.body;
+
+    // Check if notification exists
+    const check = await query(`SELECT * FROM dashboard_notifications WHERE id = $1`, [id]);
+    if (!check.rows[0]) return res.status(404).json({ error: "Notification not found" });
+
+    const newTitle = title ?? check.rows[0].title;
+    const newContent = content ?? check.rows[0].content;
+    const newType = type ?? check.rows[0].type;
+    const newHolidayDate = type ? (holidayDate ?? null) : check.rows[0].holiday_date;
+    const newStartTime = startTime ?? check.rows[0].start_time;
+    const newEndTime = endTime ?? check.rows[0].end_time;
+    const newIsActive = isActive ?? check.rows[0].is_active;
+
+    if (!['general', 'holiday'].includes(newType)) {
+      return res.status(400).json({ error: "type must be 'general' or 'holiday'" });
+    }
+
+    if (newType === 'holiday' && !newHolidayDate) {
+      return res.status(400).json({ error: "holidayDate is required when type is 'holiday'" });
+    }
+
+    const { rows } = await query(
+      `UPDATE dashboard_notifications
+       SET title = $1, content = $2, type = $3, holiday_date = $4,
+           start_time = $5, end_time = $6, is_active = $7, updated_at = NOW()
+       WHERE id = $8 RETURNING *`,
+      [newTitle, newContent, newType, newHolidayDate, newStartTime, newEndTime, newIsActive, id]
+    );
+
+    const r = rows[0];
+    res.json({
+      id: r.id,
+      title: r.title,
+      content: r.content,
+      type: r.type,
+      holidayDate: r.holiday_date ? formatSqlDate(r.holiday_date) : null,
+      startTime: r.start_time,
+      endTime: r.end_time,
+      isActive: r.is_active,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at
+    });
+  } catch (e) { next(e); }
+});
+
+// DELETE /notifications/:id -> delete notification (Admin only)
+router.delete("/:id", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { rowCount } = await query(`DELETE FROM dashboard_notifications WHERE id = $1`, [id]);
+    if (rowCount === 0) return res.status(404).json({ error: "Notification not found" });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+export default router;

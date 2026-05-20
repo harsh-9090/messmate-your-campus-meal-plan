@@ -59,7 +59,7 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
     };
   }, []);
 
-  const { data, isError, isLoading } = useQuery({
+  const { data, error, isError, isLoading } = useQuery<any, any>({
     queryKey: ["qr-token-daily", userId],
     queryFn: async () => {
       try {
@@ -72,7 +72,10 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
           }));
         }
         return res;
-      } catch (err) {
+      } catch (err: any) {
+        if (err?.status === 403) {
+          throw err;
+        }
         const cached = getCachedQRTokens(userId);
         if (cached) {
           console.warn("Network failed. Using cached offline QR passes.");
@@ -132,8 +135,10 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : isError ? (
-          <div className="grid h-full w-full place-items-center px-4 text-center text-xs font-medium text-destructive">
-            QR unavailable - check connection
+          <div className="grid h-full w-full place-items-center px-4 text-center text-xs font-semibold text-destructive">
+            {error?.status === 403 && error?.message === "MESS_CLOSED"
+              ? error?.details?.reason || "Mess is closed today"
+              : "QR unavailable - check connection"}
           </div>
         ) : !selectedToken ? (
           <div className="grid h-full w-full place-items-center px-4 text-center text-xs font-medium text-muted-foreground">
@@ -143,6 +148,7 @@ export function QRCanvas({ meals = ["Breakfast", "Lunch", "Dinner"], size = 200 
           <canvas ref={canvasRef} width={size} height={size} />
         )}
       </div>
+
 
       {/* Verified Secure Footer Badge / Offline Alert */}
       {!isOnline ? (

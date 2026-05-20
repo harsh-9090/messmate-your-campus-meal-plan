@@ -23,6 +23,7 @@ import { Route as AdminScanLogsRouteImport } from './routes/admin.scan-logs'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPlanConfigRouteImport } from './routes/admin.plan-config'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMenuRouteImport } from './routes/admin.menu'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
@@ -97,6 +98,11 @@ const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
   path: '/payments',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminNotificationsRoute = AdminNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMenuRoute = AdminMenuRouteImport.update({
   id: '/menu',
   path: '/menu',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/menu': typeof AdminMenuRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/plan-config': typeof AdminPlanConfigRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/menu': typeof AdminMenuRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/plan-config': typeof AdminPlanConfigRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/menu': typeof AdminMenuRoute
+  '/admin/notifications': typeof AdminNotificationsRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/plan-config': typeof AdminPlanConfigRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/members'
     | '/admin/menu'
+    | '/admin/notifications'
     | '/admin/payments'
     | '/admin/plan-config'
     | '/admin/reports'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/members'
     | '/admin/menu'
+    | '/admin/notifications'
     | '/admin/payments'
     | '/admin/plan-config'
     | '/admin/reports'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/admin/finance'
     | '/admin/members'
     | '/admin/menu'
+    | '/admin/notifications'
     | '/admin/payments'
     | '/admin/plan-config'
     | '/admin/reports'
@@ -340,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPaymentsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/notifications': {
+      id: '/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AdminNotificationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/menu': {
       id: '/admin/menu'
       path: '/menu'
@@ -368,6 +387,7 @@ interface AdminRouteChildren {
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminMembersRoute: typeof AdminMembersRoute
   AdminMenuRoute: typeof AdminMenuRoute
+  AdminNotificationsRoute: typeof AdminNotificationsRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminPlanConfigRoute: typeof AdminPlanConfigRoute
   AdminReportsRoute: typeof AdminReportsRoute
@@ -380,6 +400,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminFinanceRoute: AdminFinanceRoute,
   AdminMembersRoute: AdminMembersRoute,
   AdminMenuRoute: AdminMenuRoute,
+  AdminNotificationsRoute: AdminNotificationsRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminPlanConfigRoute: AdminPlanConfigRoute,
   AdminReportsRoute: AdminReportsRoute,

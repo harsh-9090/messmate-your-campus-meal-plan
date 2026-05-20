@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/messmate/auth";
-import { membersApi, scanApi, configApi, menusApi, authApi } from "@/lib/messmate/api";
+import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi } from "@/lib/messmate/api";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,11 @@ function MemberPortal() {
   const menusQ = useQuery({
     queryKey: ["menus", "day", todayStr],
     queryFn: () => menusApi.list({ date: todayStr }),
+    enabled: !!authUser,
+  });
+  const notificationsQ = useQuery({
+    queryKey: ["notifications-active"],
+    queryFn: () => notificationsApi.list(),
     enabled: !!authUser,
   });
 
@@ -223,6 +228,42 @@ function MemberPortal() {
 
       {/* Main Grid: Stacks on mobile, side-by-side on desktop */}
       <main className="mx-auto max-w-2xl md:max-w-7xl space-y-4 md:space-y-0 p-4 md:grid md:grid-cols-12 md:gap-6">
+        {/* Active Notifications Banner */}
+        {notificationsQ.data && notificationsQ.data.length > 0 && (
+          <div className="md:col-span-12 space-y-3 mb-4">
+            {notificationsQ.data.map((n) => (
+              <div
+                key={n.id}
+                className={cn(
+                  "p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition-all duration-300",
+                  n.type === "holiday"
+                    ? "bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 border-red-200 dark:border-red-900/40 text-red-900 dark:text-red-100"
+                    : "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-900/40 text-blue-900 dark:text-blue-100"
+                )}
+              >
+                <div className="flex gap-3">
+                  <span className="text-xl sm:text-2xl shrink-0 mt-0.5">
+                    {n.type === "holiday" ? "⚠️" : "📢"}
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-sm sm:text-base leading-none">
+                      {n.title}
+                    </h4>
+                    <p className="text-xs sm:text-sm opacity-90 mt-1.5 leading-relaxed">
+                      {n.content}
+                    </p>
+                  </div>
+                </div>
+                {n.type === "holiday" && n.holidayDate && (
+                  <Badge className="bg-red-600 hover:bg-red-600 text-white dark:bg-red-800 shrink-0 self-start sm:self-center font-bold px-3 py-1 rounded-full uppercase tracking-wider text-[10px]">
+                    Mess Closed: {n.holidayDate}
+                  </Badge>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* COLUMN 1: Today's Menu & Meals Status (Visible if activeTab === 'today' on mobile) */}
         <div
           className={`md:col-span-4 space-y-4 ${activeTab === "today" ? "block" : "hidden md:block"}`}

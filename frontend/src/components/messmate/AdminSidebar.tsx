@@ -11,6 +11,7 @@ import {
   TrendingUp,
   UserCog,
   Menu,
+  Megaphone,
 } from "lucide-react";
 import { useAuth } from "@/lib/messmate/auth";
 import { cn } from "@/lib/utils";
@@ -27,9 +28,11 @@ const items = [
   { to: "/admin/finance", label: "Finance", icon: TrendingUp },
   { to: "/admin/scan-logs", label: "Scan Logs", icon: ScanLine },
   { to: "/admin/reports", label: "Reports", icon: BarChart3 },
+  { to: "/admin/notifications", label: "Announcements", icon: Megaphone },
   { to: "/admin/staff", label: "Staff", icon: UserCog },
   { to: "/admin/plan-config", label: "Plan Config", icon: Settings },
 ];
+
 
 function SidebarContent({ onNavItemClick }: { onNavItemClick?: () => void }) {
   const path = useRouterState({ select: (r) => r.location.pathname });
