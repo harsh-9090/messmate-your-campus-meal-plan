@@ -242,9 +242,9 @@ function NotificationsPage() {
                 <div className="flex items-center justify-between border-b pb-3">
                   <div className="flex flex-col">
                     <span className="font-bold text-foreground">{n.title}</span>
-                    <span className="text-[10px] text-muted-foreground mt-0.5">
+                    {/* <span className="text-[10px] text-muted-foreground mt-0.5">
                       ID: #{n.id}
-                    </span>
+                    </span> */}
                   </div>
                   <Badge
                     variant="secondary"
