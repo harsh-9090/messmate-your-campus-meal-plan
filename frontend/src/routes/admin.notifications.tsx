@@ -144,7 +144,7 @@ function NotificationsPage() {
                             : "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/50"
                         }
                       >
-                        {n.type === "holiday" ? "Holiday (QR Block)" : "General Notice"}
+                        {n.type === "holiday" ? "Holiday" : "General Notice"}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -438,7 +438,7 @@ function NotificationDialog({
                   });
                 }}
               >
-                <Calendar className="h-4 w-4" /> Holiday (QR Block)
+                <Calendar className="h-4 w-4" /> Holiday
               </Button>
             </div>
           </div>
