@@ -39,6 +39,9 @@ import { GhostLoader } from "@/components/messmate/GhostLoader";
 
 const formatHolidayDate = (dateStr: string) => {
   try {
+    if (dateStr === todayISO()) {
+      return "Mess is Closed Today";
+    }
     const [year, month, day] = dateStr.split("-").map(Number);
     const date = new Date(year, month - 1, day);
     const dayNum = date.getDate();
