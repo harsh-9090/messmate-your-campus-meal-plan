@@ -252,36 +252,45 @@ function MemberPortal() {
         {/* Active Notifications Banner */}
         {notificationsQ.data && notificationsQ.data.length > 0 && (
           <div className="md:col-span-12 space-y-3 mb-4">
-            {notificationsQ.data.map((n) => (
-              <div
-                key={n.id}
-                className={cn(
-                  "p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm transition-all duration-300",
-                  n.type === "holiday"
-                    ? "bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 border-red-200 dark:border-red-900/40 text-red-900 dark:text-red-100"
-                    : "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-900/40 text-blue-900 dark:text-blue-100"
-                )}
-              >
-                <div className="flex gap-3">
-                  <span className="text-xl sm:text-2xl shrink-0 mt-0.5">
-                    {n.type === "holiday" ? "⚠️" : "📢"}
-                  </span>
-                  <div>
-                    <h4 className="font-bold text-sm sm:text-base leading-none">
-                      {n.title}
-                    </h4>
-                    <p className="text-xs sm:text-sm opacity-90 mt-1.5 leading-relaxed">
-                      {n.content}
-                    </p>
+            {notificationsQ.data.map((n) => {
+              const isHoliday = n.type === "holiday";
+              return (
+                <div
+                  key={n.id}
+                  className={cn(
+                    "rounded-xl border overflow-hidden shadow-sm transition-all duration-300 bg-card",
+                    isHoliday
+                      ? "border-red-200 dark:border-red-900/40"
+                      : "border-blue-200 dark:border-blue-900/40"
+                  )}
+                >
+                  {/* Top Status Header Strip */}
+                  <div
+                    className={cn(
+                      "px-4 py-2 text-xs font-bold uppercase tracking-wider text-white",
+                      isHoliday ? "bg-red-600 dark:bg-red-800" : "bg-blue-600 dark:bg-blue-800"
+                    )}
+                  >
+                    {isHoliday && n.holidayDate ? formatHolidayDate(n.holidayDate) : "Announcement"}
+                  </div>
+
+                  {/* Card Body content below the header */}
+                  <div className="p-4 flex gap-3 items-start">
+                    <span className="text-xl sm:text-2xl shrink-0 mt-0.5">
+                      {isHoliday ? "⚠️" : "📢"}
+                    </span>
+                    <div>
+                      <h4 className="font-bold text-sm sm:text-base leading-snug">
+                        {n.title}
+                      </h4>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1 leading-relaxed">
+                        {n.content}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                {n.type === "holiday" && n.holidayDate && (
-                  <Badge className="bg-red-600 hover:bg-red-600 text-white dark:bg-red-800 shrink-0 self-start sm:self-center font-bold px-3 py-1.5 rounded-full uppercase tracking-wider text-[10px]">
-                    {formatHolidayDate(n.holidayDate)}
-                  </Badge>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
