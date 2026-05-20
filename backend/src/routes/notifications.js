@@ -79,16 +79,32 @@ router.post("/", requireRole("admin"), async (req, res, next) => {
       blockBreakfast = true, blockLunch = true, blockDinner = true
     } = req.body;
 
-    if (!title || !content || !type || !startTime || !endTime) {
-      return res.status(400).json({ error: "title, content, type, startTime, and endTime are required" });
+    if (!title || !content || !type) {
+      return res.status(400).json({ error: "title, content, and type are required" });
     }
 
     if (!['general', 'holiday'].includes(type)) {
       return res.status(400).json({ error: "type must be 'general' or 'holiday'" });
     }
 
-    if (type === 'holiday' && !holidayDate) {
-      return res.status(400).json({ error: "holidayDate is required when type is 'holiday'" });
+    let finalStartTime = startTime;
+    let finalEndTime = endTime;
+
+    if (type === 'holiday') {
+      if (!holidayDate || !/^\d{4}-\d{2}-\d{2}$/.test(holidayDate)) {
+        return res.status(400).json({ error: "holidayDate is required in YYYY-MM-DD format when type is 'holiday'" });
+      }
+      // Calculate display starts (2 days before holiday at 00:00:00 IST) and ends (holiday itself at 23:59:59 IST)
+      const startD = new Date(`${holidayDate}T00:00:00+05:30`);
+      startD.setDate(startD.getDate() - 2);
+      const endD = new Date(`${holidayDate}T23:59:59+05:30`);
+
+      finalStartTime = startD.toISOString();
+      finalEndTime = endD.toISOString();
+    } else {
+      if (!startTime || !endTime) {
+        return res.status(400).json({ error: "startTime and endTime are required for general notices" });
+      }
     }
 
     const { rows } = await query(
@@ -97,7 +113,7 @@ router.post("/", requireRole("admin"), async (req, res, next) => {
          block_breakfast, block_lunch, block_dinner, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
        RETURNING *`,
-      [title, content, type, holidayDate, startTime, endTime, isActive, blockBreakfast, blockLunch, blockDinner]
+      [title, content, type, holidayDate, finalStartTime, finalEndTime, isActive, blockBreakfast, blockLunch, blockDinner]
     );
 
     const r = rows[0];
@@ -136,19 +152,28 @@ router.put("/:id", requireRole("admin"), async (req, res, next) => {
     const newContent = content ?? check.rows[0].content;
     const newType = type ?? check.rows[0].type;
     const newHolidayDate = type ? (holidayDate ?? null) : check.rows[0].holiday_date;
-    const newStartTime = startTime ?? check.rows[0].start_time;
-    const newEndTime = endTime ?? check.rows[0].end_time;
     const newIsActive = isActive ?? check.rows[0].is_active;
     const newBlockBreakfast = blockBreakfast ?? check.rows[0].block_breakfast;
     const newBlockLunch = blockLunch ?? check.rows[0].block_lunch;
     const newBlockDinner = blockDinner ?? check.rows[0].block_dinner;
+    let finalStartTime = startTime ?? check.rows[0].start_time;
+    let finalEndTime = endTime ?? check.rows[0].end_time;
 
-    if (!['general', 'holiday'].includes(newType)) {
-      return res.status(400).json({ error: "type must be 'general' or 'holiday'" });
-    }
+    if (newType === 'holiday') {
+      if (!newHolidayDate || !/^\d{4}-\d{2}-\d{2}$/.test(newHolidayDate)) {
+        return res.status(400).json({ error: "holidayDate is required in YYYY-MM-DD format when type is 'holiday'" });
+      }
+      // Calculate display starts (2 days before holiday at 00:00:00 IST) and ends (holiday itself at 23:59:59 IST)
+      const startD = new Date(`${newHolidayDate}T00:00:00+05:30`);
+      startD.setDate(startD.getDate() - 2);
+      const endD = new Date(`${newHolidayDate}T23:59:59+05:30`);
 
-    if (newType === 'holiday' && !newHolidayDate) {
-      return res.status(400).json({ error: "holidayDate is required when type is 'holiday'" });
+      finalStartTime = startD.toISOString();
+      finalEndTime = endD.toISOString();
+    } else {
+      if (!finalStartTime || !finalEndTime) {
+        return res.status(400).json({ error: "startTime and endTime are required for general notices" });
+      }
     }
 
     const { rows } = await query(
@@ -159,7 +184,7 @@ router.put("/:id", requireRole("admin"), async (req, res, next) => {
            updated_at = NOW()
        WHERE id = $11 RETURNING *`,
       [
-        newTitle, newContent, newType, newHolidayDate, newStartTime, newEndTime, newIsActive,
+        newTitle, newContent, newType, newHolidayDate, finalStartTime, finalEndTime, newIsActive,
         newBlockBreakfast, newBlockLunch, newBlockDinner, id
       ]
     );

@@ -399,8 +399,8 @@ function NotificationDialog({
     mutationFn: (data: any) => {
       const payload = {
         ...data,
-        startTime: new Date(data.startTime).toISOString(),
-        endTime: new Date(data.endTime).toISOString(),
+        startTime: data.type === "general" ? new Date(data.startTime).toISOString() : new Date().toISOString(),
+        endTime: data.type === "general" ? new Date(data.endTime).toISOString() : new Date().toISOString(),
         holidayDate: data.type === "holiday" ? (data.holidayDate || null) : null,
       };
       return notification ? notificationsApi.update(notification.id, payload) : notificationsApi.create(payload);
@@ -527,24 +527,26 @@ function NotificationDialog({
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="grid gap-1">
-              <label className="text-[10px] font-bold uppercase text-muted-foreground">Display Starts</label>
-              <Input
-                type="datetime-local"
-                value={formData.startTime}
-                onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-              />
+          {formData.type !== "holiday" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid gap-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">Display Starts</label>
+                <Input
+                  type="datetime-local"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-1">
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">Display Ends</label>
+                <Input
+                  type="datetime-local"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                />
+              </div>
             </div>
-            <div className="grid gap-1">
-              <label className="text-[10px] font-bold uppercase text-muted-foreground">Display Ends</label>
-              <Input
-                type="datetime-local"
-                value={formData.endTime}
-                onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-              />
-            </div>
-          </div>
+          )}
 
           <div className="flex items-center gap-3 pt-2">
             <input
