@@ -217,7 +217,15 @@ router.post("/",
       const memberObj = rowToMember(m);
       if (role === "member") {
         try {
-          await sendPlanActivatedEmail(memberObj);
+          await sendPlanActivatedEmail(memberObj, {
+            label: memberObj.subscription.planLabel,
+            meals: memberObj.subscription.meals,
+            startDate: memberObj.subscription.startDate,
+            endDate: memberObj.subscription.endDate,
+            price: memberObj.subscription.pricePerMonth,
+            amountPaid: memberObj.subscription.amountPaid,
+            dueAmount: memberObj.subscription.dueAmount,
+          });
         } catch (mailErr) {
           console.error("[MEMBERS-ERROR] Failed to send initial plan activation email:", mailErr.message);
         }
