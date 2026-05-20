@@ -25,7 +25,7 @@ export async function runDailyTasks() {
   const { rows: soon } = await query(
     `SELECT * FROM members
       WHERE role = 'member' AND is_active = TRUE
-        AND sub_end_date BETWEEN CURRENT_DATE + INTERVAL '2 day' AND CURRENT_DATE + INTERVAL '3 day'`
+        AND sub_end_date BETWEEN CURRENT_DATE + INTERVAL '1 day' AND CURRENT_DATE + INTERVAL '3 day'`
   );
   for (const r of soon) {
     const m = rowToMember(r);

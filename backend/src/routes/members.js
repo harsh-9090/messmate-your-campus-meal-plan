@@ -213,7 +213,25 @@ router.post("/",
           [id, name, mobile, amountPaid, paymentMethod, planId]
         );
       }
-      res.status(201).json(stripPassword(rowToMember(m)));
+
+      const memberObj = rowToMember(m);
+      if (role === "member") {
+        try {
+          await sendPlanActivatedEmail(memberObj);
+        } catch (mailErr) {
+          console.error("[MEMBERS-ERROR] Failed to send initial plan activation email:", mailErr.message);
+        }
+
+        try {
+          const otp = Math.floor(100000 + Math.random() * 900000).toString();
+          await setCache(`messmate:member:${id}:email-otp`, otp, 300); // 5 minutes TTL
+          await sendVerificationOTPEmail(memberObj, otp);
+        } catch (otpErr) {
+          console.error("[MEMBERS-ERROR] Failed to send email verification OTP:", otpErr.message);
+        }
+      }
+
+      res.status(201).json(stripPassword(memberObj));
     } catch (e) { next(e); }
   });
 
