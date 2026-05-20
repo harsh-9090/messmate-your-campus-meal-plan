@@ -37,6 +37,24 @@ import type { Meal } from "@/lib/messmate/types";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
 
+const formatHolidayDate = (dateStr: string) => {
+  try {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    const dayNum = date.getDate();
+    const monthName = date.toLocaleString("en-IN", { month: "long" });
+
+    let suffix = "th";
+    if (dayNum === 1 || dayNum === 21 || dayNum === 31) suffix = "st";
+    else if (dayNum === 2 || dayNum === 22) suffix = "nd";
+    else if (dayNum === 3 || dayNum === 23) suffix = "rd";
+
+    return `Mess is Closed on ${dayNum}${suffix} of ${monthName}`;
+  } catch (e) {
+    return `Mess is Closed: ${dateStr}`;
+  }
+};
+
 export const Route = createFileRoute("/member/")({
   head: () => ({
     meta: [
@@ -255,8 +273,8 @@ function MemberPortal() {
                   </div>
                 </div>
                 {n.type === "holiday" && n.holidayDate && (
-                  <Badge className="bg-red-600 hover:bg-red-600 text-white dark:bg-red-800 shrink-0 self-start sm:self-center font-bold px-3 py-1 rounded-full uppercase tracking-wider text-[10px]">
-                    Mess Closed: {n.holidayDate}
+                  <Badge className="bg-red-600 hover:bg-red-600 text-white dark:bg-red-800 shrink-0 self-start sm:self-center font-bold px-3 py-1.5 rounded-full uppercase tracking-wider text-[10px]">
+                    {formatHolidayDate(n.holidayDate)}
                   </Badge>
                 )}
               </div>
