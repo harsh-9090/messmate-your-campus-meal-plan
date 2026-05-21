@@ -348,6 +348,19 @@ function MemberPortal() {
   const [activeTab, setActiveTab] = useState<"today" | "pass" | "skips" | "account">("today");
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
 
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
+    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "default"
+  );
+  const [showPushBanner, setShowPushBanner] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window) || !authUser) return;
+    const isDismissed = localStorage.getItem(`messmate:dismiss-push-banner:${authUser.id}`);
+    if (Notification.permission === "default" && !isDismissed) {
+      setShowPushBanner(true);
+    }
+  }, [authUser]);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -620,6 +633,58 @@ function MemberPortal() {
 
       {/* Main Grid: Stacks on mobile, side-by-side on desktop */}
       <main className="mx-auto max-w-2xl md:max-w-7xl space-y-4 md:space-y-0 p-4 md:grid md:grid-cols-12 md:gap-6">
+        {/* Enable Push Notifications Banner (User-gesture permission request) */}
+        {showPushBanner && (
+          <Card className="md:col-span-12 p-4 border-indigo-200 dark:border-indigo-950/40 bg-gradient-to-r from-indigo-50/30 to-violet-50/30 dark:from-indigo-950/5 dark:to-violet-950/5 shadow-sm mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <span className="text-xl shrink-0">🔔</span>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-sm sm:text-base text-foreground leading-snug">
+                    Enable Web Push Notifications
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Stay updated with real-time dining alerts, guest pass approvals, and kitchen board notices.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem(`messmate:dismiss-push-banner:${authUser.id}`, "true");
+                    setShowPushBanner(false);
+                  }}
+                  className="text-xs font-bold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border/60 hover:bg-muted/30 bg-transparent transition-colors cursor-pointer"
+                >
+                  Later
+                </button>
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    const { checkAndRegisterPush } = await import("@/lib/messmate/pushHelper");
+                    await checkAndRegisterPush();
+                    if ("Notification" in window) {
+                      setNotificationPermission(Notification.permission);
+                      if (Notification.permission === "granted") {
+                        setShowPushBanner(false);
+                        toast.success("Push notifications enabled successfully!");
+                      } else if (Notification.permission === "denied") {
+                        setShowPushBanner(false);
+                        toast.error("Notification permission denied. Please enable them in your browser settings.");
+                      }
+                    }
+                  }}
+                  size="sm"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 h-8"
+                >
+                  Enable
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Active Notifications Banner */}
         {notificationsQ.data && notificationsQ.data.length > 0 && (
           <div className="md:col-span-12 space-y-3 mb-4">

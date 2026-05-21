@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { membersApi, configApi, reportsApi, usageApi } from "@/lib/messmate/api";
+import { useAuth } from "@/lib/messmate/auth";
 import { StatCard } from "@/components/messmate/StatCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,20 @@ function AdminDashboard() {
 
   const [viewingList, setViewingList] = useState<{ title: string; members: Member[] } | null>(null);
 
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
+    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "default"
+  );
+  const [showPushBanner, setShowPushBanner] = useState(false);
+  const authUser = useAuth((s) => s.user);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window) || !authUser) return;
+    const isDismissed = localStorage.getItem(`messmate:dismiss-push-banner:${authUser.id}`);
+    if (Notification.permission === "default" && !isDismissed) {
+      setShowPushBanner(true);
+    }
+  }, [authUser]);
+
   const renewM = useMutation({
     mutationFn: (id: string) => membersApi.renew(id, {}),
     onSuccess: () => {
@@ -128,6 +143,60 @@ function AdminDashboard() {
           <p className="text-sm text-muted-foreground">{formatDate(today)} · Live overview</p>
         </div>
       </header>
+
+      {/* Enable Push Notifications Banner (User-gesture permission request) */}
+      {showPushBanner && (
+        <Card className="p-4 border-indigo-200 dark:border-indigo-950/40 bg-gradient-to-r from-indigo-50/30 to-violet-50/30 dark:from-indigo-950/5 dark:to-violet-950/5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <span className="text-xl shrink-0">🔔</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="font-bold text-sm sm:text-base text-foreground leading-snug">
+                  Enable Web Push Notifications
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Receive instant alerts for new feedback submissions and guest pass approval requests.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  if (authUser) {
+                    localStorage.setItem(`messmate:dismiss-push-banner:${authUser.id}`, "true");
+                  }
+                  setShowPushBanner(false);
+                }}
+                className="text-xs font-bold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border/60 hover:bg-muted/30 bg-transparent transition-colors cursor-pointer"
+              >
+                Later
+              </button>
+              <Button
+                type="button"
+                onClick={async () => {
+                  const { checkAndRegisterPush } = await import("@/lib/messmate/pushHelper");
+                  await checkAndRegisterPush();
+                  if ("Notification" in window) {
+                    setNotificationPermission(Notification.permission);
+                    if (Notification.permission === "granted") {
+                      setShowPushBanner(false);
+                      toast.success("Push notifications enabled successfully!");
+                    } else if (Notification.permission === "denied") {
+                      setShowPushBanner(false);
+                      toast.error("Notification permission denied. Please enable them in your browser settings.");
+                    }
+                  }
+                }}
+                size="sm"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 h-8"
+              >
+                Enable
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="space-y-4">
         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/80 pl-1">

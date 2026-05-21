@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/lib/messmate/auth";
+import { PullToRefresh } from "@/components/messmate/PullToRefresh";
 
 import appCss from "../styles.css?url";
 
@@ -280,7 +281,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <PullToRefresh>
+        <Outlet />
+      </PullToRefresh>
       <Toaster richColors position="top-right" />
     </QueryClientProvider>
   );
