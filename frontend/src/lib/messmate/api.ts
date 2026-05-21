@@ -450,4 +450,9 @@ export const guestPassesApi = {
     request<GuestPass & { host_name: string }>(`/guest-passes/public/${token}`, {
       auth: false,
     }),
+  issueWalkIn: (data: { guestName: string; guestEmail: string; date: string; meal: Meal }) =>
+    request<GuestPass>("/guest-passes/walk-in", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };

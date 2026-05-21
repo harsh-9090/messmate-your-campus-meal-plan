@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { guestPassesApi } from "@/lib/messmate/api";
+import { guestPassesApi, configApi } from "@/lib/messmate/api";
+import { Meal, GuestPass } from "@/lib/messmate/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,13 +23,18 @@ import {
   IndianRupee, 
   AlertCircle,
   Clock,
-  ArrowUpRight
+  ArrowUpRight,
+  Mail,
+  Check
 } from "lucide-react";
 import { formatINR } from "@/lib/messmate/dateHelpers";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import QRCode from "qrcode";
 
 export const Route = createFileRoute("/admin/guest-passes")({
   head: () => ({ meta: [{ title: "Guest Passes - Mom's Kitchen Admin" }] }),
@@ -39,6 +45,7 @@ function AdminGuestPassesPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
+  const [walkInOpen, setWalkInOpen] = useState(false);
 
   // Fetch pending approvals
   const pendingQ = useQuery({
@@ -104,13 +111,20 @@ function AdminGuestPassesPage() {
 
   return (
     <div className="space-y-6 p-6 md:p-8">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold">Guest Passes</h1>
           <p className="text-sm text-muted-foreground">
             Approve counter payments and audit visitor access logs
           </p>
         </div>
+        <Button
+          onClick={() => setWalkInOpen(true)}
+          className="rounded-xl font-bold shadow-sm cursor-pointer h-10 px-5 gap-2"
+        >
+          <Ticket className="h-4 w-4" />
+          <span>Issue Walk-in Pass</span>
+        </Button>
       </header>
 
       {/* Stats Cards Row */}
@@ -268,7 +282,11 @@ function AdminGuestPassesPage() {
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-bold text-slate-800 dark:text-slate-200">{gp.host_name || "Unknown"}</span>
-                            <span className="text-[10px] text-muted-foreground font-semibold">ID: {gp.member_id}</span>
+                            {gp.member_id ? (
+                              <span className="text-[10px] text-muted-foreground font-semibold">ID: {gp.member_id}</span>
+                            ) : (
+                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">Walk-in Ticket</span>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="font-semibold text-slate-700 dark:text-slate-300">
@@ -312,6 +330,223 @@ function AdminGuestPassesPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      <WalkInPassDialog open={walkInOpen} onOpenChange={setWalkInOpen} />
     </div>
+  );
+}
+
+interface WalkInPassDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
+  const qc = useQueryClient();
+  const [guestName, setGuestName] = useState("");
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestDate, setGuestDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [guestMeal, setGuestMeal] = useState<Meal>("Lunch");
+  const [createdPass, setCreatedPass] = useState<GuestPass | null>(null);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Fetch meal windows to resolve dynamic pricing
+  const windowsQ = useQuery({
+    queryKey: ["windows"],
+    queryFn: () => configApi.listWindows(),
+  });
+
+  const getGuestPriceOf = (mealName: Meal) => {
+    const w = windowsQ.data?.find((x) => x.meal === mealName);
+    return w?.guestPrice ?? 120;
+  };
+
+  const walkInM = useMutation({
+    mutationFn: (data: { guestName: string; guestEmail: string; date: string; meal: Meal }) =>
+      guestPassesApi.issueWalkIn(data),
+    onSuccess: (pass) => {
+      toast.success("Walk-in pass issued & email dispatched!");
+      setCreatedPass(pass);
+      qc.invalidateQueries({ queryKey: ["guest-passes-all"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to issue walk-in pass");
+    },
+  });
+
+  useEffect(() => {
+    if (!open) {
+      setGuestName("");
+      setGuestEmail("");
+      setGuestDate(new Date().toISOString().split("T")[0]);
+      setGuestMeal("Lunch");
+      setCreatedPass(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (createdPass && canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, createdPass.qr_token, {
+        width: 180,
+        margin: 1,
+        color: { dark: "#0f172a", light: "#ffffff" },
+        errorCorrectionLevel: "H",
+      }).catch((err) => {
+        console.error("QR Code generation failed", err);
+      });
+    }
+  }, [createdPass]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md w-[95vw] rounded-2xl">
+        <DialogHeader>
+          <DialogTitle className="font-display text-xl font-bold flex items-center gap-2">
+            <Ticket className="h-5 w-5 text-primary" />
+            <span>{createdPass ? "Pass Issued Successfully!" : "Issue Walk-in Ticket"}</span>
+          </DialogTitle>
+        </DialogHeader>
+
+        {!createdPass ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!guestName.trim()) {
+                toast.error("Please enter guest name");
+                return;
+              }
+              if (!guestEmail.trim()) {
+                toast.error("Please enter guest email");
+                return;
+              }
+              walkInM.mutate({
+                guestName: guestName.trim(),
+                guestEmail: guestEmail.trim(),
+                date: guestDate,
+                meal: guestMeal,
+              });
+            }}
+            className="space-y-4 py-2"
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="guestName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Guest Name
+              </Label>
+              <Input
+                id="guestName"
+                placeholder="Enter visitor name..."
+                required
+                className="h-10 rounded-xl"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="guestEmail" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Guest Email Address
+              </Label>
+              <Input
+                id="guestEmail"
+                type="email"
+                placeholder="Enter visitor email..."
+                required
+                className="h-10 rounded-xl"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="guestDate" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Date
+                </Label>
+                <Input
+                  id="guestDate"
+                  type="date"
+                  required
+                  className="h-10 rounded-xl cursor-pointer"
+                  value={guestDate}
+                  onChange={(e) => setGuestDate(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="guestMeal" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Meal Session
+                </Label>
+                <select
+                  id="guestMeal"
+                  className="w-full h-10 px-3 rounded-xl border border-input bg-background text-sm font-semibold"
+                  value={guestMeal}
+                  onChange={(e) => setGuestMeal(e.target.value as Meal)}
+                >
+                  <option value="Breakfast">Breakfast (₹{getGuestPriceOf("Breakfast")})</option>
+                  <option value="Lunch">Lunch (₹{getGuestPriceOf("Lunch")})</option>
+                  <option value="Dinner">Dinner (₹{getGuestPriceOf("Dinner")})</option>
+                </select>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button
+                type="submit"
+                className="w-full h-10 rounded-xl font-bold shadow-sm"
+                disabled={walkInM.isPending}
+              >
+                {walkInM.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                Confirm Payment & Issue (₹{getGuestPriceOf(guestMeal)})
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : (
+          <div className="text-center space-y-5 py-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 flex items-center justify-center">
+              <Check className="h-6 w-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="font-bold text-slate-800 dark:text-slate-200">Active Walk-in Ticket</h3>
+              <p className="text-xs text-muted-foreground">
+                Email with instructions sent to <strong className="text-slate-700 dark:text-slate-300">{guestEmail}</strong>
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <canvas ref={canvasRef} className="border p-2.5 rounded-xl bg-white shadow-sm" />
+              <p className="text-[10px] text-muted-foreground font-semibold mt-2.5">
+                Scan this QR code directly for entry validation
+              </p>
+            </div>
+
+            <div className="bg-muted/40 rounded-xl p-3 text-left space-y-1.5 border border-border/40 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-semibold">Guest Name:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{createdPass.guest_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-semibold">Meal & Date:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  {createdPass.meal} ({createdPass.date})
+                </span>
+              </div>
+              <div className="flex justify-between border-t pt-1.5 mt-1">
+                <span className="text-muted-foreground font-semibold">Amount Paid:</span>
+                <span className="font-extrabold text-emerald-600 dark:text-emerald-400">₹{createdPass.price}</span>
+              </div>
+            </div>
+
+            <Button onClick={() => onOpenChange(false)} className="w-full h-10 rounded-xl font-bold shadow-sm">
+              Done
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

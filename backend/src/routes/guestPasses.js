@@ -4,6 +4,7 @@ import { query } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import crypto from "crypto";
 import { format } from "date-fns";
+import { sendGuestPassEmail } from "../services/notificationService.js";
 
 const router = Router();
 
@@ -96,9 +97,9 @@ router.get("/pending", verifyToken, requireRole("admin"), async (req, res, next)
 router.get("/", verifyToken, requireRole("admin"), async (req, res, next) => {
   try {
     const { rows } = await query(
-      `SELECT gp.*, m.name as host_name, m.mobile as host_mobile
+      `SELECT gp.*, COALESCE(m.name, 'Admin (Walk-in)') as host_name, m.mobile as host_mobile
        FROM guest_passes gp
-       JOIN members m ON gp.member_id = m.member_id
+       LEFT JOIN members m ON gp.member_id = m.member_id
        ORDER BY gp.created_at DESC`
     );
     const formatted = rows.map((gp) => ({
@@ -147,9 +148,9 @@ router.get("/public/:token", async (req, res, next) => {
   try {
     const { token } = req.params;
     const { rows } = await query(
-      `SELECT gp.guest_name, gp.date, gp.meal, gp.status, gp.price, gp.qr_token, m.name as host_name
+      `SELECT gp.guest_name, gp.date, gp.meal, gp.status, gp.price, gp.qr_token, COALESCE(m.name, 'Admin (Walk-in)') as host_name
        FROM guest_passes gp
-       JOIN members m ON gp.member_id = m.member_id
+       LEFT JOIN members m ON gp.member_id = m.member_id
        WHERE gp.qr_token = $1`,
       [token]
     );
@@ -167,5 +168,65 @@ router.get("/public/:token", async (req, res, next) => {
     next(e);
   }
 });
+
+// 6. Issue a walk-in guest pass (Admins only)
+// POST /walk-in
+router.post(
+  "/walk-in",
+  verifyToken,
+  requireRole("admin"),
+  [
+    body("guestName").trim().notEmpty().withMessage("Guest name is required"),
+    body("guestEmail").trim().isEmail().withMessage("Valid guest email is required"),
+    body("date").isISO8601().withMessage("Valid date (YYYY-MM-DD) is required"),
+    body("meal").isIn(["Breakfast", "Lunch", "Dinner"]).withMessage("Invalid meal type"),
+  ],
+  async (req, res, next) => {
+    try {
+      const errs = validationResult(req);
+      if (!errs.isEmpty()) {
+        return res.status(400).json({ error: "Invalid input", details: errs.array() });
+      }
+
+      const { guestName, guestEmail, date, meal } = req.body;
+
+      // Generate a crypto random token prefixed with 'gp_'
+      const rawToken = crypto.randomBytes(32).toString("hex");
+      const qrToken = `gp_${rawToken}`;
+
+      const { rows: windowRows } = await query(
+        `SELECT guest_price FROM meal_windows WHERE meal = $1`,
+        [meal]
+      );
+      const price = windowRows[0]?.guest_price ?? 120;
+
+      const { rows } = await query(
+        `INSERT INTO guest_passes (member_id, guest_name, date, meal, qr_token, status, price)
+         VALUES (NULL, $1, $2, $3, $4, 'active', $5)
+         RETURNING *`,
+        [guestName, date, meal, qrToken, price]
+      );
+
+      const pass = rows[0];
+
+      // Dispatch guest pass email asynchronously
+      sendGuestPassEmail(guestEmail, guestName, {
+        date: format(new Date(date), "yyyy-MM-dd"),
+        meal,
+        price,
+        qrToken,
+      }).catch((err) => {
+        console.error("[NOTIFY-ERROR] Failed to send walk-in guest pass email:", err.message);
+      });
+
+      res.status(201).json({
+        ...pass,
+        date: format(new Date(pass.date), "yyyy-MM-dd"),
+      });
+    } catch (e) {
+      next(e);
+    }
+  }
+);
 
 export default router;

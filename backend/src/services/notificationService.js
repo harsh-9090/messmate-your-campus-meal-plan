@@ -311,3 +311,72 @@ export async function sendVerificationOTPEmail(member, otp) {
   }
 }
 
+export async function sendGuestPassEmail(email, guestName, passDetails) {
+  console.log(`[NOTIFY] Preparing guest pass email for ${guestName} (${email})`);
+
+  const passUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/guest-pass/${passDetails.qrToken}`;
+
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #d1fae5; border-radius: 12px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+      <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #ecfdf5; padding-bottom: 15px;">
+        <h2 style="color: #10b981; margin: 0; font-size: 24px;">Your Guest Meal Pass is Active! 🥣</h2>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 5px;">Mom's Kitchen Guest Portal</p>
+      </div>
+      
+      <p>Hello <strong>${guestName}</strong>,</p>
+      <p>A guest meal ticket has been issued for you at Mom's Kitchen!</p>
+      
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <h4 style="margin: 0 0 12px 0; color: #166534; font-size: 16px; border-bottom: 1px solid #dcfce7; padding-bottom: 5px;">Pass Details:</h4>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr>
+            <td style="padding: 6px 0; color: #475569; width: 35%;"><strong>Visitor Name:</strong></td>
+            <td style="padding: 6px 0; color: #1e293b;">${guestName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #475569;"><strong>Valid Date:</strong></td>
+            <td style="padding: 6px 0; color: #1e293b;">${passDetails.date}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #475569;"><strong>Meal Session:</strong></td>
+            <td style="padding: 6px 0; color: #1e293b; font-weight: bold; color: #10b981;">${passDetails.meal}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #475569;"><strong>Amount Paid:</strong></td>
+            <td style="padding: 6px 0; color: #1e293b;">₹${passDetails.price}</td>
+          </tr>
+          <tr>
+            <td style="padding: 6px 0; color: #475569;"><strong>Issued By:</strong></td>
+            <td style="padding: 6px 0; color: #1e293b; font-style: italic;">Mess Office (Walk-in)</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${passUrl}" style="background-color: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">View QR Pass</a>
+      </div>
+
+      <p style="font-size: 14px; line-height: 1.5; color: #334155;">
+        Please click the button above to view your active QR code. Show this QR code to the scanner at the kitchen during your meal session to get served!
+      </p>
+      
+      <hr style="border: 0; border-top: 1px solid #f3f4f6; margin: 25px 0;" />
+      <p style="font-size: 12px; color: #6b7280; text-align: center; margin: 0;">
+        Mom's Kitchen Administration
+      </p>
+    </div>
+  `;
+
+  try {
+    await sendEmail({
+      to: email,
+      subject: `Your Mom's Kitchen Guest Pass for ${passDetails.meal} (${passDetails.date})`,
+      html,
+    });
+    console.log(`[NOTIFY] Guest pass email sent to ${email}`);
+  } catch (err) {
+    console.error(`[NOTIFY-ERROR] Failed to send guest pass email to ${email}:`, err.message);
+  }
+}
+
+
