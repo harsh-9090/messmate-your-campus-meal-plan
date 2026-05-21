@@ -104,6 +104,10 @@ const windowUpdateSchema = [
     .withMessage("endTime is required")
     .matches(timeRegex)
     .withMessage("endTime must match 24h format (HH:MM or HH:MM:SS)"),
+  body("guestPrice")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("guestPrice must be a non-negative integer"),
   validate
 ];
 
@@ -129,7 +133,7 @@ router.get("/windows", async (_req, res, next) => {
     if (cached) return res.json(cached);
 
     const { rows } = await query(`SELECT * FROM meal_windows WHERE is_active = TRUE ORDER BY start_time ASC`);
-    const result = rows.map((w) => ({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active }));
+    const result = rows.map((w) => ({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active, guestPrice: w.guest_price }));
     await setCache("messmate:window:list", result, 1800); // 30 min
     res.json(result);
   } catch (e) { next(e); }
@@ -195,7 +199,7 @@ router.get("/windows", async (_req, res, next) => {
     if (cached) return res.json(cached);
 
     const { rows } = await query(`SELECT * FROM meal_windows ORDER BY start_time ASC`);
-    const result = rows.map((w) => ({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active }));
+    const result = rows.map((w) => ({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active, guestPrice: w.guest_price }));
     await setCache("messmate:window:list", result, 1800); // 30 min
     res.json(result);
   } catch (e) { next(e); }
@@ -203,19 +207,37 @@ router.get("/windows", async (_req, res, next) => {
 
 router.put("/windows/:meal", requireRole("admin"), windowUpdateSchema, async (req, res, next) => {
   try {
-    const { startTime, endTime } = req.body;
-    const { rows } = await query(
-      `INSERT INTO meal_windows (meal, start_time, end_time)
-       VALUES ($1,$2,$3)
-       ON CONFLICT (meal) DO UPDATE SET start_time = EXCLUDED.start_time, end_time = EXCLUDED.end_time, updated_at = NOW()
-       RETURNING *`,
-      [req.params.meal, startTime, endTime]
-    );
+    const { startTime, endTime, guestPrice } = req.body;
+    let queryStr;
+    let params;
+    if (guestPrice !== undefined) {
+      queryStr = `
+        INSERT INTO meal_windows (meal, start_time, end_time, guest_price)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (meal) DO UPDATE SET 
+          start_time = EXCLUDED.start_time, 
+          end_time = EXCLUDED.end_time, 
+          guest_price = EXCLUDED.guest_price,
+          updated_at = NOW()
+        RETURNING *`;
+      params = [req.params.meal, startTime, endTime, guestPrice];
+    } else {
+      queryStr = `
+        INSERT INTO meal_windows (meal, start_time, end_time)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (meal) DO UPDATE SET 
+          start_time = EXCLUDED.start_time, 
+          end_time = EXCLUDED.end_time, 
+          updated_at = NOW()
+        RETURNING *`;
+      params = [req.params.meal, startTime, endTime];
+    }
+    const { rows } = await query(queryStr, params);
     
     await delCache(["messmate:window:list", `messmate:window:${req.params.meal}`]);
     
     const w = rows[0];
-    res.json({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active });
+    res.json({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active, guestPrice: w.guest_price });
   } catch (e) { next(e); }
 });
 

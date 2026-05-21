@@ -253,10 +253,10 @@ export const configApi = {
   removePlan: (planId: string) =>
     request<{ ok: true }>(`/config/plans/${planId}`, { method: "DELETE" }),
   listWindows: () => request<MealWindow[]>("/config/windows"),
-  updateWindow: (meal: Meal, startTime: string, endTime: string) =>
+  updateWindow: (meal: Meal, startTime: string, endTime: string, guestPrice?: number) =>
     request<MealWindow>(`/config/windows/${meal}`, {
       method: "PUT",
-      body: JSON.stringify({ startTime, endTime }),
+      body: JSON.stringify({ startTime, endTime, guestPrice }),
     }),
 };
 

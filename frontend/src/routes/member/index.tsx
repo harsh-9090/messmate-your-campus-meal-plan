@@ -512,6 +512,10 @@ function MemberPortal() {
   const locked = (!sub.isPaid && !inGracePeriod) || expired;
 
   const windows = windowsQ.data ?? [];
+  const getGuestPriceOf = (mealType: Meal) => {
+    const w = windows.find((x) => x.meal === mealType);
+    return w?.guestPrice !== undefined ? w.guestPrice : (mealType === "Breakfast" ? 80 : 120);
+  };
   const myLogs = logsQ.data ?? [];
 
   // Build today's usage from logs
@@ -905,9 +909,9 @@ function MemberPortal() {
                       value={guestMeal}
                       onChange={(e) => setGuestMeal(e.target.value as Meal)}
                     >
-                      <option value="Breakfast">Breakfast (₹80)</option>
-                      <option value="Lunch">Lunch (₹120)</option>
-                      <option value="Dinner">Dinner (₹120)</option>
+                      <option value="Breakfast">Breakfast (₹{getGuestPriceOf("Breakfast")})</option>
+                      <option value="Lunch">Lunch (₹{getGuestPriceOf("Lunch")})</option>
+                      <option value="Dinner">Dinner (₹{getGuestPriceOf("Dinner")})</option>
                     </select>
                   </div>
                 </div>
@@ -920,7 +924,7 @@ function MemberPortal() {
                   {createGuestPassM.isPending ? (
                     <Loader2 className="h-3 w-3 animate-spin mr-1" />
                   ) : null}
-                  Submit Request (₹{guestMeal === 'Breakfast' ? 80 : 120})
+                  Submit Request (₹{getGuestPriceOf(guestMeal)})
                 </Button>
               </form>
             )}

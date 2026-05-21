@@ -7,11 +7,7 @@ import { format } from "date-fns";
 
 const router = Router();
 
-const GUEST_PASS_PRICES = {
-  Breakfast: 80,
-  Lunch: 120,
-  Dinner: 120
-};
+
 
 // 1. Create a guest pass request (authenticated members)
 // POST /
@@ -34,7 +30,11 @@ router.post(
       const rawToken = crypto.randomBytes(32).toString("hex");
       const qrToken = `gp_${rawToken}`;
 
-      const price = GUEST_PASS_PRICES[meal] || 120;
+      const { rows: windowRows } = await query(
+        `SELECT guest_price FROM meal_windows WHERE meal = $1`,
+        [meal]
+      );
+      const price = windowRows[0]?.guest_price ?? 120;
 
       const { rows } = await query(
         `INSERT INTO guest_passes (member_id, guest_name, date, meal, qr_token, status, price)

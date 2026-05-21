@@ -71,6 +71,7 @@ export interface MealWindow {
   meal: Meal;
   startTime: string; // HH:MM
   endTime: string;
+  guestPrice?: number;
 }
 
 export interface ScanResult {

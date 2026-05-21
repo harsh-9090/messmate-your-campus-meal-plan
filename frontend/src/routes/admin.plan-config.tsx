@@ -60,11 +60,13 @@ function PlanConfigPage() {
       meal,
       startTime,
       endTime,
+      guestPrice,
     }: {
       meal: Meal;
       startTime: string;
       endTime: string;
-    }) => configApi.updateWindow(meal, startTime, endTime),
+      guestPrice?: number;
+    }) => configApi.updateWindow(meal, startTime, endTime, guestPrice),
     onSuccess: (_, v) => {
       toast.success(`${v.meal} window updated`);
       qc.invalidateQueries({ queryKey: ["windows"] });
@@ -205,7 +207,7 @@ function PlanConfigPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:flex items-center gap-4">
+                  <div className="grid grid-cols-3 sm:flex items-center gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">
                         Start Time
@@ -214,13 +216,14 @@ function PlanConfigPage() {
                         <Input
                           type="time"
                           defaultValue={w.startTime}
-                          className="h-11 w-full sm:w-32 bg-muted/30 border-transparent focus:bg-background rounded-xl transition-all"
+                          className="h-11 w-full sm:w-28 bg-muted/30 border-transparent focus:bg-background rounded-xl transition-all"
                           onBlur={(e) => {
                             if (e.target.value !== w.startTime)
                               updateWindowM.mutate({
                                 meal: w.meal,
                                 startTime: e.target.value,
                                 endTime: w.endTime,
+                                guestPrice: w.guestPrice,
                               });
                           }}
                         />
@@ -234,13 +237,36 @@ function PlanConfigPage() {
                         <Input
                           type="time"
                           defaultValue={w.endTime}
-                          className="h-11 w-full sm:w-32 bg-muted/30 border-transparent focus:bg-background rounded-xl transition-all"
+                          className="h-11 w-full sm:w-28 bg-muted/30 border-transparent focus:bg-background rounded-xl transition-all"
                           onBlur={(e) => {
                             if (e.target.value !== w.endTime)
                               updateWindowM.mutate({
                                 meal: w.meal,
                                 startTime: w.startTime,
                                 endTime: e.target.value,
+                                guestPrice: w.guestPrice,
+                              });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">
+                        Guest Price (₹)
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          defaultValue={w.guestPrice !== undefined ? w.guestPrice : 120}
+                          className="h-11 w-full sm:w-28 bg-muted/30 border-transparent focus:bg-background rounded-xl transition-all font-semibold"
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val) && val !== w.guestPrice)
+                              updateWindowM.mutate({
+                                meal: w.meal,
+                                startTime: w.startTime,
+                                endTime: w.endTime,
+                                guestPrice: val,
                               });
                           }}
                         />

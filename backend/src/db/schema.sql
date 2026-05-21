@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS meal_windows (
   start_time  TEXT NOT NULL,   -- "HH:MM"
   end_time    TEXT NOT NULL,
   is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+  guest_price INTEGER NOT NULL DEFAULT 120,
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -189,3 +190,6 @@ CREATE TABLE IF NOT EXISTS guest_passes (
 );
 
 CREATE INDEX IF NOT EXISTS guest_passes_token_idx ON guest_passes (qr_token);
+
+ALTER TABLE meal_windows ADD COLUMN IF NOT EXISTS guest_price INTEGER NOT NULL DEFAULT 120;
+UPDATE meal_windows SET guest_price = 80 WHERE meal = 'Breakfast' AND guest_price = 120;
