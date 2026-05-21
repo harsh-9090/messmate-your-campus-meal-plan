@@ -17,6 +17,7 @@ import type {
   HeadcountReport,
   UnratedMeal,
   RatingsAnalytics,
+  GuestPass,
 } from "./types";
 
 const BASE_URL =
@@ -432,4 +433,21 @@ export const ratingsApi = {
   getAnalytics: () => request<RatingsAnalytics>("/ratings/analytics"),
 };
 
-
+export const guestPassesApi = {
+  create: (data: { guestName?: string; date: string; meal: Meal }) =>
+    request<GuestPass>("/guest-passes", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  myPasses: () => request<GuestPass[]>("/guest-passes/my-passes"),
+  listPending: () => request<GuestPass[]>("/guest-passes/pending"),
+  listAll: () => request<GuestPass[]>("/guest-passes"),
+  approve: (id: string) =>
+    request<GuestPass>(`/guest-passes/${id}/approve`, {
+      method: "PATCH",
+    }),
+  getPublicPass: (token: string) =>
+    request<GuestPass & { host_name: string }>(`/guest-passes/public/${token}`, {
+      auth: false,
+    }),
+};

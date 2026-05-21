@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MemberIndexRouteImport } from './routes/member/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as StaffScannerRouteImport } from './routes/staff/scanner'
+import { Route as GuestPassTokenRouteImport } from './routes/guest-pass.$token'
 import { Route as AdminStaffRouteImport } from './routes/admin.staff'
 import { Route as AdminScanLogsRouteImport } from './routes/admin.scan-logs'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -27,6 +28,7 @@ import { Route as AdminNotificationsRouteImport } from './routes/admin.notificat
 import { Route as AdminMenuRouteImport } from './routes/admin.menu'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminHeadcountRouteImport } from './routes/admin.headcount'
+import { Route as AdminGuestPassesRouteImport } from './routes/admin.guest-passes'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminFeedbackRouteImport } from './routes/admin.feedback'
 
@@ -75,6 +77,11 @@ const StaffScannerRoute = StaffScannerRouteImport.update({
   path: '/staff/scanner',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuestPassTokenRoute = GuestPassTokenRouteImport.update({
+  id: '/guest-pass/$token',
+  path: '/guest-pass/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminStaffRoute = AdminStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
@@ -120,6 +127,11 @@ const AdminHeadcountRoute = AdminHeadcountRouteImport.update({
   path: '/headcount',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminGuestPassesRoute = AdminGuestPassesRouteImport.update({
+  id: '/guest-passes',
+  path: '/guest-passes',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFinanceRoute = AdminFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
@@ -140,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/guest-passes': typeof AdminGuestPassesRoute
   '/admin/headcount': typeof AdminHeadcountRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/menu': typeof AdminMenuRoute
@@ -149,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scan-logs': typeof AdminScanLogsRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/guest-pass/$token': typeof GuestPassTokenRoute
   '/staff/scanner': typeof StaffScannerRoute
   '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
@@ -161,6 +175,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/guest-passes': typeof AdminGuestPassesRoute
   '/admin/headcount': typeof AdminHeadcountRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/menu': typeof AdminMenuRoute
@@ -170,6 +185,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scan-logs': typeof AdminScanLogsRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/guest-pass/$token': typeof GuestPassTokenRoute
   '/staff/scanner': typeof StaffScannerRoute
   '/admin': typeof AdminIndexRoute
   '/member': typeof MemberIndexRoute
@@ -184,6 +200,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/guest-passes': typeof AdminGuestPassesRoute
   '/admin/headcount': typeof AdminHeadcountRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/menu': typeof AdminMenuRoute
@@ -193,6 +210,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scan-logs': typeof AdminScanLogsRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/guest-pass/$token': typeof GuestPassTokenRoute
   '/staff/scanner': typeof StaffScannerRoute
   '/admin/': typeof AdminIndexRoute
   '/member/': typeof MemberIndexRoute
@@ -208,6 +226,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/feedback'
     | '/admin/finance'
+    | '/admin/guest-passes'
     | '/admin/headcount'
     | '/admin/members'
     | '/admin/menu'
@@ -217,6 +236,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/scan-logs'
     | '/admin/staff'
+    | '/guest-pass/$token'
     | '/staff/scanner'
     | '/admin/'
     | '/member/'
@@ -229,6 +249,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/feedback'
     | '/admin/finance'
+    | '/admin/guest-passes'
     | '/admin/headcount'
     | '/admin/members'
     | '/admin/menu'
@@ -238,6 +259,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/scan-logs'
     | '/admin/staff'
+    | '/guest-pass/$token'
     | '/staff/scanner'
     | '/admin'
     | '/member'
@@ -251,6 +273,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/admin/feedback'
     | '/admin/finance'
+    | '/admin/guest-passes'
     | '/admin/headcount'
     | '/admin/members'
     | '/admin/menu'
@@ -260,6 +283,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/scan-logs'
     | '/admin/staff'
+    | '/guest-pass/$token'
     | '/staff/scanner'
     | '/admin/'
     | '/member/'
@@ -272,6 +296,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  GuestPassTokenRoute: typeof GuestPassTokenRoute
   StaffScannerRoute: typeof StaffScannerRoute
   MemberIndexRoute: typeof MemberIndexRoute
 }
@@ -341,6 +366,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffScannerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guest-pass/$token': {
+      id: '/guest-pass/$token'
+      path: '/guest-pass/$token'
+      fullPath: '/guest-pass/$token'
+      preLoaderRoute: typeof GuestPassTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/staff': {
       id: '/admin/staff'
       path: '/staff'
@@ -404,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHeadcountRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/guest-passes': {
+      id: '/admin/guest-passes'
+      path: '/guest-passes'
+      fullPath: '/admin/guest-passes'
+      preLoaderRoute: typeof AdminGuestPassesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/finance': {
       id: '/admin/finance'
       path: '/finance'
@@ -424,6 +463,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
+  AdminGuestPassesRoute: typeof AdminGuestPassesRoute
   AdminHeadcountRoute: typeof AdminHeadcountRoute
   AdminMembersRoute: typeof AdminMembersRoute
   AdminMenuRoute: typeof AdminMenuRoute
@@ -439,6 +479,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminFeedbackRoute: AdminFeedbackRoute,
   AdminFinanceRoute: AdminFinanceRoute,
+  AdminGuestPassesRoute: AdminGuestPassesRoute,
   AdminHeadcountRoute: AdminHeadcountRoute,
   AdminMembersRoute: AdminMembersRoute,
   AdminMenuRoute: AdminMenuRoute,
@@ -460,6 +501,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  GuestPassTokenRoute: GuestPassTokenRoute,
   StaffScannerRoute: StaffScannerRoute,
   MemberIndexRoute: MemberIndexRoute,
 }

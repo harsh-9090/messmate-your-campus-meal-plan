@@ -141,6 +141,97 @@ router.post("/validate",
         });
       }
 
+      if (qrToken.startsWith("gp_")) {
+        const gpRes = await query(
+          `SELECT gp.*, m.name as host_name 
+           FROM guest_passes gp 
+           JOIN members m ON gp.member_id = m.member_id 
+           WHERE gp.qr_token = $1`,
+          [qrToken]
+        );
+        if (gpRes.rows.length === 0) {
+          await query(
+            `INSERT INTO scan_logs (meal, date, ts, status, denial_code, denial_reason, scanned_by)
+             VALUES ($1, $2, NOW(), 'denied', 'INVALID_TOKEN', 'Guest pass not found', $3)`,
+            [meal, todayStr, req.user.sub]
+          );
+          return res.status(200).json({ status: "denied", code: "INVALID_TOKEN", reason: "Guest pass not found", meal });
+        }
+        
+        const gp = gpRes.rows[0];
+        const hostInfo = { memberId: gp.member_id, name: `${gp.guest_name || 'Guest'} (Host: ${gp.host_name})` };
+        
+        if (gp.status === 'pending_approval') {
+          const reason = "Guest pass is pending counter payment/approval";
+          await query(
+            `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by)
+             VALUES ($1, $2, $3, $4, NOW(), 'denied', 'PENDING_APPROVAL', $5, $6)`,
+            [gp.member_id, hostInfo.name, meal, todayStr, reason, req.user.sub]
+          );
+          return res.status(200).json({ status: "denied", code: "PENDING_APPROVAL", reason, meal, member: hostInfo });
+        }
+        
+        if (gp.status === 'used') {
+          const reason = "Guest pass has already been used";
+          await query(
+            `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by)
+             VALUES ($1, $2, $3, $4, NOW(), 'denied', 'ALREADY_USED', $5, $6)`,
+            [gp.member_id, hostInfo.name, meal, todayStr, reason, req.user.sub]
+          );
+          return res.status(200).json({ status: "denied", code: "ALREADY_USED", reason, meal, member: hostInfo });
+        }
+
+        if (gp.status === 'expired') {
+          const reason = "Guest pass has expired";
+          await query(
+            `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by)
+             VALUES ($1, $2, $3, $4, NOW(), 'denied', 'EXPIRED', $5, $6)`,
+            [gp.member_id, hostInfo.name, meal, todayStr, reason, req.user.sub]
+          );
+          return res.status(200).json({ status: "denied", code: "EXPIRED", reason, meal, member: hostInfo });
+        }
+
+        const gpDateStr = format(new Date(gp.date), "yyyy-MM-dd");
+        if (gpDateStr !== todayStr) {
+          const reason = `Guest pass is for date ${gpDateStr} but today is ${todayStr}`;
+          await query(
+            `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by)
+             VALUES ($1, $2, $3, $4, NOW(), 'denied', 'WRONG_DATE', $5, $6)`,
+            [gp.member_id, hostInfo.name, meal, todayStr, reason, req.user.sub]
+          );
+          return res.status(200).json({ status: "denied", code: "WRONG_DATE", reason, meal, member: hostInfo });
+        }
+
+        if (gp.meal !== meal) {
+          const reason = `Guest pass is for ${gp.meal} but scanned during ${meal}`;
+          await query(
+            `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by)
+             VALUES ($1, $2, $3, $4, NOW(), 'denied', 'WRONG_MEAL', $5, $6)`,
+            [gp.member_id, hostInfo.name, meal, todayStr, reason, req.user.sub]
+          );
+          return res.status(200).json({ status: "denied", code: "WRONG_MEAL", reason, meal, member: hostInfo });
+        }
+
+        await query(
+          `UPDATE guest_passes SET status = 'used', scanned_at = NOW(), updated_at = NOW() WHERE id = $1`,
+          [gp.id]
+        );
+
+        await query(
+          `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, scanned_by)
+           VALUES ($1, $2, $3, $4, NOW(), 'allowed', $5)`,
+          [gp.member_id, hostInfo.name, meal, todayStr, req.user.sub]
+        );
+
+        return res.status(200).json({
+          status: "allowed",
+          meal,
+          member: hostInfo,
+          isGuestPass: true,
+          guestName: gp.guest_name || "Guest"
+        });
+      }
+
       const decoded = await verifyQRToken(qrToken, meal);
       if (!decoded) {
         await query(

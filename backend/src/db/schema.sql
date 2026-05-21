@@ -175,5 +175,17 @@ CREATE TABLE IF NOT EXISTS menu_item_ratings (
 CREATE INDEX IF NOT EXISTS menu_item_ratings_dish_idx ON menu_item_ratings (dish_name);
 CREATE INDEX IF NOT EXISTS menu_item_ratings_date_idx ON menu_item_ratings (date);
 
+CREATE TABLE IF NOT EXISTS guest_passes (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  member_id       TEXT REFERENCES members(member_id) ON DELETE SET NULL,
+  guest_name      TEXT,
+  date            DATE NOT NULL,
+  meal            TEXT NOT NULL CHECK (meal IN ('Breakfast','Lunch','Dinner')),
+  qr_token        TEXT UNIQUE NOT NULL,
+  status          TEXT NOT NULL CHECK (status IN ('pending_approval','active','used','expired')),
+  price           INTEGER NOT NULL DEFAULT 0,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-
+CREATE INDEX IF NOT EXISTS guest_passes_token_idx ON guest_passes (qr_token);

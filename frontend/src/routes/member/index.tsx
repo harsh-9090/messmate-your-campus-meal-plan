@@ -2,11 +2,12 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/messmate/auth";
-import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi, skipsApi, ratingsApi } from "@/lib/messmate/api";
+import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi, skipsApi, ratingsApi, guestPassesApi } from "@/lib/messmate/api";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { QRCanvas } from "@/components/messmate/QRCanvas";
 import { SubscriptionBar } from "@/components/messmate/SubscriptionBar";
 import { MealChip } from "@/components/messmate/MealChip";
@@ -38,7 +39,7 @@ import {
   formatDate,
 } from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
-import type { Meal, DashboardNotification, UnratedMeal } from "@/lib/messmate/types";
+import type { Meal, DashboardNotification, UnratedMeal, GuestPass } from "@/lib/messmate/types";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
 
@@ -358,6 +359,29 @@ function MemberPortal() {
   }, []);
 
   const todayStr = todayISO();
+
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [guestName, setGuestName] = useState("");
+  const [guestDate, setGuestDate] = useState(todayStr);
+  const [guestMeal, setGuestMeal] = useState<Meal>("Lunch");
+
+  const myPassesQ = useQuery({
+    queryKey: ["my-guest-passes"],
+    queryFn: () => guestPassesApi.myPasses(),
+    enabled: !!authUser,
+  });
+
+  const createGuestPassM = useMutation({
+    mutationFn: (args: { guestName?: string; date: string; meal: Meal }) =>
+      guestPassesApi.create(args),
+    onSuccess: () => {
+      toast.success("Guest pass requested! Please pay at the counter to activate.");
+      qc.invalidateQueries({ queryKey: ["my-guest-passes"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to request guest pass");
+    },
+  });
 
   const meQ = useQuery({
     queryKey: ["member", authUser?.id],
@@ -809,6 +833,184 @@ function MemberPortal() {
                   )}
                   <QRCanvas meals={sub.meals} />
                 </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Guest Passes Card */}
+          <Card className="p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Visitors
+                </div>
+                <div className="font-display text-lg font-bold">Guest Passes</div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 rounded-lg text-xs font-bold cursor-pointer"
+                onClick={() => setShowRequestForm(!showRequestForm)}
+              >
+                {showRequestForm ? "Cancel" : "+ Request Pass"}
+              </Button>
+            </div>
+
+            {showRequestForm && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!guestDate) return;
+                  createGuestPassM.mutate({
+                    guestName: guestName.trim() || "Guest",
+                    date: guestDate,
+                    meal: guestMeal,
+                  }, {
+                    onSuccess: () => {
+                      setGuestName("");
+                      setShowRequestForm(false);
+                    }
+                  });
+                }}
+                className="space-y-3 p-3.5 rounded-xl bg-muted/40 border border-border/50 animate-in fade-in slide-in-from-top-1 duration-250"
+              >
+                <div className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                  New Guest Ticket
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Guest Name</label>
+                  <Input
+                    placeholder="Enter guest name..."
+                    className="h-9 px-3 rounded-lg text-xs"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Date</label>
+                    <Input
+                      type="date"
+                      className="h-9 px-3 rounded-lg text-xs cursor-pointer"
+                      min={todayStr}
+                      value={guestDate}
+                      onChange={(e) => setGuestDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Meal</label>
+                    <select
+                      className="w-full h-9 px-2 rounded-lg border border-input bg-background text-xs font-semibold"
+                      value={guestMeal}
+                      onChange={(e) => setGuestMeal(e.target.value as Meal)}
+                    >
+                      <option value="Breakfast">Breakfast (₹80)</option>
+                      <option value="Lunch">Lunch (₹120)</option>
+                      <option value="Dinner">Dinner (₹120)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-9 rounded-lg text-xs font-bold shadow-sm"
+                  disabled={createGuestPassM.isPending}
+                >
+                  {createGuestPassM.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : null}
+                  Submit Request (₹{guestMeal === 'Breakfast' ? 80 : 120})
+                </Button>
+              </form>
+            )}
+
+            {/* List of passes */}
+            <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+              {myPassesQ.isLoading ? (
+                <div className="text-center py-4 text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1.5">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading passes...
+                </div>
+              ) : myPassesQ.data?.length === 0 ? (
+                <div className="text-center py-6 text-xs text-muted-foreground font-medium">
+                  No guest passes requested yet.
+                </div>
+              ) : (
+                myPassesQ.data?.map((gp) => {
+                  const shareText = encodeURIComponent(
+                    `Here is your Mess Guest Pass for ${gp.meal} on ${gp.date}. Present this link to scan: ${window.location.origin}/guest-pass/${gp.qr_token}`
+                  );
+                  const whatsappLink = `https://api.whatsapp.com/send?text=${shareText}`;
+
+                  return (
+                    <div
+                      key={gp.id}
+                      className="p-3 rounded-xl border border-border/80 bg-background hover:bg-muted/10 transition-colors flex flex-col gap-2.5"
+                    >
+                      <div className="flex items-start justify-between gap-1.5">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                            {gp.guest_name}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1">
+                            <span>{gp.date}</span>
+                            <span>•</span>
+                            <span className="font-bold text-primary">{gp.meal}</span>
+                          </div>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className={`text-[9px] font-bold py-0 px-2 shrink-0 ${
+                            gp.status === "active"
+                              ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                              : gp.status === "used"
+                                ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                : gp.status === "pending_approval"
+                                  ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                                  : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
+                          }`}
+                        >
+                          {gp.status === "pending_approval" ? "Pending Cash" : gp.status}
+                        </Badge>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 border-t pt-2 mt-0.5">
+                        <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-400">
+                          ₹{gp.price}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                            className="h-7 px-2 rounded-md text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/5 cursor-pointer"
+                          >
+                            <Link to="/guest-pass/$token" params={{ token: gp.qr_token }}>
+                              View Pass
+                            </Link>
+                          </Button>
+                          {gp.status === "active" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                              className="h-7 px-2.5 rounded-md text-[10px] font-bold border-emerald-500/30 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 cursor-pointer"
+                            >
+                              <a
+                                href={whatsappLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Share Pass
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </Card>

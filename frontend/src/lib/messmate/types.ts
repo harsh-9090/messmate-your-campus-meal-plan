@@ -8,7 +8,8 @@ export type DenialCode =
   | "ALREADY_USED"
   | "INVALID_TOKEN"
   | "NOT_FOUND"
-  | "MEAL_SKIPPED";
+  | "MEAL_SKIPPED"
+  | "PENDING_APPROVAL";
 
 export interface Plan {
   planId: string;
@@ -172,4 +173,17 @@ export interface RatingsAnalytics {
   comments: RatingComment[];
 }
 
-
+export interface GuestPass {
+  id: string;
+  member_id: string;
+  guest_name: string;
+  date: string;
+  meal: Meal;
+  qr_token: string;
+  status: "pending_approval" | "active" | "used" | "expired";
+  price: number;
+  host_name?: string;
+  host_mobile?: string;
+  created_at: string;
+  updated_at: string;
+}
