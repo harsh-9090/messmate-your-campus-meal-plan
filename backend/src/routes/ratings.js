@@ -19,14 +19,14 @@ router.get("/status", async (req, res, next) => {
     const { rows: usageRows } = await query(
       `SELECT date, used_breakfast, used_lunch, used_dinner FROM meal_usage 
        WHERE member_id = $1 AND date BETWEEN $2::date AND $3::date`,
-      [req.user.id, yesterdayStr, todayStr]
+      [req.user.sub, yesterdayStr, todayStr]
     );
 
     // 2. Fetch existing ratings
     const { rows: ratingRows } = await query(
       `SELECT DISTINCT date, meal FROM menu_item_ratings 
        WHERE member_id = $1 AND date BETWEEN $2::date AND $3::date`,
-      [req.user.id, yesterdayStr, todayStr]
+      [req.user.sub, yesterdayStr, todayStr]
     );
 
     // 3. Fetch menus
@@ -98,7 +98,7 @@ router.post("/", async (req, res, next) => {
          VALUES ($1, $2::date, $3, $4, $5, $6, $7, NOW())
          ON CONFLICT (member_id, date, meal, dish_name)
          DO UPDATE SET rating = EXCLUDED.rating, comments = EXCLUDED.comments, is_anonymous = EXCLUDED.is_anonymous`,
-        [req.user.id, date, meal, dish_name, rating, comments, is_anonymous]
+        [req.user.sub, date, meal, dish_name, rating, comments, is_anonymous]
       );
     }
 
