@@ -13,6 +13,8 @@ import type {
   Payment,
   Menu,
   DashboardNotification,
+  MealSkip,
+  HeadcountReport,
 } from "./types";
 
 const BASE_URL =
@@ -394,5 +396,25 @@ export const notificationsApi = {
   update: (id: number, data: Partial<DashboardNotification>) =>
     request<DashboardNotification>(`/notifications/${id}`, { method: "PUT", body: JSON.stringify(data) }),
   remove: (id: number) => request<{ ok: boolean }>(`/notifications/${id}`, { method: "DELETE" }),
+};
+
+export const skipsApi = {
+  listMySkips: (startDate?: string, endDate?: string) => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    return request<MealSkip[]>("/skips", { query: params });
+  },
+  toggleSkip: (date: string, meal: Meal, skip: boolean) =>
+    request<{ ok: boolean; date: string; meal: Meal; skipped: boolean }>("/skips/toggle", {
+      method: "POST",
+      body: JSON.stringify({ date, meal, skip }),
+    }),
+  getHeadcount: (startDate?: string, endDate?: string) => {
+    const params: Record<string, string> = {};
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    return request<HeadcountReport[]>("/skips/headcount", { query: params });
+  },
 };
 

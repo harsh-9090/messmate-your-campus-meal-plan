@@ -26,6 +26,7 @@ import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminNotificationsRouteImport } from './routes/admin.notifications'
 import { Route as AdminMenuRouteImport } from './routes/admin.menu'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
+import { Route as AdminHeadcountRouteImport } from './routes/admin.headcount'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -113,6 +114,11 @@ const AdminMembersRoute = AdminMembersRouteImport.update({
   path: '/members',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminHeadcountRoute = AdminHeadcountRouteImport.update({
+  id: '/headcount',
+  path: '/headcount',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminFinanceRoute = AdminFinanceRouteImport.update({
   id: '/finance',
   path: '/finance',
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/headcount': typeof AdminHeadcountRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/menu': typeof AdminMenuRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/headcount': typeof AdminHeadcountRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/menu': typeof AdminMenuRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
   '/admin/finance': typeof AdminFinanceRoute
+  '/admin/headcount': typeof AdminHeadcountRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/menu': typeof AdminMenuRoute
   '/admin/notifications': typeof AdminNotificationsRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/admin/finance'
+    | '/admin/headcount'
     | '/admin/members'
     | '/admin/menu'
     | '/admin/notifications'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/admin/finance'
+    | '/admin/headcount'
     | '/admin/members'
     | '/admin/menu'
     | '/admin/notifications'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/register'
     | '/reset-password'
     | '/admin/finance'
+    | '/admin/headcount'
     | '/admin/members'
     | '/admin/menu'
     | '/admin/notifications'
@@ -373,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMembersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/headcount': {
+      id: '/admin/headcount'
+      path: '/headcount'
+      fullPath: '/admin/headcount'
+      preLoaderRoute: typeof AdminHeadcountRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/finance': {
       id: '/admin/finance'
       path: '/finance'
@@ -385,6 +404,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminFinanceRoute: typeof AdminFinanceRoute
+  AdminHeadcountRoute: typeof AdminHeadcountRoute
   AdminMembersRoute: typeof AdminMembersRoute
   AdminMenuRoute: typeof AdminMenuRoute
   AdminNotificationsRoute: typeof AdminNotificationsRoute
@@ -398,6 +418,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminFinanceRoute: AdminFinanceRoute,
+  AdminHeadcountRoute: AdminHeadcountRoute,
   AdminMembersRoute: AdminMembersRoute,
   AdminMenuRoute: AdminMenuRoute,
   AdminNotificationsRoute: AdminNotificationsRoute,

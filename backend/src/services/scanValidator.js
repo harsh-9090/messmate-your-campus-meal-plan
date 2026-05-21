@@ -90,6 +90,17 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
     return { status: "denied", code: "NOT_IN_PLAN", reason, member: memberInfo, meal };
   }
 
+  // Check if today's meal is skipped
+  const skipCheck = await query(
+    `SELECT 1 FROM meal_skips WHERE member_id = $1 AND skip_date = $2 AND meal = $3`,
+    [member.memberId, date, meal]
+  );
+  if (skipCheck.rows.length > 0) {
+    const reason = `You have opted to skip ${meal} today.`;
+    await logScan({ ...base, status: "denied", code: "MEAL_SKIPPED", reason });
+    return { status: "denied", code: "MEAL_SKIPPED", reason, member: memberInfo, meal };
+  }
+
   const windowCacheKey = `messmate:window:${meal}`;
   let w = await getCache(windowCacheKey);
   if (!w) {

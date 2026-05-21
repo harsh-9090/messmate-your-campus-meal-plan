@@ -28,22 +28,40 @@ export async function calculateAbsenceCredits(memberId, startDate, endDate) {
     return { totalCreditDays: 0, streaks: [] };
   }
 
-  // Fetch all dates with availed meals during the active subscription period
-  const { rows } = await query(
-    `SELECT date FROM meal_usage 
+  // Fetch member sub_meals and sub_plan_id
+  const { rows: memberRows } = await query(
+    `SELECT sub_meals, sub_plan_id FROM members WHERE member_id = $1`,
+    [memberId]
+  );
+
+  let subMeals = [];
+  if (memberRows[0]?.sub_meals) {
+    if (Array.isArray(memberRows[0].sub_meals)) {
+      subMeals = memberRows[0].sub_meals;
+    } else if (typeof memberRows[0].sub_meals === "string") {
+      subMeals = memberRows[0].sub_meals.replace(/[{}]/g, "").split(",").filter(Boolean);
+    }
+  }
+
+  // Fetch all pre-registered meal skips during the active subscription period
+  const { rows: skipRows } = await query(
+    `SELECT skip_date, meal FROM meal_skips 
      WHERE member_id = $1 
-       AND date BETWEEN $2::date AND $3::date 
-       AND used_count > 0 
-     ORDER BY date ASC`,
+       AND skip_date BETWEEN $2::date AND $3::date 
+     ORDER BY skip_date ASC`,
     [memberId, startStr, endStr]
   );
 
-  // Set of formatted strings representing attended dates
-  const attendedDates = new Set(rows.map(r => {
-    // If PG returns date object, format it. If string, take substring
-    const dObj = r.date instanceof Date ? r.date : new Date(r.date);
-    return fmtDate(dObj);
-  }));
+  // Group skips by date
+  const skipsByDate = {};
+  for (const r of skipRows) {
+    const dObj = r.skip_date instanceof Date ? r.skip_date : new Date(r.skip_date);
+    const dStr = fmtDate(dObj);
+    if (!skipsByDate[dStr]) {
+      skipsByDate[dStr] = [];
+    }
+    skipsByDate[dStr].push(r.meal);
+  }
 
   let consecutiveAbsent = 0;
   let totalCreditDays = 0;
@@ -54,15 +72,18 @@ export async function calculateAbsenceCredits(memberId, startDate, endDate) {
     const currentDate = addDays(start, i);
     const dateStr = fmtDate(currentDate);
 
-    if (!attendedDates.has(dateStr)) {
-      // User was absent
+    const daySkips = skipsByDate[dateStr] || [];
+    // Day counts as absent only if member skipped all subscribed meals
+    const hasSkippedAll = subMeals.length > 0 && subMeals.every(m => daySkips.includes(m));
+
+    if (hasSkippedAll) {
       if (consecutiveAbsent === 0) {
         streakStart = currentDate;
       }
       consecutiveAbsent++;
     } else {
-      // User attended - close active absent streak if it qualifies
-      if (consecutiveAbsent > 3) {
+      // Close active absent streak if it qualifies (>= 3 consecutive days)
+      if (consecutiveAbsent >= 3) {
         const credit = consecutiveAbsent; // Interpretation A
         totalCreditDays += credit;
         streaks.push({
@@ -78,7 +99,7 @@ export async function calculateAbsenceCredits(memberId, startDate, endDate) {
   }
 
   // Handle final day streak
-  if (consecutiveAbsent > 3) {
+  if (consecutiveAbsent >= 3) {
     const credit = consecutiveAbsent; // Interpretation A
     totalCreditDays += credit;
     streaks.push({
@@ -90,10 +111,6 @@ export async function calculateAbsenceCredits(memberId, startDate, endDate) {
   }
 
   // Fetch member's plan duration to enforce strict capping
-  const { rows: memberRows } = await query(
-    `SELECT sub_plan_id FROM members WHERE member_id = $1`,
-    [memberId]
-  );
   let durationMonths = 1;
   if (memberRows[0]?.sub_plan_id) {
     const { rows: planRows } = await query(

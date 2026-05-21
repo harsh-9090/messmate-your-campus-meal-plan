@@ -16,6 +16,7 @@ import staffRoutes from "./routes/staff.js";
 import cronRoutes from "./routes/cron.js";
 import menuRoutes from "./routes/menus.js";
 import notificationRoutes from "./routes/notifications.js";
+import skipRoutes from "./routes/skips.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 export const app = express();
@@ -41,6 +42,7 @@ v1.use("/staff", staffRoutes);
 v1.use("/cron", cronRoutes);
 v1.use("/menus", menuRoutes);
 v1.use("/notifications", notificationRoutes);
+v1.use("/skips", skipRoutes);
 app.use("/api/v1", v1);
 
 app.use(errorHandler);

@@ -148,4 +148,15 @@ CREATE TABLE IF NOT EXISTS dashboard_notifications (
 CREATE INDEX IF NOT EXISTS dashboard_notifications_active_idx ON dashboard_notifications(is_active);
 CREATE INDEX IF NOT EXISTS dashboard_notifications_time_idx ON dashboard_notifications(start_time, end_time);
 
+CREATE TABLE IF NOT EXISTS meal_skips (
+  id              BIGSERIAL PRIMARY KEY,
+  member_id       TEXT NOT NULL REFERENCES members(member_id) ON DELETE CASCADE,
+  skip_date       DATE NOT NULL,
+  meal            TEXT NOT NULL CHECK (meal IN ('Breakfast','Lunch','Dinner')),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (member_id, skip_date, meal)
+);
+
+CREATE INDEX IF NOT EXISTS meal_skips_date_member_idx ON meal_skips (skip_date, member_id);
+
 

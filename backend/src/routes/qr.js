@@ -41,6 +41,13 @@ router.get("/token", async (req, res, next) => {
       if (row.block_dinner) blockedMeals.add("Dinner");
     }
     
+    // Fetch user's registered skips for today
+    const skipsRes = await query(
+      `SELECT meal FROM meal_skips WHERE member_id = $1 AND skip_date = $2`,
+      [memberId, todayStr]
+    );
+    const skippedMeals = new Set(skipsRes.rows.map(r => r.meal));
+    
     // If all allowed meals in user's subscription are blocked, deny access
     if (allowedMeals.length > 0 && allowedMeals.every(m => blockedMeals.has(m))) {
       return res.status(403).json({ error: "MESS_CLOSED", reason: holidayReason });
@@ -50,7 +57,7 @@ router.get("/token", async (req, res, next) => {
     
     // Generate static daily token for each allowed meal in the user's plan
     for (const meal of ["Breakfast", "Lunch", "Dinner"]) {
-      if (allowedMeals.includes(meal) && !blockedMeals.has(meal)) {
+      if (allowedMeals.includes(meal) && !blockedMeals.has(meal) && !skippedMeals.has(meal)) {
         tokens[meal] = generateQRToken(memberId, meal).token;
       }
     }
@@ -58,6 +65,7 @@ router.get("/token", async (req, res, next) => {
     res.json({
       tokens,
       blockedMeals: Array.from(blockedMeals),
+      skippedMeals: Array.from(skippedMeals),
       holidayReason,
       date: getISTDateStr()
     });

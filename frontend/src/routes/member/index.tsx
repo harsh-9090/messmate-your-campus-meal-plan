@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/messmate/auth";
-import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi } from "@/lib/messmate/api";
+import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi, skipsApi } from "@/lib/messmate/api";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ import {
   Mail,
   ArrowRight,
   Loader2,
+  Calendar,
+  TrendingDown,
 } from "lucide-react";
 import {
   daysRemaining,
@@ -31,6 +33,8 @@ import {
   isWithinWindow,
   formatTime12h,
   todayISO,
+  addDaysISO,
+  formatDate,
 } from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
 import type { Meal, DashboardNotification } from "@/lib/messmate/types";
@@ -94,7 +98,7 @@ function MemberPortal() {
   const logout = useAuth((s) => s.logout);
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"today" | "pass" | "account">("today");
+  const [activeTab, setActiveTab] = useState<"today" | "pass" | "skips" | "account">("today");
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
 
   useEffect(() => {
@@ -132,6 +136,48 @@ function MemberPortal() {
     queryFn: () => notificationsApi.list(),
     enabled: !!authUser,
   });
+
+  const skipsQ = useQuery({
+    queryKey: ["my-skips"],
+    queryFn: () => skipsApi.listMySkips(),
+    enabled: !!authUser,
+  });
+
+  const qc = useQueryClient();
+  const toggleSkipM = useMutation({
+    mutationFn: (args: { date: string; meal: Meal; skip: boolean }) =>
+      skipsApi.toggleSkip(args.date, args.meal, args.skip),
+    onSuccess: (data) => {
+      toast.success(
+        data.skipped
+          ? `Opted out of ${data.meal} for ${formatDate(data.date)}`
+          : `Opted in to ${data.meal} for ${formatDate(data.date)}`
+      );
+      qc.invalidateQueries({ queryKey: ["my-skips"] });
+      qc.invalidateQueries({ queryKey: ["my-logs"] });
+      qc.invalidateQueries({ queryKey: ["qr-token-daily"] });
+      qc.invalidateQueries({ queryKey: ["member"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to toggle meal skip");
+    },
+  });
+
+  const upcomingDays = useMemo(() => {
+    const list = [];
+    for (let i = 0; i < 7; i++) {
+      list.push(addDaysISO(todayStr, i));
+    }
+    return list;
+  }, [todayStr]);
+
+  const getIsLocked = (dateStr: string, meal: Meal) => {
+    const w = windows.find((x) => x.meal === meal);
+    const startTimeStr = w?.startTime || (meal === "Breakfast" ? "07:00" : meal === "Lunch" ? "12:00" : "19:00");
+    const mealStart = new Date(`${dateStr}T${startTimeStr}:00+05:30`);
+    const now = new Date();
+    return (mealStart.getTime() - now.getTime()) < 12 * 60 * 60 * 1000;
+  };
 
   useEffect(() => {
     if (!_hasHydrated) return;
@@ -240,7 +286,7 @@ function MemberPortal() {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <UtensilsCrossed className="h-4 w-4" /> Today's Menu
+          <UtensilsCrossed className="h-4 w-4" /> Today
         </button>
         <button
           onClick={() => setActiveTab("pass")}
@@ -250,7 +296,17 @@ function MemberPortal() {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <QrCode className="h-4 w-4" /> Dining Pass
+          <QrCode className="h-4 w-4" /> Pass
+        </button>
+        <button
+          onClick={() => setActiveTab("skips")}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold transition-all rounded-lg cursor-pointer ${
+            activeTab === "skips"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <TrendingDown className="h-4 w-4" /> Skips
         </button>
         <button
           onClick={() => setActiveTab("account")}
@@ -260,7 +316,7 @@ function MemberPortal() {
               : "text-muted-foreground hover:text-foreground"
           }`}
         >
-          <CreditCard className="h-4 w-4" /> Plan & Logs
+          <CreditCard className="h-4 w-4" /> Account
         </button>
       </div>
 
@@ -313,7 +369,7 @@ function MemberPortal() {
 
         {/* COLUMN 1: Today's Menu & Meals Status (Visible if activeTab === 'today' on mobile) */}
         <div
-          className={`md:col-span-4 space-y-4 ${activeTab === "today" ? "block" : "hidden md:block"}`}
+          className={`md:col-span-3 space-y-4 ${activeTab === "today" ? "block" : "hidden md:block"}`}
         >
           {/* Today's Menu */}
           <Card className="p-4 sm:p-5 shadow-sm border-border bg-card">
@@ -418,7 +474,7 @@ function MemberPortal() {
 
         {/* COLUMN 2: Pass & Warnings (Visible if activeTab === 'pass' on mobile) */}
         <div
-          className={`md:col-span-4 space-y-4 ${activeTab === "pass" ? "block" : "hidden md:block"}`}
+          className={`md:col-span-3 space-y-4 ${activeTab === "pass" ? "block" : "hidden md:block"}`}
         >
           {/* Expiry Warning */}
           {!expired && left <= 3 && sub.isPaid && (
@@ -478,9 +534,125 @@ function MemberPortal() {
           </Card>
         </div>
 
-        {/* COLUMN 3: Subscription & Historical logs (Visible if activeTab === 'account' on mobile) */}
+        {/* COLUMN 3: Skip Meals Planner (Visible if activeTab === 'skips' on mobile) */}
         <div
-          className={`md:col-span-4 space-y-4 ${activeTab === "account" ? "block" : "hidden md:block"}`}
+          className={`md:col-span-3 space-y-4 ${activeTab === "skips" ? "block" : "hidden md:block"}`}
+        >
+          <Card className="p-4 sm:p-5 shadow-sm space-y-4 border-border bg-card">
+            <div className="flex items-center justify-between border-b pb-2">
+              <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
+                <span>🗓️</span> Skip Meals
+              </div>
+              <Badge variant="secondary" className="text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                12h Cut-off
+              </Badge>
+            </div>
+
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Plan your absences in advance to help reduce kitchen food waste. Toggles lock 12h before meal windows start.
+            </p>
+
+            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+              {skipsQ.isLoading || windowsQ.isLoading ? (
+                <div className="py-6 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  Loading skip calendar…
+                </div>
+              ) : (
+                upcomingDays.map((dateStr) => {
+                  const d = new Date(dateStr);
+                  const isToday = dateStr === todayStr;
+                  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                  
+                  return (
+                    <div
+                      key={dateStr}
+                      className={cn(
+                        "rounded-xl border p-3 space-y-2 bg-muted/5 transition-all",
+                        isToday && "border-primary/30 bg-primary/[0.02]"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-foreground">
+                          {dayNames[d.getDay()]}, {d.getDate()} {monthNames[d.getMonth()]}
+                          {isToday && (
+                            <span className="ml-1.5 text-[9px] uppercase tracking-wider font-extrabold text-primary bg-primary/10 rounded-full px-1.5 py-0.5">
+                              Today
+                            </span>
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        {sub.meals.map((meal) => {
+                          const isSkippedVal = (skipsQ.data ?? []).some(
+                            (s) => s.date === dateStr && s.meal === meal
+                          );
+                          const isLockedVal = getIsLocked(dateStr, meal);
+                          const isPendingToggle =
+                            toggleSkipM.isPending &&
+                            toggleSkipM.variables?.date === dateStr &&
+                            toggleSkipM.variables?.meal === meal;
+
+                          return (
+                            <div
+                              key={meal}
+                              className="flex items-center justify-between text-xs bg-background/50 dark:bg-background/25 rounded-lg border border-border/40 px-2 py-1.5"
+                            >
+                              <span className="font-semibold text-muted-foreground/90 flex items-center gap-1">
+                                {meal === "Breakfast" ? "🌅" : meal === "Lunch" ? "🍱" : "🌙"}
+                                {meal}
+                              </span>
+
+                              <div className="flex items-center gap-2">
+                                {isLockedVal ? (
+                                  <span className="text-[10px] text-muted-foreground/60 font-medium flex items-center gap-1 select-none">
+                                    <Lock className="h-3 w-3" /> Locked
+                                  </span>
+                                ) : null}
+
+                                <button
+                                  disabled={isLockedVal || isPendingToggle}
+                                  onClick={() =>
+                                    toggleSkipM.mutate({
+                                      date: dateStr,
+                                      meal,
+                                      skip: !isSkippedVal,
+                                    })
+                                  }
+                                  className={cn(
+                                    "px-2 py-1 rounded-md text-[10px] font-bold uppercase transition-all duration-150 cursor-pointer border",
+                                    isSkippedVal
+                                      ? "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 hover:bg-amber-200"
+                                      : "bg-primary/10 dark:bg-primary/20 text-primary border-primary/25 hover:bg-primary/20",
+                                    (isLockedVal || isPendingToggle) && "opacity-50 cursor-not-allowed"
+                                  )}
+                                >
+                                  {isPendingToggle ? (
+                                    <Loader2 className="h-3 w-3 animate-spin mx-auto" />
+                                  ) : isSkippedVal ? (
+                                    "Skipped"
+                                  ) : (
+                                    "Eating"
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* COLUMN 4: Subscription & Historical logs (Visible if activeTab === 'account' on mobile) */}
+        <div
+          className={`md:col-span-3 space-y-4 ${activeTab === "account" ? "block" : "hidden md:block"}`}
         >
           {/* Subscription Progress Card */}
           <Card className="overflow-hidden p-0 shadow-sm">

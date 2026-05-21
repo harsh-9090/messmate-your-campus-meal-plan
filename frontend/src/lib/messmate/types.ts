@@ -7,7 +7,8 @@ export type DenialCode =
   | "WRONG_TIME"
   | "ALREADY_USED"
   | "INVALID_TOKEN"
-  | "NOT_FOUND";
+  | "NOT_FOUND"
+  | "MEAL_SKIPPED";
 
 export interface Plan {
   planId: string;
@@ -120,5 +121,24 @@ export interface DashboardNotification {
   blockDinner?: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface MealSkip {
+  id: number;
+  date: string;
+  meal: Meal;
+  createdAt: string;
+}
+
+export interface HeadcountReport {
+  date: string;
+  meals: Record<
+    Meal,
+    {
+      activeSubscribers: number;
+      skips: number;
+      expectedPortions: number;
+    }
+  >;
 }
 
