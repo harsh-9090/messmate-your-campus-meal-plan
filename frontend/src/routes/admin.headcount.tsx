@@ -14,6 +14,7 @@ import {
   Users,
   UtensilsCrossed,
   Info,
+  ChevronDown,
 } from "lucide-react";
 import { todayISO, formatDate, addDaysISO } from "@/lib/messmate/dateHelpers";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,17 @@ function KitchenForecastPage() {
     startDate: todayISO(),
     endDate: addDaysISO(todayISO(), 6), // 7 days default
   });
+
+  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>(() => ({
+    [todayISO()]: true,
+  }));
+
+  const toggleDate = (date: string) => {
+    setExpandedDates((prev) => ({
+      ...prev,
+      [date]: !prev[date],
+    }));
+  };
 
   const { data: headcountData, isLoading, error } = useQuery({
     queryKey: ["headcount", dateRange],
@@ -160,92 +172,140 @@ function KitchenForecastPage() {
           No days found in the selected range.
         </div>
       ) : (
-        <div className="space-y-6">
-          {headcountData?.map((day) => (
-            <Card key={day.date} className="p-6 border-border bg-card shadow-sm space-y-4">
-              <h3 className="font-display font-bold text-lg border-b pb-2 text-foreground">
-                {formatDate(day.date)}
-              </h3>
+        <div className="space-y-4">
+          {headcountData?.map((day) => {
+            const isExpanded = !!expandedDates[day.date];
+            const isToday = day.date === todayISO();
+            const dayTotalExpected = Object.values(day.meals).reduce(
+              (sum, m) => sum + m.expectedPortions,
+              0
+            );
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {(["Breakfast", "Lunch", "Dinner"] as const).map((meal) => {
-                  const mData = day.meals[meal];
-                  const skipsPercent =
-                    mData.activeSubscribers > 0
-                      ? Math.round((mData.skips / mData.activeSubscribers) * 100)
-                      : 0;
+            return (
+              <Card
+                key={day.date}
+                className={cn(
+                  "border-border bg-card shadow-sm transition-all duration-200 overflow-hidden",
+                  isExpanded ? "p-6" : "p-4 hover:bg-muted/5"
+                )}
+              >
+                {/* Accordion Header */}
+                <button
+                  onClick={() => toggleDate(day.date)}
+                  className={cn(
+                    "flex w-full items-center justify-between font-display text-left focus:outline-none cursor-pointer",
+                    isExpanded && "border-b pb-4 mb-4"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-bold text-lg text-foreground">
+                      {formatDate(day.date)}
+                    </h3>
+                    {isToday && (
+                      <Badge className="bg-primary text-primary-foreground font-bold hover:bg-primary px-2 py-0.5 text-xs">
+                        Today
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    {!isExpanded && (
+                      <Badge variant="outline" className="font-semibold text-xs py-0.5 px-2 bg-muted/20 border-muted">
+                        To Cook: {dayTotalExpected} plates
+                      </Badge>
+                    )}
+                    <ChevronDown
+                      className={cn(
+                        "h-5 w-5 text-muted-foreground transition-transform duration-200 shrink-0",
+                        isExpanded && "rotate-180"
+                      )}
+                    />
+                  </div>
+                </button>
 
-                  return (
-                    <div
-                      key={meal}
-                      className="rounded-xl border border-border p-4 space-y-3 bg-muted/5 hover:bg-muted/10 transition-all duration-150"
-                    >
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <span className="font-bold flex items-center gap-1.5 text-sm text-foreground">
-                          <UtensilsCrossed className="h-4 w-4 text-primary/80" />
-                          {meal}
-                        </span>
-                        {mData.skips > 0 && (
-                          <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                            {mData.skips} skipped ({skipsPercent}%)
-                          </Badge>
-                        )}
-                      </div>
+                {/* Accordion Content */}
+                {isExpanded && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {(["Breakfast", "Lunch", "Dinner"] as const).map((meal) => {
+                      const mData = day.meals[meal];
+                      const skipsPercent =
+                        mData.activeSubscribers > 0
+                          ? Math.round((mData.skips / mData.activeSubscribers) * 100)
+                          : 0;
 
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="bg-background rounded-lg p-2 border border-border/40">
-                          <div className="text-xs text-muted-foreground font-semibold">Active</div>
-                          <div className="font-black text-sm text-foreground">
-                            {mData.activeSubscribers}
+                      return (
+                        <div
+                          key={meal}
+                          className="rounded-xl border border-border p-4 space-y-3 bg-muted/5 hover:bg-muted/10 transition-all duration-150"
+                        >
+                          <div className="flex items-center justify-between border-b pb-2">
+                            <span className="font-bold flex items-center gap-1.5 text-sm text-foreground">
+                              <UtensilsCrossed className="h-4 w-4 text-primary/80" />
+                              {meal}
+                            </span>
+                            {mData.skips > 0 && (
+                              <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                                {mData.skips} skipped ({skipsPercent}%)
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div className="bg-background rounded-lg p-2 border border-border/40">
+                              <div className="text-xs text-muted-foreground font-semibold font-medium">Active</div>
+                              <div className="font-black text-sm text-foreground">
+                                {mData.activeSubscribers}
+                              </div>
+                            </div>
+                            <div className="bg-background rounded-lg p-2 border border-border/40">
+                              <div className="text-xs text-muted-foreground font-semibold font-medium">Skips</div>
+                              <div className="font-black text-sm text-amber-600 dark:text-amber-400">
+                                {mData.skips}
+                              </div>
+                            </div>
+                            <div className="bg-primary/5 rounded-lg p-2 border border-primary/20">
+                              <div className="text-xs text-primary font-bold">To Cook</div>
+                              <div className="font-black text-base text-primary">
+                                {mData.expectedPortions}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Visual Progress/Portion Bar */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[10px] text-muted-foreground font-semibold uppercase">
+                              <span>Portions Scale</span>
+                              <span>{mData.expectedPortions} / {mData.activeSubscribers}</span>
+                            </div>
+                            <div className="h-2 w-full bg-muted dark:bg-muted/20 rounded-full overflow-hidden flex">
+                              <div
+                                className="bg-primary h-full transition-all duration-300"
+                                style={{
+                                  width: `${mData.activeSubscribers > 0
+                                      ? (mData.expectedPortions / mData.activeSubscribers) * 100
+                                      : 0
+                                    }%`,
+                                }}
+                              />
+                              <div
+                                className="bg-amber-500 h-full transition-all duration-300"
+                                style={{
+                                  width: `${mData.activeSubscribers > 0
+                                      ? (mData.skips / mData.activeSubscribers) * 100
+                                      : 0
+                                    }%`,
+                                }}
+                              />
+                            </div>
                           </div>
                         </div>
-                        <div className="bg-background rounded-lg p-2 border border-border/40">
-                          <div className="text-xs text-muted-foreground font-semibold font-semibold">Skips</div>
-                          <div className="font-black text-sm text-amber-600 dark:text-amber-400">
-                            {mData.skips}
-                          </div>
-                        </div>
-                        <div className="bg-primary/5 rounded-lg p-2 border border-primary/20">
-                          <div className="text-xs text-primary font-bold">To Cook</div>
-                          <div className="font-black text-base text-primary">
-                            {mData.expectedPortions}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Visual Progress/Portion Bar */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-[10px] text-muted-foreground font-semibold uppercase">
-                          <span>Portions Scale</span>
-                          <span>{mData.expectedPortions} / {mData.activeSubscribers}</span>
-                        </div>
-                        <div className="h-2 w-full bg-muted dark:bg-muted/20 rounded-full overflow-hidden flex">
-                          <div
-                            className="bg-primary h-full transition-all duration-300"
-                            style={{
-                              width: `${mData.activeSubscribers > 0
-                                  ? (mData.expectedPortions / mData.activeSubscribers) * 100
-                                  : 0
-                                }%`,
-                            }}
-                          />
-                          <div
-                            className="bg-amber-500 h-full transition-all duration-300"
-                            style={{
-                              width: `${mData.activeSubscribers > 0
-                                  ? (mData.skips / mData.activeSubscribers) * 100
-                                  : 0
-                                }%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
-          ))}
+                      );
+                    })}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
