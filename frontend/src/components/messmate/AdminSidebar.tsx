@@ -23,20 +23,40 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 
-const items = [
-  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { to: "/admin/menu", label: "Menu Planner", icon: UtensilsCrossed },
-  { to: "/admin/headcount", label: "Kitchen Forecast", icon: ChefHat },
-  { to: "/admin/guest-passes", label: "Guest Passes", icon: Ticket },
-  { to: "/admin/feedback", label: "Food Feedback", icon: Star },
-  { to: "/admin/members", label: "Members", icon: Users },
-  { to: "/admin/payments", label: "Payments", icon: IndianRupee },
-  { to: "/admin/finance", label: "Finance", icon: TrendingUp },
-  { to: "/admin/scan-logs", label: "Scan Logs", icon: ScanLine },
-  { to: "/admin/reports", label: "Reports", icon: BarChart3 },
-  { to: "/admin/notifications", label: "Announcements", icon: Megaphone },
-  { to: "/admin/staff", label: "Staff", icon: UserCog },
-  { to: "/admin/plan-config", label: "Plan Config", icon: Settings },
+const groups = [
+  {
+    title: "Operations & Kitchen",
+    items: [
+      { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
+      { to: "/admin/menu", label: "Menu Planner", icon: UtensilsCrossed },
+      { to: "/admin/headcount", label: "Kitchen Forecast", icon: ChefHat },
+      { to: "/admin/scan-logs", label: "Scan Logs", icon: ScanLine },
+    ],
+  },
+  {
+    title: "People & Comms",
+    items: [
+      { to: "/admin/members", label: "Members", icon: Users },
+      { to: "/admin/guest-passes", label: "Guest Passes", icon: Ticket },
+      { to: "/admin/staff", label: "Staff", icon: UserCog },
+      { to: "/admin/notifications", label: "Announcements", icon: Megaphone },
+    ],
+  },
+  {
+    title: "Analytics & Finance",
+    items: [
+      { to: "/admin/payments", label: "Payments", icon: IndianRupee },
+      { to: "/admin/finance", label: "Finance", icon: TrendingUp },
+      { to: "/admin/reports", label: "Reports", icon: BarChart3 },
+      { to: "/admin/feedback", label: "Food Feedback", icon: Star },
+    ],
+  },
+  {
+    title: "Settings",
+    items: [
+      { to: "/admin/plan-config", label: "Plan Config", icon: Settings },
+    ],
+  },
 ];
 
 
@@ -60,26 +80,35 @@ function SidebarContent({ onNavItemClick }: { onNavItemClick?: () => void }) {
           </div>
         </div>
       </div>
-      <nav className="flex-1 overflow-y-auto space-y-1 px-3">
-        {items.map((it) => {
-          const active = it.exact ? path === it.to : path.startsWith(it.to);
-          return (
-            <Link
-              key={it.to}
-              to={it.to}
-              onClick={onNavItemClick}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                active
-                  ? "bg-primary shadow-sm text-primary-foreground shadow-primary/20"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-              )}
-            >
-              <it.icon className="h-4 w-4" />
-              {it.label}
-            </Link>
-          );
-        })}
+      <nav className="flex-1 overflow-y-auto space-y-4 px-3 py-2">
+        {groups.map((group, gIdx) => (
+          <div key={gIdx} className="space-y-1">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-3 py-1">
+              {group.title}
+            </div>
+            <div className="space-y-0.5">
+              {group.items.map((it) => {
+                const active = it.exact ? path === it.to : path.startsWith(it.to);
+                return (
+                  <Link
+                    key={it.to}
+                    to={it.to}
+                    onClick={onNavItemClick}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                      active
+                        ? "bg-primary shadow-sm text-primary-foreground shadow-primary/20"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    )}
+                  >
+                    <it.icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{it.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
       <div className="border-t border-sidebar-border p-3">
         <div className="flex items-center gap-2 mb-2 px-2">
