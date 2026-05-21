@@ -94,6 +94,7 @@ export const Route = createFileRoute("/member/")({
 });
 
 interface FeedbackWidgetProps {
+  memberId: string;
   unratedMeals: UnratedMeal[];
   onSubmit: (data: {
     date: string;
@@ -105,15 +106,29 @@ interface FeedbackWidgetProps {
   isSubmitting: boolean;
 }
 
-function FeedbackWidget({ unratedMeals, onSubmit, isSubmitting }: FeedbackWidgetProps) {
-  if (unratedMeals.length === 0) return null;
+function FeedbackWidget({ memberId, unratedMeals, onSubmit, isSubmitting }: FeedbackWidgetProps) {
+  const [dismissedKeys, setDismissedKeys] = useState<string[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const current = unratedMeals[0];
+  const activeMeals = useMemo(() => {
+    return unratedMeals.filter((m) => {
+      const key = `${m.date}:${m.meal}`;
+      if (dismissedKeys.includes(key)) return false;
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem(`messmate:dismissed-feedback:${memberId}:${m.date}:${m.meal}`);
+        return !saved;
+      }
+      return true;
+    });
+  }, [unratedMeals, dismissedKeys, memberId]);
+
+  const current = activeMeals[0];
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [comments, setComments] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
 
   useEffect(() => {
+    if (!current) return;
     const initial: Record<string, number> = {};
     current.items.forEach((item) => {
       initial[item] = 5;
@@ -122,6 +137,8 @@ function FeedbackWidget({ unratedMeals, onSubmit, isSubmitting }: FeedbackWidget
     setComments("");
     setIsAnonymous(false);
   }, [current]);
+
+  if (activeMeals.length === 0) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,14 +155,63 @@ function FeedbackWidget({ unratedMeals, onSubmit, isSubmitting }: FeedbackWidget
     });
   };
 
+  const handleSkip = () => {
+    const key = `${current.date}:${current.meal}`;
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`messmate:dismissed-feedback:${memberId}:${current.date}:${current.meal}`, "true");
+    }
+    setDismissedKeys((prev) => [...prev, key]);
+    setIsExpanded(false);
+  };
+
   const getMealEmoji = (meal: Meal) => {
     if (meal === "Breakfast") return "🍳";
     if (meal === "Lunch") return "🍱";
     return "🍲";
   };
 
+  if (!isExpanded) {
+    return (
+      <Card className="md:col-span-12 p-4 border-emerald-200 dark:border-emerald-950/40 bg-gradient-to-r from-emerald-50/30 to-teal-50/30 dark:from-emerald-950/5 dark:to-teal-950/5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <span className="text-xl shrink-0">{getMealEmoji(current.meal)}</span>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-bold text-sm sm:text-base text-foreground flex flex-wrap items-center gap-1.5 leading-snug">
+                <span>Rate your recent {current.meal}</span>
+                <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px] shrink-0">
+                  Pending Feedback
+                </Badge>
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                Served on {formatDate(current.date)} • {current.items.join(", ")}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="text-xs font-bold text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border/60 hover:bg-muted/30 bg-transparent transition-colors cursor-pointer"
+            >
+              Skip
+            </button>
+            <Button
+              type="button"
+              onClick={() => setIsExpanded(true)}
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 h-8"
+            >
+              Rate Now
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="md:col-span-12 p-5 border-emerald-200 dark:border-emerald-950/40 bg-gradient-to-r from-emerald-50/30 to-teal-50/30 dark:from-emerald-950/5 dark:to-teal-950/5 shadow-sm space-y-4">
+    <Card className="md:col-span-12 p-5 border-emerald-200 dark:border-emerald-950/40 bg-gradient-to-r from-emerald-50/30 to-teal-50/30 dark:from-emerald-950/5 dark:to-teal-950/5 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
       <div className="flex items-center justify-between border-b pb-3 border-emerald-100 dark:border-emerald-950/20">
         <div className="flex items-center gap-2">
           <span className="text-xl">{getMealEmoji(current.meal)}</span>
@@ -161,9 +227,9 @@ function FeedbackWidget({ unratedMeals, onSubmit, isSubmitting }: FeedbackWidget
             </p>
           </div>
         </div>
-        {unratedMeals.length > 1 && (
+        {activeMeals.length > 1 && (
           <Badge variant="outline" className="text-xs font-semibold">
-            +{unratedMeals.length - 1} more pending
+            +{activeMeals.length - 1} more pending
           </Badge>
         )}
       </div>
@@ -221,7 +287,7 @@ function FeedbackWidget({ unratedMeals, onSubmit, isSubmitting }: FeedbackWidget
               />
             </div>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
               <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -232,21 +298,37 @@ function FeedbackWidget({ unratedMeals, onSubmit, isSubmitting }: FeedbackWidget
                 Submit Anonymously
               </label>
 
-              <Button
-                type="submit"
-                size="sm"
-                disabled={isSubmitting}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Ratings"
-                )}
-              </Button>
+              <div className="flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsExpanded(false)}
+                  className="text-xs font-bold text-muted-foreground hover:text-foreground px-2 py-1.5 rounded-lg transition-colors cursor-pointer bg-transparent border-0"
+                >
+                  Collapse
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 px-2 py-1.5 rounded-lg transition-colors cursor-pointer bg-transparent border-0"
+                >
+                  Skip Meal
+                </button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSubmitting}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 h-8"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit"
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -557,6 +639,7 @@ function MemberPortal() {
         {unratedQ.data && unratedQ.data.length > 0 && (
           <div className="md:col-span-12 mb-4">
             <FeedbackWidget
+              memberId={authUser.id}
               unratedMeals={unratedQ.data}
               onSubmit={(payload) => submitRatingM.mutate(payload)}
               isSubmitting={submitRatingM.isPending}
