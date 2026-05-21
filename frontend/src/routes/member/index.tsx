@@ -27,6 +27,7 @@ import {
   Calendar,
   TrendingDown,
   Star,
+  ChevronDown,
 } from "lucide-react";
 import {
   daysRemaining,
@@ -361,6 +362,7 @@ function MemberPortal() {
   const todayStr = todayISO();
 
   const [showRequestForm, setShowRequestForm] = useState(false);
+  const [showPassesList, setShowPassesList] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [guestDate, setGuestDate] = useState(todayStr);
   const [guestMeal, setGuestMeal] = useState<Meal>("Lunch");
@@ -891,7 +893,7 @@ function MemberPortal() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Date</label>
                     <Input
@@ -929,92 +931,105 @@ function MemberPortal() {
               </form>
             )}
 
-            {/* List of passes */}
-            <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
-              {myPassesQ.isLoading ? (
-                <div className="text-center py-4 text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1.5">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading passes...
-                </div>
-              ) : myPassesQ.data?.length === 0 ? (
-                <div className="text-center py-6 text-xs text-muted-foreground font-medium">
-                  No guest passes requested yet.
-                </div>
-              ) : (
-                myPassesQ.data?.map((gp) => {
-                  const shareText = encodeURIComponent(
-                    `Here is your Mess Guest Pass for ${gp.meal} on ${gp.date}. Present this link to scan: ${window.location.origin}/guest-pass/${gp.qr_token}`
-                  );
-                  const whatsappLink = `https://api.whatsapp.com/send?text=${shareText}`;
+            {/* List of passes (Collapsible) */}
+            <div className="border-t pt-3 space-y-3">
+              <button
+                type="button"
+                onClick={() => setShowPassesList(!showPassesList)}
+                className="w-full flex items-center justify-between text-[11px] font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors cursor-pointer"
+              >
+                <span>My Requested Passes ({myPassesQ.data?.length || 0})</span>
+                <ChevronDown className={`h-4 w-4 transition-transform duration-205 ${showPassesList ? "rotate-180" : ""}`} />
+              </button>
 
-                  return (
-                    <div
-                      key={gp.id}
-                      className="p-3 rounded-xl border border-border/80 bg-background hover:bg-muted/10 transition-colors flex flex-col gap-2.5"
-                    >
-                      <div className="flex items-start justify-between gap-1.5">
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
-                            {gp.guest_name}
-                          </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1">
-                            <span>{gp.date}</span>
-                            <span>•</span>
-                            <span className="font-bold text-primary">{gp.meal}</span>
-                          </div>
-                        </div>
-                        <Badge
-                          variant="secondary"
-                          className={`text-[9px] font-bold py-0 px-2 shrink-0 ${
-                            gp.status === "active"
-                              ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-                              : gp.status === "used"
-                                ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                                : gp.status === "pending_approval"
-                                  ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
-                                  : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
-                          }`}
-                        >
-                          {gp.status === "pending_approval" ? "Pending Cash" : gp.status}
-                        </Badge>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-2 border-t pt-2 mt-0.5">
-                        <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-400">
-                          ₹{gp.price}
-                        </span>
-
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            asChild
-                            className="h-7 px-2 rounded-md text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/5 cursor-pointer"
-                          >
-                            <Link to="/guest-pass/$token" params={{ token: gp.qr_token }}>
-                              View Pass
-                            </Link>
-                          </Button>
-                          {gp.status === "active" && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              asChild
-                              className="h-7 px-2.5 rounded-md text-[10px] font-bold border-emerald-500/30 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 cursor-pointer"
-                            >
-                              <a
-                                href={whatsappLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Share Pass
-                              </a>
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+              {showPassesList && (
+                <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                  {myPassesQ.isLoading ? (
+                    <div className="text-center py-4 text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1.5">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading passes...
                     </div>
-                  );
-                })
+                  ) : myPassesQ.data?.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-muted-foreground font-medium">
+                      No guest passes requested yet.
+                    </div>
+                  ) : (
+                    myPassesQ.data?.map((gp) => {
+                      const shareText = encodeURIComponent(
+                        `Here is your Mess Guest Pass for ${gp.meal} on ${gp.date}. Present this link to scan: ${window.location.origin}/guest-pass/${gp.qr_token}`
+                      );
+                      const whatsappLink = `https://api.whatsapp.com/send?text=${shareText}`;
+
+                      return (
+                        <div
+                          key={gp.id}
+                          className="p-3 rounded-xl border border-border/80 bg-background hover:bg-muted/10 transition-colors flex flex-col gap-2.5"
+                        >
+                          <div className="flex items-start justify-between gap-1.5">
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                                {gp.guest_name}
+                              </div>
+                              <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1">
+                                <span>{gp.date}</span>
+                                <span>•</span>
+                                <span className="font-bold text-primary">{gp.meal}</span>
+                              </div>
+                            </div>
+                            <Badge
+                              variant="secondary"
+                              className={`text-[9px] font-bold py-0 px-2 shrink-0 ${
+                                gp.status === "active"
+                                  ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                                  : gp.status === "used"
+                                    ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                    : gp.status === "pending_approval"
+                                      ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                                      : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
+                              }`}
+                            >
+                              {gp.status === "pending_approval" ? "Pending Cash" : gp.status}
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2 border-t pt-2 mt-0.5">
+                            <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-400">
+                              ₹{gp.price}
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className="h-7 px-2 rounded-md text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/5 cursor-pointer"
+                              >
+                                <Link to="/guest-pass/$token" params={{ token: gp.qr_token }}>
+                                  View Pass
+                                </Link>
+                              </Button>
+                              {gp.status === "active" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  asChild
+                                  className="h-7 px-2.5 rounded-md text-[10px] font-bold border-emerald-500/30 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 cursor-pointer"
+                                >
+                                  <a
+                                    href={whatsappLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    Share Pass
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               )}
             </div>
           </Card>
