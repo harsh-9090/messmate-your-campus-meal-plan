@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { differenceInCalendarDays, format } from "date-fns";
 import { query, rowToMember } from "../db/index.js";
 import { notifyExpiringSoon, notifyExpired } from "../services/notificationService.js";
+import { sendPushToMember } from "../services/pushNotificationService.js";
 import { delCache, delByPattern } from "../db/redis.js";
 
 const getISTDate = () => {
@@ -29,7 +30,15 @@ export async function runDailyTasks() {
   );
   for (const r of soon) {
     const m = rowToMember(r);
-    await notifyExpiringSoon(m, differenceInCalendarDays(new Date(m.subscription.endDate), getISTDate()));
+    const daysLeft = differenceInCalendarDays(new Date(m.subscription.endDate), getISTDate());
+    await notifyExpiringSoon(m, daysLeft);
+    sendPushToMember(m.memberId, {
+      title: "Subscription Expiring Soon ⚠️",
+      body: `Your meal plan subscription expires in ${daysLeft} days (on ${m.subscription.endDate}). Please visit the mess office to renew.`,
+      url: "/dashboard",
+    }).catch((err) => {
+      console.error(`[PUSH-ERROR] Failed to send push subscription expiry warning to member ${m.memberId}:`, err.message);
+    });
   }
 
   const { rows: gone } = await query(

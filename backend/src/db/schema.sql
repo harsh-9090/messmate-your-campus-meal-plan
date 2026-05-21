@@ -193,3 +193,15 @@ CREATE INDEX IF NOT EXISTS guest_passes_token_idx ON guest_passes (qr_token);
 
 ALTER TABLE meal_windows ADD COLUMN IF NOT EXISTS guest_price INTEGER NOT NULL DEFAULT 120;
 UPDATE meal_windows SET guest_price = 80 WHERE meal = 'Breakfast' AND guest_price = 120;
+
+-- Push Notifications Subscriptions
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id              BIGSERIAL PRIMARY KEY,
+  member_id       TEXT REFERENCES members(member_id) ON DELETE CASCADE,
+  endpoint        TEXT UNIQUE NOT NULL,
+  p256dh          TEXT NOT NULL,
+  auth            TEXT NOT NULL,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS push_subscriptions_member_idx ON push_subscriptions (member_id);

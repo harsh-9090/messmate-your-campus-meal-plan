@@ -456,3 +456,18 @@ export const guestPassesApi = {
       body: JSON.stringify(data),
     }),
 };
+
+export const pushApi = {
+  getVapidKey: () => request<{ publicKey: string }>("/push/vapid-key"),
+  subscribe: (subscription: any) =>
+    request<{ ok: boolean }>("/push/subscribe", {
+      method: "POST",
+      body: JSON.stringify(subscription),
+    }),
+  unsubscribe: (endpoint: string) =>
+    request<{ ok: boolean }>("/push/unsubscribe", {
+      method: "POST",
+      body: JSON.stringify({ endpoint }),
+    }),
+};
+

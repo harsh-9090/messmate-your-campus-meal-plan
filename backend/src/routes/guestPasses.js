@@ -5,6 +5,7 @@ import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import crypto from "crypto";
 import { format } from "date-fns";
 import { sendGuestPassEmail } from "../services/notificationService.js";
+import { sendPushToMember, sendPushToAdminsAndStaff } from "../services/pushNotificationService.js";
 
 const router = Router();
 
@@ -43,6 +44,21 @@ router.post(
          RETURNING *`,
         [memberId, guestName || "Guest", date, meal, qrToken, price]
       );
+
+      // Notify admins and staff about the pending approval pass
+      (async () => {
+        try {
+          const memberRes = await query("SELECT name FROM members WHERE member_id = $1", [memberId]);
+          const hostName = memberRes.rows[0]?.name || "A member";
+          await sendPushToAdminsAndStaff({
+            title: "Pending Guest Pass Approval",
+            body: `${hostName} requested a guest pass for ${guestName || "Guest"} (${meal} on ${format(new Date(date), "yyyy-MM-dd")})`,
+            url: "/admin/guest-passes",
+          });
+        } catch (pushErr) {
+          console.error("[PUSH-ERROR] Failed to send push on guest pass creation:", pushErr.message);
+        }
+      })();
 
       res.status(201).json(rows[0]);
     } catch (e) {
@@ -135,6 +151,17 @@ router.patch("/:id/approve", verifyToken, requireRole("admin"), async (req, res,
        RETURNING *`,
       [id]
     );
+
+    // Notify member about the guest pass approval
+    if (gp.member_id) {
+      sendPushToMember(gp.member_id, {
+        title: "Guest Pass Approved! 🎉",
+        body: `Your guest pass request for ${gp.guest_name || "Guest"} has been approved for ${gp.meal} on ${format(new Date(gp.date), "yyyy-MM-dd")}.`,
+        url: "/dashboard",
+      }).catch((pushErr) => {
+        console.error("[PUSH-ERROR] Failed to send push on guest pass approval:", pushErr.message);
+      });
+    }
 
     res.json(rows[0]);
   } catch (e) {

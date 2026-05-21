@@ -2,6 +2,7 @@ import { Router } from "express";
 import { query } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { format, subDays } from "date-fns";
+import { sendPushToAdminsAndStaff } from "../services/pushNotificationService.js";
 
 const router = Router();
 router.use(verifyToken);
@@ -101,6 +102,25 @@ router.post("/", async (req, res, next) => {
         [req.user.sub, date, meal, dish_name, rating, comments, is_anonymous]
       );
     }
+
+    // Trigger push notification to admins and staff about the new feedback/rating
+    (async () => {
+      try {
+        let author = "Anonymous member";
+        if (!is_anonymous) {
+          const memberRes = await query("SELECT name FROM members WHERE member_id = $1", [req.user.sub]);
+          author = memberRes.rows[0]?.name || "A member";
+        }
+        const ratingsSummary = ratings.map(r => `${r.dish_name}: ${r.rating}★`).join(", ");
+        await sendPushToAdminsAndStaff({
+          title: "New Feedback Received 🥣",
+          body: `${author} rated ${meal} on ${date}: ${ratingsSummary}${comments ? ` - "${comments}"` : ""}`,
+          url: "/admin/feedback",
+        });
+      } catch (pushErr) {
+        console.error("[PUSH-ERROR] Failed to send push on rating submission:", pushErr.message);
+      }
+    })();
 
     res.json({ ok: true });
   } catch (e) { next(e); }

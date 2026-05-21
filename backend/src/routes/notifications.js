@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { query } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
+import { sendPushToAllMembers } from "../services/pushNotificationService.js";
 
 const router = Router();
 router.use(verifyToken);
@@ -117,6 +118,18 @@ router.post("/", requireRole("admin"), async (req, res, next) => {
     );
 
     const r = rows[0];
+
+    // Trigger push notification if notice is active and is a general/holiday notice
+    if (isActive) {
+      sendPushToAllMembers({
+        title: `Notice: ${title}`,
+        body: content,
+        url: "/dashboard",
+      }).catch((pushErr) => {
+        console.error("[PUSH-ERROR] Failed to send notice push notifications:", pushErr.message);
+      });
+    }
+
     res.status(201).json({
       id: r.id,
       title: r.title,

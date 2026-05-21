@@ -9,6 +9,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from "@/lib/messmate/auth";
 
 import appCss from "../styles.css?url";
 
@@ -252,6 +253,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const user = useAuth((s) => s.user);
+  const accessToken = useAuth((s) => s.accessToken);
 
   React.useEffect(() => {
     // Clean up splash screen once client app hydrates
@@ -263,6 +266,17 @@ function RootComponent() {
       }, 400);
     }
   }, []);
+
+  React.useEffect(() => {
+    if (user && accessToken) {
+      const timer = setTimeout(() => {
+        import("@/lib/messmate/pushHelper").then(({ checkAndRegisterPush }) => {
+          checkAndRegisterPush();
+        });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, accessToken]);
 
   return (
     <QueryClientProvider client={queryClient}>
