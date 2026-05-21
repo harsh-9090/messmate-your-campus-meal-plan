@@ -51,11 +51,11 @@ function KitchenForecastPage() {
     }
     const totalSubscribed = portions + skips;
     const wasteSavedPercent = totalSubscribed > 0 ? Math.round((skips / totalSubscribed) * 100) : 0;
-    return { 
-      totalPortions: portions, 
-      totalSkips: skips, 
-      wasteSavedPercent, 
-      targetDate: targetData?.date || todayStr 
+    return {
+      totalPortions: portions,
+      totalSkips: skips,
+      wasteSavedPercent,
+      targetDate: targetData?.date || todayStr
     };
   }, [headcountData]);
 
@@ -143,13 +143,7 @@ function KitchenForecastPage() {
         </Card>
       </div>
 
-      {/* Kitchen Alert notice */}
-      <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-950/40 dark:bg-blue-950/10">
-        <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-        <div className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-          <strong>How headcount is calculated:</strong> Active Subscribers represents the total count of members with active, paid subscriptions that include that specific meal. Net portions to cook are obtained by subtracting registered skips from the active subscribers. Toggles for skips lock 12 hours before the start of each meal.
-        </div>
-      </div>
+
 
       {/* Forecast list */}
       {isLoading ? (
@@ -229,21 +223,19 @@ function KitchenForecastPage() {
                           <div
                             className="bg-primary h-full transition-all duration-300"
                             style={{
-                              width: `${
-                                mData.activeSubscribers > 0
+                              width: `${mData.activeSubscribers > 0
                                   ? (mData.expectedPortions / mData.activeSubscribers) * 100
                                   : 0
-                              }%`,
+                                }%`,
                             }}
                           />
                           <div
                             className="bg-amber-500 h-full transition-all duration-300"
                             style={{
-                              width: `${
-                                mData.activeSubscribers > 0
+                              width: `${mData.activeSubscribers > 0
                                   ? (mData.skips / mData.activeSubscribers) * 100
                                   : 0
-                              }%`,
+                                }%`,
                             }}
                           />
                         </div>
