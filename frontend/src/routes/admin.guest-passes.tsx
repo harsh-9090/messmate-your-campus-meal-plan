@@ -162,12 +162,12 @@ function AdminGuestPassesPage() {
 
       <Tabs defaultValue="pending" className="w-full" onValueChange={setActiveTab}>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 border-b pb-4">
-          <TabsList className="bg-slate-100 dark:bg-slate-900 border">
-            <TabsTrigger value="pending" className="font-semibold">
-              Pending Counter Payments ({totalPendingCount})
+          <TabsList className="bg-slate-100 dark:bg-slate-900 border grid grid-cols-2 w-full sm:w-auto h-auto p-1 rounded-xl">
+            <TabsTrigger value="pending" className="font-semibold py-2 px-3 text-xs sm:text-sm">
+              Pending ({totalPendingCount})
             </TabsTrigger>
-            <TabsTrigger value="all" className="font-semibold">
-              All Guest Passes ({allPasses.length})
+            <TabsTrigger value="all" className="font-semibold py-2 px-3 text-xs sm:text-sm">
+              All Passes ({allPasses.length})
             </TabsTrigger>
           </TabsList>
 
@@ -187,8 +187,9 @@ function AdminGuestPassesPage() {
           </div>
         </div>
 
-        <TabsContent value="pending" className="mt-4">
-          <Card className="overflow-hidden border border-slate-200/80 dark:border-slate-800 rounded-2xl">
+        <TabsContent value="pending" className="mt-4 space-y-4">
+          {/* Desktop Table View */}
+          <Card className="hidden md:block overflow-hidden border border-slate-200/80 dark:border-slate-800 rounded-2xl">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -254,10 +255,75 @@ function AdminGuestPassesPage() {
               </Table>
             </div>
           </Card>
+
+          {/* Mobile Card-Based View */}
+          <div className="md:hidden space-y-3">
+            {pendingQ.isLoading ? (
+              <Card className="p-8 text-center text-muted-foreground font-semibold">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
+                Loading pending guest passes...
+              </Card>
+            ) : filteredPending.length === 0 ? (
+              <Card className="p-8 text-center text-muted-foreground font-semibold">
+                No guest passes awaiting payment.
+              </Card>
+            ) : (
+              filteredPending.map((gp) => (
+                <Card key={gp.id} className="p-4 space-y-3 border-slate-200 dark:border-slate-800 shadow-sm">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <div className="font-bold text-slate-800 dark:text-slate-200">{gp.host_name || "Unknown"}</div>
+                      <div className="text-[10px] text-muted-foreground font-semibold">
+                        ID: {gp.member_id || "N/A"} · {gp.host_mobile || "N/A"}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-extrabold text-amber-600 text-sm">
+                        {formatINR(gp.price)}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground font-semibold">Price</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-dashed">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-muted-foreground font-semibold mr-1">Guest:</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs">{gp.guest_name}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <Badge variant="outline" className="font-bold border-slate-200/80 text-[10px] py-0 px-1.5">
+                        {gp.date}
+                      </Badge>
+                      <Badge className="font-bold bg-primary/10 text-primary hover:bg-primary/15 border-none text-[10px] py-0 px-1.5">
+                        {gp.meal}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  <div className="pt-1">
+                    <Button
+                      size="sm"
+                      className="w-full rounded-xl h-10 px-4 shadow-sm"
+                      onClick={() => approveM.mutate(gp.id)}
+                      disabled={approveM.isPending}
+                    >
+                      {approveM.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 mr-2" />
+                      )}
+                      Mark Paid & Approve
+                    </Button>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
         </TabsContent>
 
-        <TabsContent value="all" className="mt-4">
-          <Card className="overflow-hidden border border-slate-200/80 dark:border-slate-800 rounded-2xl">
+        <TabsContent value="all" className="mt-4 space-y-4">
+          {/* Desktop Table View */}
+          <Card className="hidden md:block overflow-hidden border border-slate-200/80 dark:border-slate-800 rounded-2xl">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -328,6 +394,71 @@ function AdminGuestPassesPage() {
               </Table>
             </div>
           </Card>
+
+          {/* Mobile Card-Based View */}
+          <div className="md:hidden space-y-3">
+            {allQ.isLoading ? (
+              <Card className="p-8 text-center text-muted-foreground font-semibold">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
+                Loading guest passes history...
+              </Card>
+            ) : filteredAll.length === 0 ? (
+              <Card className="p-8 text-center text-muted-foreground font-semibold">
+                No guest passes found.
+              </Card>
+            ) : (
+              filteredAll.map((gp) => (
+                <Card key={gp.id} className="p-4 space-y-3 border-slate-200 dark:border-slate-800 shadow-sm animate-in fade-in-50 duration-155">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <div className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight">{gp.host_name || "Unknown"}</div>
+                      {gp.member_id ? (
+                        <span className="text-[10px] text-muted-foreground font-semibold">ID: {gp.member_id}</span>
+                      ) : (
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded">Walk-in Ticket</span>
+                      )}
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className={`capitalize font-bold text-[10px] py-0 px-2 ${
+                        gp.status === "active"
+                          ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                          : gp.status === "used"
+                            ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                            : gp.status === "pending_approval"
+                              ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                              : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
+                      }`}
+                    >
+                      {gp.status === "pending_approval" ? "Pending Cash" : gp.status}
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2.5 border-t border-dashed text-xs gap-4">
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider block">Guest Name</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px]">{gp.guest_name}</span>
+                    </div>
+                    <div className="space-y-0.5 text-center">
+                      <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider block">Session</span>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="font-bold border-slate-200/80 text-[10px] py-0 px-1.5 h-4">
+                          {gp.date}
+                        </Badge>
+                        <Badge className="font-bold bg-primary/10 text-primary hover:bg-primary/15 border-none text-[10px] py-0 px-1.5 h-4">
+                          {gp.meal}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="space-y-0.5 text-right">
+                      <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider block">Amount</span>
+                      <span className="font-extrabold text-slate-700 dark:text-slate-300 text-xs">{formatINR(gp.price)}</span>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
         </TabsContent>
       </Tabs>
       <WalkInPassDialog open={walkInOpen} onOpenChange={setWalkInOpen} />
