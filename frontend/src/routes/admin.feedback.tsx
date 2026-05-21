@@ -145,12 +145,12 @@ function AdminFeedbackPage() {
         {/* Left Column: Dish performance leaderboard */}
         <div className="lg:col-span-7 space-y-6">
           <Card className="p-6 border-border bg-card shadow-sm">
-            <div className="flex items-center justify-between border-b pb-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 mb-4 gap-2">
               <div className="flex items-center gap-2">
                 <ChefHat className="h-5 w-5 text-primary" />
                 <h2 className="font-display text-lg font-bold">Dish Performance Leaderboard</h2>
               </div>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs w-fit">
                 {dishes.length} Dishes Rated
               </Badge>
             </div>
@@ -169,28 +169,30 @@ function AdminFeedbackPage() {
                       key={dish.dish_name}
                       className="p-4 rounded-xl border border-border/50 bg-background/50 hover:bg-background/80 transition-colors space-y-3"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-muted-foreground/60 w-5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="text-xs font-bold text-muted-foreground/60 w-5 shrink-0">
                             #{idx + 1}
                           </span>
-                          <span className="font-bold text-sm sm:text-base">{dish.dish_name}</span>
-                          {isTop && (
-                            <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border-0 text-[10px]">
-                              Popular
-                            </Badge>
-                          )}
-                          {isLow && (
-                            <Badge className="bg-red-500/10 text-red-600 dark:text-red-400 font-bold border-0 text-[10px]">
-                              Review Needed
-                            </Badge>
-                          )}
+                          <div className="flex flex-wrap items-center gap-2 min-w-0">
+                            <span className="font-bold text-sm sm:text-base">{dish.dish_name}</span>
+                            {isTop && (
+                              <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold border-0 text-[10px] shrink-0">
+                                Popular
+                              </Badge>
+                            )}
+                            {isLow && (
+                              <Badge className="bg-red-500/10 text-red-600 dark:text-red-400 font-bold border-0 text-[10px] shrink-0">
+                                Review Needed
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-card px-2.5 py-1 rounded-lg border text-xs sm:text-sm font-bold shadow-sm">
-                          <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                        <div className="flex items-center gap-1.5 bg-card px-2.5 py-1 rounded-lg border text-xs sm:text-sm font-bold shadow-sm shrink-0 w-fit self-start sm:self-auto">
+                          <Star className="h-4 w-4 fill-amber-400 text-amber-400 shrink-0" />
                           <span>{dish.avg_rating}</span>
                           <span className="text-muted-foreground font-normal">
-                            ({dish.total_ratings} votes)
+                            ({dish.total_ratings} {dish.total_ratings === 1 ? "vote" : "votes"})
                           </span>
                         </div>
                       </div>
