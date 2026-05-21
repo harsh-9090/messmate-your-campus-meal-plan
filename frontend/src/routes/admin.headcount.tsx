@@ -34,20 +34,36 @@ function KitchenForecastPage() {
     queryFn: () => skipsApi.getHeadcount(dateRange.startDate, dateRange.endDate),
   });
 
-  const totals = useMemo(() => {
-    if (!headcountData) return { totalPortions: 0, totalSkips: 0, wasteSavedPercent: 0 };
+  const todayTotals = useMemo(() => {
+    if (!headcountData || headcountData.length === 0) {
+      return { totalPortions: 0, totalSkips: 0, wasteSavedPercent: 0, targetDate: todayISO() };
+    }
+    const todayStr = todayISO();
+    const targetData = headcountData.find((d) => d.date === todayStr) || headcountData[0];
+
     let portions = 0;
     let skips = 0;
-    headcountData.forEach((day) => {
-      Object.values(day.meals).forEach((m) => {
+    if (targetData) {
+      Object.values(targetData.meals).forEach((m) => {
         portions += m.expectedPortions;
         skips += m.skips;
       });
-    });
+    }
     const totalSubscribed = portions + skips;
     const wasteSavedPercent = totalSubscribed > 0 ? Math.round((skips / totalSubscribed) * 100) : 0;
-    return { totalPortions: portions, totalSkips: skips, wasteSavedPercent };
+    return { 
+      totalPortions: portions, 
+      totalSkips: skips, 
+      wasteSavedPercent, 
+      targetDate: targetData?.date || todayStr 
+    };
   }, [headcountData]);
+
+  const formattedTargetDate = useMemo(() => {
+    if (!todayTotals.targetDate) return "Today";
+    if (todayTotals.targetDate === todayISO()) return "Today";
+    return formatDate(todayTotals.targetDate);
+  }, [todayTotals.targetDate]);
 
   return (
     <div className="space-y-6 p-6 md:p-8">
@@ -60,24 +76,24 @@ function KitchenForecastPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <CalendarIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-xl border border-input bg-background px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+              <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
                 type="date"
-                className="pl-9 w-40 font-medium"
+                className="border-0 bg-transparent p-0 text-sm font-semibold focus:ring-0 focus:outline-none w-[115px] text-foreground cursor-pointer"
                 value={dateRange.startDate}
                 onChange={(e) =>
                   e.target.value && setDateRange((prev) => ({ ...prev, startDate: e.target.value }))
                 }
               />
             </div>
-            <span className="text-muted-foreground text-sm font-semibold">to</span>
-            <div className="relative">
-              <CalendarIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
+            <span className="text-muted-foreground text-[10px] font-extrabold uppercase px-1">to</span>
+            <div className="flex items-center gap-2 rounded-xl border border-input bg-background px-3 py-1.5 shadow-sm focus-within:ring-2 focus-within:ring-primary focus-within:border-primary">
+              <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
                 type="date"
-                className="pl-9 w-40 font-medium"
+                className="border-0 bg-transparent p-0 text-sm font-semibold focus:ring-0 focus:outline-none w-[115px] text-foreground cursor-pointer"
                 value={dateRange.endDate}
                 onChange={(e) =>
                   e.target.value && setDateRange((prev) => ({ ...prev, endDate: e.target.value }))
@@ -95,9 +111,9 @@ function KitchenForecastPage() {
             <ChefHat className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-2xl font-black">{totals.totalPortions}</div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Expected Plates
+            <div className="text-2xl font-black">{todayTotals.totalPortions}</div>
+            <div className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+              Expected Plates ({formattedTargetDate})
             </div>
           </div>
         </Card>
@@ -107,9 +123,9 @@ function KitchenForecastPage() {
             <TrendingDown className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-2xl font-black">{totals.totalSkips}</div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Registered Skips
+            <div className="text-2xl font-black">{todayTotals.totalSkips}</div>
+            <div className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+              Registered Skips ({formattedTargetDate})
             </div>
           </div>
         </Card>
@@ -119,9 +135,9 @@ function KitchenForecastPage() {
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <div className="text-2xl font-black">{totals.wasteSavedPercent}%</div>
-            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              Portions Saved
+            <div className="text-2xl font-black">{todayTotals.wasteSavedPercent}%</div>
+            <div className="text-[10px] font-extrabold text-muted-foreground uppercase tracking-wider">
+              Portions Saved ({formattedTargetDate})
             </div>
           </div>
         </Card>
