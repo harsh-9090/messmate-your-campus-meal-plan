@@ -140,19 +140,93 @@ function ScanLogsPage() {
           </div>
 
           {/* Denials by Reason breakdown */}
-          <Card className="p-5 shadow-sm border">
-            <h3 className="mb-3 font-display text-lg font-bold">Denials by reason (today)</h3>
-            {Object.keys(byCode).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No denials today.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(byCode).map(([code, n]) => (
-                  <Badge key={code} variant="secondary" className="text-sm font-semibold py-1">
-                    {code} · <span className="ml-1 font-bold">{n}</span>
-                  </Badge>
-                ))}
-              </div>
-            )}
+          <Card className="p-6 shadow-sm border bg-card">
+            {(() => {
+              const totalDenials = Object.values(byCode).reduce((a, b) => a + b, 0);
+              return (
+                <>
+                  <div className="flex items-center justify-between border-b pb-3 mb-4">
+                    <h3 className="font-display text-lg font-bold text-foreground">
+                      Denials by reason (today)
+                    </h3>
+                    {totalDenials > 0 && (
+                      <Badge className="bg-destructive/10 text-destructive border-destructive/20 font-bold px-2.5 py-0.5 text-xs hover:bg-destructive/10">
+                        Total: {totalDenials}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {totalDenials === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">No denials today.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {Object.entries(byCode).map(([code, n]) => {
+                        const percentage = totalDenials > 0 ? Math.round((n / totalDenials) * 100) : 0;
+                        
+                        const reasonMeta = {
+                          title: code.replace(/_/g, " "),
+                          color: "bg-destructive",
+                          borderColor: "border-destructive/20",
+                          bgColor: "bg-destructive/5",
+                        };
+
+                        if (code === "WRONG_TIME" || code === "WRONG_MEAL" || code === "WRONG_MEAL_QR") {
+                          reasonMeta.color = "bg-amber-500";
+                          reasonMeta.borderColor = "border-amber-500/20";
+                          reasonMeta.bgColor = "bg-amber-500/5";
+                        } else if (code === "EXPIRED" || code === "UNPAID" || code === "INVALID_TOKEN") {
+                          reasonMeta.color = "bg-red-500";
+                          reasonMeta.borderColor = "border-red-500/20";
+                          reasonMeta.bgColor = "bg-red-500/5";
+                        } else if (code === "ALREADY_USED") {
+                          reasonMeta.color = "bg-orange-500";
+                          reasonMeta.borderColor = "border-orange-500/20";
+                          reasonMeta.bgColor = "bg-orange-500/5";
+                        }
+
+                        return (
+                          <div
+                            key={code}
+                            className={cn(
+                              "rounded-xl border p-4 flex flex-col justify-between transition-all duration-200 hover:shadow-xs",
+                              reasonMeta.borderColor,
+                              reasonMeta.bgColor
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <span className="text-[9px] uppercase font-extrabold tracking-wider text-muted-foreground/80">
+                                  Reason Code
+                                </span>
+                                <h4 className="font-bold text-sm text-foreground mt-0.5 capitalize">
+                                  {reasonMeta.title.toLowerCase()}
+                                </h4>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-lg font-black text-foreground">{n}</span>
+                                <span className="text-xs text-muted-foreground block font-semibold">
+                                  {percentage}%
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="mt-3 space-y-1">
+                              <div className="h-1.5 w-full bg-muted dark:bg-muted/10 rounded-full overflow-hidden">
+                                <div
+                                  className={cn("h-full rounded-full transition-all duration-300", reasonMeta.color)}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </Card>
         </div>
       ) : (
