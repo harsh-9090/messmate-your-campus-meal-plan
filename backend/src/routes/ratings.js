@@ -107,7 +107,7 @@ router.post("/", async (req, res, next) => {
 });
 
 // GET /ratings/analytics -> Get food feedback analytics (Admin/Staff only)
-router.get("/analytics", requireRole(["admin", "staff"]), async (req, res, next) => {
+router.get("/analytics", requireRole("admin", "staff"), async (req, res, next) => {
   try {
     // 1. Fetch stats per dish
     const { rows: dishStats } = await query(`
