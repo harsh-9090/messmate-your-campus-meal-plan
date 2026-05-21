@@ -159,4 +159,21 @@ CREATE TABLE IF NOT EXISTS meal_skips (
 
 CREATE INDEX IF NOT EXISTS meal_skips_date_member_idx ON meal_skips (skip_date, member_id);
 
+CREATE TABLE IF NOT EXISTS menu_item_ratings (
+  id              BIGSERIAL PRIMARY KEY,
+  member_id       TEXT REFERENCES members(member_id) ON DELETE SET NULL,
+  date            DATE NOT NULL,
+  meal            TEXT NOT NULL CHECK (meal IN ('Breakfast','Lunch','Dinner')),
+  dish_name       TEXT NOT NULL,
+  rating          INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comments        TEXT,
+  is_anonymous    BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (member_id, date, meal, dish_name)
+);
+
+CREATE INDEX IF NOT EXISTS menu_item_ratings_dish_idx ON menu_item_ratings (dish_name);
+CREATE INDEX IF NOT EXISTS menu_item_ratings_date_idx ON menu_item_ratings (date);
+
+
 

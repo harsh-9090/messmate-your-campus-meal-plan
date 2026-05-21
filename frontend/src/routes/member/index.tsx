@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/messmate/auth";
-import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi, skipsApi } from "@/lib/messmate/api";
+import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi, skipsApi, ratingsApi } from "@/lib/messmate/api";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
   Loader2,
   Calendar,
   TrendingDown,
+  Star,
 } from "lucide-react";
 import {
   daysRemaining,
@@ -37,7 +38,7 @@ import {
   formatDate,
 } from "@/lib/messmate/dateHelpers";
 import { MEALS } from "@/lib/messmate/constants";
-import type { Meal, DashboardNotification } from "@/lib/messmate/types";
+import type { Meal, DashboardNotification, UnratedMeal } from "@/lib/messmate/types";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
 
@@ -91,6 +92,168 @@ export const Route = createFileRoute("/member/")({
   }),
   component: MemberPortal,
 });
+
+interface FeedbackWidgetProps {
+  unratedMeals: UnratedMeal[];
+  onSubmit: (data: {
+    date: string;
+    meal: Meal;
+    ratings: Array<{ dish_name: string; rating: number }>;
+    comments?: string;
+    is_anonymous: boolean;
+  }) => void;
+  isSubmitting: boolean;
+}
+
+function FeedbackWidget({ unratedMeals, onSubmit, isSubmitting }: FeedbackWidgetProps) {
+  if (unratedMeals.length === 0) return null;
+
+  const current = unratedMeals[0];
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [comments, setComments] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
+
+  useEffect(() => {
+    const initial: Record<string, number> = {};
+    current.items.forEach((item) => {
+      initial[item] = 5;
+    });
+    setRatings(initial);
+    setComments("");
+    setIsAnonymous(false);
+  }, [current]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const ratingsPayload = Object.entries(ratings).map(([dish_name, rating]) => ({
+      dish_name,
+      rating,
+    }));
+    onSubmit({
+      date: current.date,
+      meal: current.meal,
+      ratings: ratingsPayload,
+      comments,
+      is_anonymous: isAnonymous,
+    });
+  };
+
+  const getMealEmoji = (meal: Meal) => {
+    if (meal === "Breakfast") return "🍳";
+    if (meal === "Lunch") return "🍱";
+    return "🍲";
+  };
+
+  return (
+    <Card className="md:col-span-12 p-5 border-emerald-200 dark:border-emerald-950/40 bg-gradient-to-r from-emerald-50/30 to-teal-50/30 dark:from-emerald-950/5 dark:to-teal-950/5 shadow-sm space-y-4">
+      <div className="flex items-center justify-between border-b pb-3 border-emerald-100 dark:border-emerald-950/20">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">{getMealEmoji(current.meal)}</span>
+          <div>
+            <h3 className="font-bold text-sm sm:text-base text-foreground flex items-center gap-1.5">
+              Rate your {current.meal}
+              <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold text-[10px]">
+                Pending Feedback
+              </Badge>
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Served on {formatDate(current.date)}
+            </p>
+          </div>
+        </div>
+        {unratedMeals.length > 1 && (
+          <Badge variant="outline" className="text-xs font-semibold">
+            +{unratedMeals.length - 1} more pending
+          </Badge>
+        )}
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <label className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
+              Dish Ratings
+            </label>
+            <div className="space-y-2">
+              {current.items.map((item) => {
+                const curRating = ratings[item] || 5;
+                return (
+                  <div
+                    key={item}
+                    className="flex items-center justify-between p-2 rounded-xl bg-background/50 border border-border/50 hover:bg-background/80 transition-colors"
+                  >
+                    <span className="text-xs sm:text-sm font-semibold pr-2">{item}</span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRatings((prev) => ({ ...prev, [item]: star }))}
+                          className="p-1 focus:outline-none transition-transform hover:scale-125 cursor-pointer bg-transparent border-0"
+                        >
+                          <Star
+                            className={cn(
+                              "h-5 w-5 transition-colors",
+                              star <= curRating
+                                ? "fill-amber-400 text-amber-400"
+                                : "text-muted/40 hover:text-amber-300"
+                            )}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-3 flex flex-col justify-between">
+            <div className="space-y-2">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
+                Comments (Optional)
+              </label>
+              <textarea
+                placeholder="What did you like or dislike? Any specific suggestions for the chef?"
+                className="w-full min-h-[90px] rounded-xl border border-input bg-background/50 px-3 py-2 text-xs sm:text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary resize-none"
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                  className="rounded border-input text-primary focus:ring-primary h-4 w-4"
+                />
+                Submit Anonymously
+              </label>
+
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isSubmitting}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Ratings"
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </Card>
+  );
+}
 
 function MemberPortal() {
   const authUser = useAuth((s) => s.user);
@@ -160,6 +323,29 @@ function MemberPortal() {
     },
     onError: (err: any) => {
       toast.error(err?.message || "Failed to toggle meal skip");
+    },
+  });
+
+  const unratedQ = useQuery({
+    queryKey: ["unrated-meals"],
+    queryFn: () => ratingsApi.getUnrated(),
+    enabled: !!authUser,
+  });
+
+  const submitRatingM = useMutation({
+    mutationFn: (args: {
+      date: string;
+      meal: Meal;
+      ratings: Array<{ dish_name: string; rating: number }>;
+      comments?: string;
+      is_anonymous: boolean;
+    }) => ratingsApi.submit(args),
+    onSuccess: () => {
+      toast.success("Thank you! Your feedback has been submitted.");
+      qc.invalidateQueries({ queryKey: ["unrated-meals"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to submit feedback");
     },
   });
 
@@ -364,6 +550,17 @@ function MemberPortal() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Food Quality Feedback Widget */}
+        {unratedQ.data && unratedQ.data.length > 0 && (
+          <div className="md:col-span-12 mb-4">
+            <FeedbackWidget
+              unratedMeals={unratedQ.data}
+              onSubmit={(payload) => submitRatingM.mutate(payload)}
+              isSubmitting={submitRatingM.isPending}
+            />
           </div>
         )}
 

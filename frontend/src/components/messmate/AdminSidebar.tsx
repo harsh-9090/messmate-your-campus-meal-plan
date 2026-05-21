@@ -13,6 +13,7 @@ import {
   Menu,
   Megaphone,
   ChefHat,
+  Star,
 } from "lucide-react";
 import { useAuth } from "@/lib/messmate/auth";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const items = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/admin/menu", label: "Menu Planner", icon: UtensilsCrossed },
   { to: "/admin/headcount", label: "Kitchen Forecast", icon: ChefHat },
+  { to: "/admin/feedback", label: "Food Feedback", icon: Star },
   { to: "/admin/members", label: "Members", icon: Users },
   { to: "/admin/payments", label: "Payments", icon: IndianRupee },
   { to: "/admin/finance", label: "Finance", icon: TrendingUp },

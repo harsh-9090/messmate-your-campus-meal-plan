@@ -142,3 +142,34 @@ export interface HeadcountReport {
   >;
 }
 
+export interface UnratedMeal {
+  date: string;
+  meal: Meal;
+  items: string[];
+}
+
+export interface DishRatingStats {
+  dish_name: string;
+  avg_rating: number;
+  total_ratings: number;
+  breakdown: Record<number, number>;
+}
+
+export interface RatingComment {
+  id: number;
+  date: string;
+  meal: Meal;
+  dish_name: string;
+  rating: number;
+  comments: string;
+  is_anonymous: boolean;
+  memberName: string;
+  createdAt: string;
+}
+
+export interface RatingsAnalytics {
+  dishes: DishRatingStats[];
+  comments: RatingComment[];
+}
+
+

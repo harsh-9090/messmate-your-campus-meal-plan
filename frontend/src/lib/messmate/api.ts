@@ -15,6 +15,8 @@ import type {
   DashboardNotification,
   MealSkip,
   HeadcountReport,
+  UnratedMeal,
+  RatingsAnalytics,
 } from "./types";
 
 const BASE_URL =
@@ -417,4 +419,17 @@ export const skipsApi = {
     return request<HeadcountReport[]>("/skips/headcount", { query: params });
   },
 };
+
+export const ratingsApi = {
+  getUnrated: () => request<UnratedMeal[]>("/ratings/status"),
+  submit: (data: {
+    date: string;
+    meal: Meal;
+    ratings: Array<{ dish_name: string; rating: number }>;
+    comments?: string;
+    is_anonymous: boolean;
+  }) => request<{ ok: boolean }>("/ratings", { method: "POST", body: JSON.stringify(data) }),
+  getAnalytics: () => request<RatingsAnalytics>("/ratings/analytics"),
+};
+
 
