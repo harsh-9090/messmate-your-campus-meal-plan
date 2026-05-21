@@ -16,7 +16,8 @@ import {
   HelpCircle,
   Coffee,
   Sun,
-  Moon
+  Moon,
+  ArrowLeft
 } from "lucide-react";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 
@@ -105,10 +106,19 @@ function GuestPassPage() {
 
       {/* Top Bar */}
       <header className="w-full max-w-md mx-auto px-6 pt-6 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
-          <img src="/apple-touch-icon.png" alt="Logo" className="h-9 w-9 rounded-full object-cover border border-primary/20 bg-primary/5 shadow-sm" />
-          <span className="font-display font-extrabold tracking-tight text-slate-800 dark:text-slate-100">Mom's Kitchen</span>
-        </div>
+        <button
+          onClick={() => {
+            if (window.history.length > 1) {
+              window.history.back();
+            } else {
+              window.location.href = "/member";
+            }
+          }}
+          className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors bg-white dark:bg-slate-900 px-3.5 py-2 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span>Back</span>
+        </button>
         <ThemeToggle />
       </header>
 
