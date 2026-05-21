@@ -25,7 +25,8 @@ router.get("/stats", async (_req, res, next) => {
         (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND created_at::date = (SELECT today FROM ist_today)) as new_members,
         (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND sub_renewed_at::date = (SELECT today FROM ist_today) AND sub_renewal_count > 0) as renewed_members,
         (SELECT COUNT(*)::int FROM members WHERE role = 'member' AND sub_end_date = (SELECT today FROM ist_today)) as expired_members,
-        (SELECT COALESCE(SUM(amount), 0)::int FROM payments WHERE created_at::date = (SELECT today FROM ist_today)) as collection,
+        (SELECT COALESCE(SUM(amount), 0)::int FROM payments WHERE created_at::date = (SELECT today FROM ist_today)) +
+        (SELECT COALESCE(SUM(price), 0)::int FROM guest_passes WHERE status IN ('active', 'used', 'expired') AND updated_at::date = (SELECT today FROM ist_today)) as collection,
         
         -- Details (as JSON arrays)
         (SELECT COALESCE(json_agg(m.*), '[]') FROM members m WHERE role = 'member' AND created_at::date = (SELECT today FROM ist_today)) as new_list,
@@ -107,13 +108,18 @@ router.get("/weekly", async (_req, res, next) => {
     );
     const byDateMap = new Map(usage.map((u) => [format(u.date, "yyyy-MM-dd"), u.meals]));
     const byDate = days.map((d) => ({ date: d, meals: byDateMap.get(d) || 0 }));
-    const { rows: rev } = await query(
+    const { rows: subRev } = await query(
       `SELECT COALESCE(SUM(sub_price_per_month),0)::int AS r
          FROM members
          WHERE role = 'member' AND is_active = TRUE AND sub_is_paid = TRUE
            AND sub_end_date >= CURRENT_DATE`
     );
-    const result = { days: byDate, estimatedMonthlyRevenue: rev[0].r };
+    const { rows: gpRev } = await query(
+      `SELECT COALESCE(SUM(price),0)::int AS r
+         FROM guest_passes
+         WHERE status IN ('active', 'used', 'expired')`
+    );
+    const result = { days: byDate, estimatedMonthlyRevenue: subRev[0].r + gpRev[0].r };
     await setCache(cacheKey, result, 600); // 10 min
     res.json(result);
   } catch (e) { next(e); }
@@ -267,19 +273,30 @@ router.get("/finance", requireRole("admin"), async (req, res, next) => {
     }
 
     const { rows: summary } = await query(`
+      WITH unified_payments AS (
+        SELECT amount, created_at FROM payments
+        UNION ALL
+        SELECT price as amount, updated_at as created_at FROM guest_passes WHERE status IN ('active', 'used', 'expired')
+      )
       SELECT 
         COALESCE(SUM(amount)::int, 0) as total_revenue,
-        (SELECT COALESCE(SUM(sub_price_per_month - sub_amount_paid)::int, 0) FROM members WHERE role = 'member' AND sub_price_per_month > sub_amount_paid) as total_dues,
+        (SELECT COALESCE(SUM(sub_price_per_month - sub_amount_paid)::int, 0) FROM members WHERE role = 'member' AND sub_price_per_month > sub_amount_paid) +
+        (SELECT COALESCE(SUM(price), 0)::int FROM guest_passes WHERE status = 'pending_approval') as total_dues,
         COUNT(*)::int as tx_count
-      FROM payments
+      FROM unified_payments
       ${where}
     `, params);
 
     const { rows: monthly } = await query(`
+      WITH unified_payments AS (
+        SELECT amount, created_at FROM payments
+        UNION ALL
+        SELECT price as amount, updated_at as created_at FROM guest_passes WHERE status IN ('active', 'used', 'expired')
+      )
       SELECT 
         TO_CHAR(date_trunc('month', created_at), 'Mon YYYY') as month,
         SUM(amount)::int as revenue
-      FROM payments
+      FROM unified_payments
       ${where}
       GROUP BY 1
       ORDER BY MIN(created_at) DESC
@@ -287,22 +304,40 @@ router.get("/finance", requireRole("admin"), async (req, res, next) => {
     `, params);
 
     const { rows: methods } = await query(`
+      WITH unified_methods AS (
+        SELECT method, amount, created_at FROM payments
+        UNION ALL
+        SELECT 'Cash' as method, price as amount, updated_at as created_at FROM guest_passes WHERE status IN ('active', 'used', 'expired')
+      )
       SELECT method as name, SUM(amount)::int as value
-      FROM payments
+      FROM unified_methods
       ${where}
       GROUP BY 1
       ORDER BY value DESC
     `, params);
 
     const { rows: plans } = await query(`
-      SELECT 
-        COALESCE(p.label, 'Custom') as name, 
-        SUM(pay.amount)::int as value,
-        (SELECT COUNT(*)::int FROM members m WHERE (m.sub_plan_id = pay.plan_id OR (m.sub_plan_id IS NULL AND pay.plan_id IS NULL)) AND m.is_active = TRUE) as members
-      FROM payments pay
-      LEFT JOIN plans p ON pay.plan_id = p.plan_id
-      ${where.replace('created_at', 'pay.created_at')}
-      GROUP BY 1, pay.plan_id
+      WITH unified_plans AS (
+        SELECT 
+          COALESCE(p.label, 'Custom') as name, 
+          pay.amount,
+          pay.created_at,
+          (SELECT COUNT(*)::int FROM members m WHERE (m.sub_plan_id = pay.plan_id OR (m.sub_plan_id IS NULL AND pay.plan_id IS NULL)) AND m.is_active = TRUE) as members
+        FROM payments pay
+        LEFT JOIN plans p ON pay.plan_id = p.plan_id
+        UNION ALL
+        SELECT 
+          'Guest Pass' as name, 
+          price as amount, 
+          updated_at as created_at,
+          (SELECT COUNT(*)::int FROM guest_passes WHERE status IN ('active', 'used', 'expired')) as members
+        FROM guest_passes 
+        WHERE status IN ('active', 'used', 'expired')
+      )
+      SELECT name, SUM(amount)::int as value, MAX(members)::int as members
+      FROM unified_plans
+      ${where}
+      GROUP BY 1
       ORDER BY value DESC
     `, params);
 
