@@ -209,20 +209,20 @@ function MenuPlannerPage() {
   return (
     <div className="space-y-6 p-6 md:p-8">
       {/* Header */}
-      <header className="flex flex-wrap items-center justify-between gap-4">
+      <header className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Menu Planner</h1>
           <p className="text-sm text-muted-foreground">
             Configure dates and plan delicious Breakfast, Lunch, and Dinner menus
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           {/* Quick Date Picker Input */}
-          <div className="relative">
-            <CalendarIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative w-full sm:w-44">
+            <CalendarIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
               type="date"
-              className="pl-9 w-44 font-medium"
+              className="pl-9 w-full font-medium h-10"
               value={selectedDate}
               onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
             />
@@ -231,7 +231,7 @@ function MenuPlannerPage() {
             variant="outline"
             size="sm"
             onClick={handleCopyYesterday}
-            className="flex items-center gap-1.5"
+            className="flex items-center justify-center gap-1.5 h-10 w-full sm:w-auto cursor-pointer"
           >
             <Copy className="h-4 w-4" /> Copy Yesterday
           </Button>
