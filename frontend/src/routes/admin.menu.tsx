@@ -218,11 +218,11 @@ function MenuPlannerPage() {
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           {/* Quick Date Picker Input */}
-          <div className="relative w-full sm:w-44">
-            <CalendarIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-            <Input
+          <div className="flex items-center gap-2 w-full sm:w-44 h-10 rounded-xl border border-input bg-background px-3 text-sm focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+            <input
               type="date"
-              className="pl-9 w-full font-medium h-10"
+              className="w-full bg-transparent border-0 p-0 text-sm font-medium focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
               value={selectedDate}
               onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
             />
