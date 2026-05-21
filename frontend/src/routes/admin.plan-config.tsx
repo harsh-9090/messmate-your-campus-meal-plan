@@ -207,7 +207,7 @@ function PlanConfigPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 sm:flex items-center gap-4">
+                  <div className="grid grid-cols-1 sm:flex items-stretch sm:items-end gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">
                         Start Time
