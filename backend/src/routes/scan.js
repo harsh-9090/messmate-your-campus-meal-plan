@@ -213,7 +213,7 @@ router.post("/validate",
         }
 
         await query(
-          `UPDATE guest_passes SET status = 'used', scanned_at = NOW(), updated_at = NOW() WHERE id = $1`,
+          `UPDATE guest_passes SET status = 'used', updated_at = NOW() WHERE id = $1`,
           [gp.id]
         );
 
