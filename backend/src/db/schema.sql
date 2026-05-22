@@ -205,3 +205,92 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
 );
 
 CREATE INDEX IF NOT EXISTS push_subscriptions_member_idx ON push_subscriptions (member_id);
+
+-- Transactional Subscriptions table (Option B Ledger)
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  member_id           TEXT NOT NULL REFERENCES members(member_id) ON DELETE CASCADE,
+  plan_id             TEXT REFERENCES plans(plan_id) ON DELETE SET NULL,
+  plan_label          TEXT NOT NULL,
+  meals               TEXT[] NOT NULL,
+  start_date          DATE NOT NULL,
+  end_date            DATE NOT NULL,
+  price_per_month     INTEGER NOT NULL,
+  amount_paid         INTEGER NOT NULL DEFAULT 0,
+  is_paid             BOOLEAN NOT NULL DEFAULT FALSE,
+  paid_at             TIMESTAMPTZ,
+  renewed_at          TIMESTAMPTZ,
+  status              TEXT NOT NULL CHECK (status IN ('active', 'expired', 'cancelled', 'pending')),
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS subscriptions_member_idx ON subscriptions(member_id);
+
+-- Safely backfill subscriptions table if it is currently empty
+INSERT INTO subscriptions (
+  member_id, plan_id, plan_label, meals, start_date, end_date, 
+  price_per_month, amount_paid, is_paid, paid_at, renewed_at, status
+)
+SELECT 
+  m.member_id, 
+  m.sub_plan_id, 
+  COALESCE(m.sub_plan_label, 'Default Plan'), 
+  COALESCE(m.sub_meals, '{}'), 
+  COALESCE(m.sub_start_date, CURRENT_DATE), 
+  COALESCE(m.sub_end_date, CURRENT_DATE + INTERVAL '30 days'), 
+  COALESCE(m.sub_price_per_month, 0), 
+  m.sub_amount_paid, 
+  m.sub_is_paid, 
+  m.sub_paid_at, 
+  m.sub_renewed_at,
+  CASE 
+    WHEN m.is_active = FALSE THEN 'pending'
+    WHEN m.sub_end_date >= CURRENT_DATE THEN 'active'
+    ELSE 'expired'
+  END
+FROM members m
+WHERE m.sub_plan_id IS NOT NULL 
+  AND NOT EXISTS (SELECT 1 FROM subscriptions LIMIT 1);
+
+-- PostgreSQL trigger function to keep members table denormalized columns in sync with subscriptions ledger
+CREATE OR REPLACE FUNCTION sync_member_subscription()
+RETURNS TRIGGER AS $$
+DECLARE
+  latest_sub RECORD;
+BEGIN
+  -- Fetch the latest active or pending subscription for this member, fallback to latest expired
+  SELECT * INTO latest_sub 
+  FROM subscriptions 
+  WHERE member_id = NEW.member_id
+  ORDER BY 
+    CASE WHEN status = 'active' THEN 1 WHEN status = 'pending' THEN 2 ELSE 3 END,
+    end_date DESC, 
+    created_at DESC 
+  LIMIT 1;
+
+  IF latest_sub.id IS NOT NULL THEN
+    UPDATE members
+    SET 
+      sub_plan_id = latest_sub.plan_id,
+      sub_plan_label = latest_sub.plan_label,
+      sub_meals = latest_sub.meals,
+      sub_start_date = latest_sub.start_date,
+      sub_end_date = latest_sub.end_date,
+      sub_is_paid = latest_sub.is_paid,
+      sub_paid_at = latest_sub.paid_at,
+      sub_price_per_month = latest_sub.price_per_month,
+      sub_amount_paid = latest_sub.amount_paid,
+      sub_renewed_at = latest_sub.renewed_at
+    WHERE member_id = NEW.member_id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_sync_member_subscription ON subscriptions;
+CREATE TRIGGER trg_sync_member_subscription
+AFTER INSERT OR UPDATE ON subscriptions
+FOR EACH ROW
+EXECUTE FUNCTION sync_member_subscription();
+

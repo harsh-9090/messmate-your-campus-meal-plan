@@ -99,15 +99,26 @@ router.post("/register",
       const end = addDays(start, (p.duration_months || 1) * 30 - 1);
       const hash = await bcrypt.hash(password, 10);
       
-      await query(
-        `INSERT INTO members (
-          member_id, name, email, mobile, password_hash, role, is_active, 
-          sub_plan_id, sub_plan_label, sub_meals, sub_price_per_month, sub_is_paid,
-          sub_start_date, sub_end_date
-        ) 
-         VALUES ($1, $2, $3, $4, $5, 'member', FALSE, $6, $7, $8, $9, FALSE, $10, $11)`,
-        [mid, name, email, mobile, hash, p.plan_id, p.label, p.meals, p.price_per_month, fmtDate(start), fmtDate(end)]
-      );
+      await withTx(async (client) => {
+        await client.query(
+          `INSERT INTO members (
+            member_id, name, email, mobile, password_hash, role, is_active, 
+            sub_plan_id, sub_plan_label, sub_meals, sub_price_per_month, sub_is_paid,
+            sub_start_date, sub_end_date
+          ) 
+           VALUES ($1, $2, $3, $4, $5, 'member', FALSE, $6, $7, $8, $9, FALSE, $10, $11)`,
+          [mid, name, email, mobile, hash, p.plan_id, p.label, p.meals, p.price_per_month, fmtDate(start), fmtDate(end)]
+        );
+
+        await client.query(
+          `INSERT INTO subscriptions (
+            member_id, plan_id, plan_label, meals, start_date, end_date,
+            price_per_month, amount_paid, is_paid, status
+          )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 0, FALSE, 'pending')`,
+          [mid, p.plan_id, p.label, p.meals, fmtDate(start), fmtDate(end), p.price_per_month]
+        );
+      });
       
       await delByPattern("member:list");
       

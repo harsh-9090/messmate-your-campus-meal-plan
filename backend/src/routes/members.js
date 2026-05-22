@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { addDays, format } from "date-fns";
 import { body, validationResult } from "express-validator";
-import { query, rowToMember, stripPassword } from "../db/index.js";
+import { query, rowToMember, stripPassword, withTx } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { getCache, setCache, delCache, delByPattern } from "../db/redis.js";
 import { nextMemberId } from "../services/memberIdService.js";
@@ -193,17 +193,30 @@ router.post("/",
       const pricePerMonth = plan?.price_per_month ?? 0;
       const isPaid = amountPaid >= pricePerMonth && pricePerMonth > 0;
 
-      const { rows } = await query(
-        `INSERT INTO members
-         (member_id, name, email, mobile, password_hash, role, is_active,
-          sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
-          sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewal_count)
-         VALUES ($1,$2,$3,$4,$5,$6,TRUE,$7,$8,$9,$10,$11,$12,$13,$14,$15,0)
-         RETURNING *`,
-        [id, name, email, mobile, hash, role,
-          planId, plan?.label ?? "Custom", meals, fmtDate(start), fmtDate(end),
-          isPaid, isPaid ? new Date() : null, pricePerMonth, amountPaid]
-      );
+      const m = await withTx(async (client) => {
+        const { rows } = await client.query(
+          `INSERT INTO members
+           (member_id, name, email, mobile, password_hash, role, is_active,
+            sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
+            sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewal_count)
+           VALUES ($1,$2,$3,$4,$5,$6,TRUE,$7,$8,$9,$10,$11,$12,$13,$14,$15,0)
+           RETURNING *`,
+          [id, name, email, mobile, hash, role,
+            planId, plan?.label ?? "Custom", meals, fmtDate(start), fmtDate(end),
+            isPaid, isPaid ? new Date() : null, pricePerMonth, amountPaid]
+        );
+
+        await client.query(
+          `INSERT INTO subscriptions (
+            member_id, plan_id, plan_label, meals, start_date, end_date,
+            price_per_month, amount_paid, is_paid, paid_at, status
+          )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active')`,
+          [id, planId, plan?.label ?? "Custom", meals, fmtDate(start), fmtDate(end),
+            pricePerMonth, amountPaid, isPaid, isPaid ? new Date() : null]
+        );
+        return rows[0];
+      });
       
       await delByPattern("member:list");
       const m = rows[0];
@@ -347,24 +360,46 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
     const end = addDays(today, (duration * 30 - 1) + credits);
     const isPaid = amountPaid >= price && price > 0;
 
-    const { rows } = await query(
-      `UPDATE members SET 
-         sub_plan_id = $1, sub_plan_label = $2, sub_meals = $3,
-         sub_start_date = $4, sub_end_date = $5, 
-         sub_is_paid = $6, sub_price_per_month = $7, sub_amount_paid = $8,
-         sub_renewed_at = NOW(), sub_renewal_count = sub_renewal_count + 1,
-         sub_paid_at = CASE WHEN $6 THEN NOW() ELSE sub_paid_at END, 
-         is_active = TRUE,
-         updated_at = NOW()
-       WHERE member_id = $9 RETURNING *`,
-      [plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(today), fmtDate(end), isPaid, price, amountPaid, req.params.id]
-    );
-    if (!rows[0]) return res.status(404).json({ error: "Not found" });
+    const updatedMember = await withTx(async (client) => {
+      // 1. Mark previous active/pending subscriptions of this member as expired
+      await client.query(
+        `UPDATE subscriptions 
+         SET status = 'expired', updated_at = NOW() 
+         WHERE member_id = $1 AND status IN ('active', 'pending')`,
+        [req.params.id]
+      );
+
+      // 2. Insert new active subscription record
+      await client.query(
+        `INSERT INTO subscriptions (
+          member_id, plan_id, plan_label, meals, start_date, end_date,
+          price_per_month, amount_paid, is_paid, paid_at, status, renewed_at
+        )
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $9 THEN NOW() ELSE NULL END, 'active', NOW())`,
+        [req.params.id, plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(today), fmtDate(end), price, amountPaid, isPaid]
+      );
+
+      // 3. Update the member profile
+      const { rows } = await client.query(
+        `UPDATE members SET 
+           sub_plan_id = $1, sub_plan_label = $2, sub_meals = $3,
+           sub_start_date = $4, sub_end_date = $5, 
+           sub_is_paid = $6, sub_price_per_month = $7, sub_amount_paid = $8,
+           sub_renewed_at = NOW(), sub_renewal_count = sub_renewal_count + 1,
+           sub_paid_at = CASE WHEN $6 THEN NOW() ELSE sub_paid_at END, 
+           is_active = TRUE,
+           updated_at = NOW()
+         WHERE member_id = $9 RETURNING *`,
+        [plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(today), fmtDate(end), isPaid, price, amountPaid, req.params.id]
+      );
+      return rows[0];
+    });
+    if (!updatedMember) return res.status(404).json({ error: "Not found" });
 
     if (amountPaid > 0) {
       await query(
         `INSERT INTO payments (member_id, member_name, member_mobile, amount, method, type, plan_id) VALUES ($1,$2,$3,$4,$5,'renewal',$6)`,
-        [req.params.id, rows[0].name, rows[0].mobile, amountPaid, paymentMethod, plan?.plan_id]
+        [req.params.id, updatedMember.name, updatedMember.mobile, amountPaid, paymentMethod, plan?.plan_id]
       );
     }
     
@@ -405,24 +440,38 @@ router.put("/:id/payment", requireRole("admin"),
   async (req, res, next) => {
     try {
       const { amountPaid, paymentMethod = "Cash" } = req.body;
-      const { rows } = await query(
-        `UPDATE members SET 
-           sub_amount_paid = sub_amount_paid + $1,
-           sub_is_paid = (sub_amount_paid + $1) >= sub_price_per_month AND sub_price_per_month > 0,
-           sub_paid_at = CASE WHEN (sub_amount_paid + $1) >= sub_price_per_month AND sub_price_per_month > 0 THEN NOW() ELSE sub_paid_at END,
-           is_active = TRUE,
-           updated_at = NOW()
-         WHERE member_id = $2 RETURNING *`,
-        [amountPaid, req.params.id]
-      );
-      if (!rows[0]) return res.status(404).json({ error: "Not found" });
+      const updatedMember = await withTx(async (client) => {
+        const { rows } = await client.query(
+          `UPDATE members SET 
+             sub_amount_paid = sub_amount_paid + $1,
+             sub_is_paid = (sub_amount_paid + $1) >= sub_price_per_month AND sub_price_per_month > 0,
+             sub_paid_at = CASE WHEN (sub_amount_paid + $1) >= sub_price_per_month AND sub_price_per_month > 0 THEN NOW() ELSE sub_paid_at END,
+             is_active = TRUE,
+             updated_at = NOW()
+           WHERE member_id = $2 RETURNING *`,
+          [amountPaid, req.params.id]
+        );
+        if (rows.length > 0) {
+          await client.query(
+            `UPDATE subscriptions SET
+               amount_paid = amount_paid + $1,
+               is_paid = (amount_paid + $1) >= price_per_month AND price_per_month > 0,
+               paid_at = CASE WHEN (amount_paid + $1) >= price_per_month AND price_per_month > 0 THEN NOW() ELSE paid_at END,
+               updated_at = NOW()
+             WHERE member_id = $2 AND status = 'active'`,
+            [amountPaid, req.params.id]
+          );
+        }
+        return rows[0];
+      });
+      if (!updatedMember) return res.status(404).json({ error: "Not found" });
 
-      const oldAmountPaid = rows[0].sub_amount_paid - amountPaid;
-      const paymentType = (oldAmountPaid <= 0 && rows[0].sub_renewal_count === 0) ? "initial" : "top-up";
+      const oldAmountPaid = updatedMember.sub_amount_paid - amountPaid;
+      const paymentType = (oldAmountPaid <= 0 && updatedMember.sub_renewal_count === 0) ? "initial" : "top-up";
 
       await query(
         `INSERT INTO payments (member_id, member_name, member_mobile, amount, method, type, plan_id) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [req.params.id, rows[0].name, rows[0].mobile, amountPaid, paymentMethod, paymentType, rows[0].sub_plan_id]
+        [req.params.id, updatedMember.name, updatedMember.mobile, amountPaid, paymentMethod, paymentType, updatedMember.sub_plan_id]
       );
       
       await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
@@ -469,17 +518,32 @@ router.put("/:id/plan", requireRole("admin"), async (req, res, next) => {
     const newPrice = plan?.price_per_month ?? current.sub_price_per_month;
     const newPaid = current.sub_amount_paid >= newPrice && newPrice > 0;
 
-    const { rows } = await query(
-      `UPDATE members SET sub_plan_id = $1, sub_plan_label = $2, sub_meals = $3,
-         sub_price_per_month = $4, sub_start_date = $5, sub_end_date = $6,
-         sub_is_paid = $7, updated_at = NOW()
-       WHERE member_id = $8 RETURNING *`,
-      [planId, plan?.label ?? "Custom", newMeals,
-       newPrice,
-       newStart instanceof Date ? fmtDate(newStart) : newStart,
-       newEnd instanceof Date ? fmtDate(newEnd) : newEnd,
-       newPaid, req.params.id]
-    );
+    const { rows } = await withTx(async (client) => {
+      await client.query(
+        `UPDATE subscriptions SET
+           plan_id = $1, plan_label = $2, meals = $3,
+           price_per_month = $4, start_date = $5, end_date = $6,
+           is_paid = $7, updated_at = NOW()
+         WHERE member_id = $8 AND status = 'active'`,
+        [planId, plan?.label ?? "Custom", newMeals,
+         newPrice,
+         newStart instanceof Date ? fmtDate(newStart) : newStart,
+         newEnd instanceof Date ? fmtDate(newEnd) : newEnd,
+         newPaid, req.params.id]
+      );
+
+      return client.query(
+        `UPDATE members SET sub_plan_id = $1, sub_plan_label = $2, sub_meals = $3,
+           sub_price_per_month = $4, sub_start_date = $5, sub_end_date = $6,
+           sub_is_paid = $7, updated_at = NOW()
+         WHERE member_id = $8 RETURNING *`,
+        [planId, plan?.label ?? "Custom", newMeals,
+         newPrice,
+         newStart instanceof Date ? fmtDate(newStart) : newStart,
+         newEnd instanceof Date ? fmtDate(newEnd) : newEnd,
+         newPaid, req.params.id]
+      );
+    });
     
     await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
     await delByPattern("member:list");
