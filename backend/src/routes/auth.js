@@ -154,6 +154,7 @@ router.post("/refresh", async (req, res) => {
 
 router.post("/logout", async (req, res, next) => {
   try {
+    // Blacklist refresh token
     const rt = req.cookies?.rt;
     if (rt) {
       try {
@@ -165,9 +166,27 @@ router.post("/logout", async (req, res, next) => {
           }
         }
       } catch (err) {
-        console.error("[AUTH] Error blacklisting token on logout:", err.message);
+        console.error("[AUTH] Error blacklisting refresh token on logout:", err.message);
       }
     }
+
+    // Blacklist access token
+    const auth = req.headers.authorization;
+    if (auth?.startsWith("Bearer ")) {
+      try {
+        const at = auth.slice(7);
+        const decoded = jwt.decode(at);
+        if (decoded && decoded.exp) {
+          const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+          if (ttl > 0) {
+            await blacklistToken(at, ttl);
+          }
+        }
+      } catch (err) {
+        console.error("[AUTH] Error blacklisting access token on logout:", err.message);
+      }
+    }
+
     res.clearCookie("rt");
     res.json({ ok: true });
   } catch (e) {

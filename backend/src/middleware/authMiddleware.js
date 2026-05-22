@@ -1,10 +1,15 @@
 import jwt from "jsonwebtoken";
+import { isTokenBlacklisted } from "../db/redis.js";
 
-export function verifyToken(req, res, next) {
+export async function verifyToken(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer ")) return res.status(401).json({ error: "Missing token" });
+  const token = auth.slice(7);
   try {
-    req.user = jwt.verify(auth.slice(7), process.env.JWT_ACCESS_SECRET);
+    req.user = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    // Check if this access token has been revoked (e.g. after logout)
+    const blacklisted = await isTokenBlacklisted(token);
+    if (blacklisted) return res.status(401).json({ error: "Token revoked" });
     next();
   } catch {
     return res.status(401).json({ error: "Invalid or expired token" });

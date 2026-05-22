@@ -120,7 +120,10 @@ export async function blacklistToken(token, ttlSeconds) {
  * @returns {Promise<boolean>}
  */
 export async function isTokenBlacklisted(token) {
-  if (!isConnected) return false;
+  if (!isConnected) {
+    console.warn("[Redis] Blacklist check bypassed — Redis offline. Token accepted without verification.");
+    return false;
+  }
   try {
     const exists = await client.exists(`messmate:blacklist:${token}`);
     return exists === 1;
