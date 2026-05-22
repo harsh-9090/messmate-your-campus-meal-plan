@@ -133,5 +133,56 @@ export async function isTokenBlacklisted(token) {
   }
 }
 
+/**
+ * Increments an attempt counter key. Sets expiration if newly created.
+ * @param {string} key
+ * @param {number} ttlSeconds
+ * @returns {Promise<number>} Updated count
+ */
+export async function incrementAttempts(key, ttlSeconds) {
+  if (!isConnected) return 0;
+  try {
+    const count = await client.incr(key);
+    if (count === 1) {
+      await client.expire(key, ttlSeconds);
+    }
+    return count;
+  } catch (err) {
+    console.error(`[Redis] Increment attempts error for ${key}:`, err.message);
+    return 0;
+  }
+}
+
+/**
+ * Sets a cooldown key to block requests for a specified duration.
+ * @param {string} key
+ * @param {number} ttlSeconds
+ */
+export async function setCooldown(key, ttlSeconds) {
+  if (!isConnected) return;
+  try {
+    await client.set(key, "1", { EX: ttlSeconds });
+  } catch (err) {
+    console.error(`[Redis] Set cooldown error for ${key}:`, err.message);
+  }
+}
+
+/**
+ * Checks if a cooldown key exists.
+ * @param {string} key
+ * @returns {Promise<boolean>}
+ */
+export async function checkCooldown(key) {
+  if (!isConnected) return false;
+  try {
+    const exists = await client.exists(key);
+    return exists === 1;
+  } catch (err) {
+    console.error(`[Redis] Check cooldown error for ${key}:`, err.message);
+    return false;
+  }
+}
+
 export { client };
+
 

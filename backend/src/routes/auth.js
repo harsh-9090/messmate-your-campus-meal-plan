@@ -6,7 +6,7 @@ import { query, rowToMember, stripPassword } from "../db/index.js";
 import { nextMemberId } from "../services/memberIdService.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
-import { delByPattern, blacklistToken, isTokenBlacklisted, getCache, setCache, delCache } from "../db/redis.js";
+import { delByPattern, blacklistToken, isTokenBlacklisted, getCache, setCache, delCache, incrementAttempts, setCooldown, checkCooldown } from "../db/redis.js";
 import { addDays, format } from "date-fns";
 import crypto from "node:crypto";
 import { queueEmailJob, queuePushJob } from "../queues/notificationQueue.js";
@@ -301,9 +301,25 @@ router.post("/verify-email", verifyToken,
         return res.status(400).json({ error: "Email already verified" });
       }
 
-      const cachedOtp = await getCache(`messmate:member:${memberId}:email-otp`);
-      if (!cachedOtp || cachedOtp !== otp) {
-        return res.status(400).json({ error: "Invalid or expired verification code" });
+      const otpKey = `messmate:member:${memberId}:email-otp`;
+      const cachedOtp = await getCache(otpKey);
+      if (!cachedOtp) {
+        return res.status(400).json({ error: "Verification code has expired or is invalid. Please request a new one." });
+      }
+
+      const attemptsKey = `messmate:member:${memberId}:email-otp-attempts`;
+
+      if (cachedOtp !== otp) {
+        const attempts = await incrementAttempts(attemptsKey, 300);
+        if (attempts >= 3) {
+          await delCache([otpKey, attemptsKey]);
+          return res.status(400).json({
+            error: "Too many failed attempts. This verification code has been invalidated. Please request a new code."
+          });
+        }
+        return res.status(400).json({
+          error: `Invalid verification code. Remaining attempts: ${3 - attempts}`
+        });
       }
 
       // Update email_verified to true in Postgres
@@ -312,8 +328,8 @@ router.post("/verify-email", verifyToken,
         [memberId]
       );
 
-      // Delete OTP from Redis
-      await delCache(`messmate:member:${memberId}:email-otp`);
+      // Clean up verification keys from Redis
+      await delCache([otpKey, attemptsKey]);
       // Delete user details cache
       await delCache([`messmate:member:${memberId}`, `messmate:member:${memberId}:subscription`]);
       await delByPattern("member:list");
@@ -334,9 +350,19 @@ router.post("/resend-verification", verifyToken, async (req, res, next) => {
       return res.status(400).json({ error: "Email already verified" });
     }
 
+    // Check resend cooldown
+    const cooldownKey = `messmate:member:${memberId}:email-otp-cooldown`;
+    const hasCooldown = await checkCooldown(cooldownKey);
+    if (hasCooldown) {
+      return res.status(429).json({ error: "Please wait 60 seconds before requesting another verification code" });
+    }
+
     // Generate new OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     await setCache(`messmate:member:${memberId}:email-otp`, otp, 300); // 5 minutes
+
+    // Set cooldown
+    await setCooldown(cooldownKey, 60);
 
     // Send email via queue
     queueEmailJob("otp", { member: m, otp });
