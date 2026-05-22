@@ -357,11 +357,20 @@ router.post("/resend-verification", verifyToken, async (req, res, next) => {
       return res.status(429).json({ error: "Please wait 60 seconds before requesting another verification code" });
     }
 
+    // Check daily resend limit (max 3 per day)
+    const dailyKey = `messmate:member:${memberId}:email-otp-daily-resends`;
+    const currentDailyStr = await getCache(dailyKey);
+    const currentDaily = currentDailyStr ? parseInt(currentDailyStr, 10) : 0;
+    if (currentDaily >= 3) {
+      return res.status(429).json({ error: "Daily verification code limit reached (3 per day). Please try again tomorrow." });
+    }
+
     // Generate new OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     await setCache(`messmate:member:${memberId}:email-otp`, otp, 300); // 5 minutes
 
-    // Set cooldown
+    // Increment daily count and set cooldown
+    await incrementAttempts(dailyKey, 86_400);
     await setCooldown(cooldownKey, 60);
 
     // Send email via queue
