@@ -1,7 +1,7 @@
 // Auth-only client store. All app data now comes from the backend via React Query.
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { authApi, configureApi } from "./api";
+import { authApi, pushApi, configureApi } from "./api";
 
 interface AuthUser {
   id: string;
@@ -36,6 +36,24 @@ export const useAuth = create<AuthState>()(
         return user;
       },
       logout: async () => {
+        try {
+          if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (registration) {
+              const subscription = await registration.pushManager.getSubscription();
+              if (subscription) {
+                try {
+                  await pushApi.unsubscribe(subscription.endpoint);
+                } catch (err) {
+                  console.warn("[PUSH] Failed to unsubscribe from backend:", err);
+                }
+                await subscription.unsubscribe().catch(() => {});
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("[PUSH] Error during push unsubscribe on logout:", err);
+        }
         try {
           await authApi.logout();
         } catch {}
