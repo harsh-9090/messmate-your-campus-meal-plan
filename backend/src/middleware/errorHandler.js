@@ -23,6 +23,7 @@ export function errorHandler(err, _req, res, _next) {
 
   res.status(status).json({
     error: responseMessage,
-    ...(err.details ? { details: err.details } : {})
+    ...(isDev && err.details ? { details: err.details } : {}),
+    ...(isDev && err.stack ? { stack: err.stack } : {}),
   });
 }
