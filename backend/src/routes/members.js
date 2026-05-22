@@ -219,7 +219,6 @@ router.post("/",
       });
       
       await delByPattern("member:list");
-      const m = rows[0];
       if (amountPaid > 0) {
         await query(
           `INSERT INTO payments (member_id, member_name, member_mobile, amount, method, type, plan_id) VALUES ($1,$2,$3,$4,$5,'initial',$6)`,
@@ -408,7 +407,6 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
     await delByPattern("report:expiring");
 
     // Dispatch plan activation email asynchronously
-    const updatedMember = rows[0];
     if (updatedMember.email_verified === false) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 300);
@@ -478,7 +476,6 @@ router.put("/:id/payment", requireRole("admin"),
       await delByPattern("member:list");
 
       // Dispatch plan activation email asynchronously
-      const updatedMember = rows[0];
       if (updatedMember.email_verified === false) {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 300);
@@ -501,7 +498,7 @@ router.put("/:id/payment", requireRole("admin"),
         }
       ).catch(err => console.error("[NOTIFY-ERROR] Failed to send activation email background:", err.message));
       
-      res.json(rowToMember(rows[0]).subscription);
+      res.json(rowToMember(updatedMember).subscription);
     } catch (e) { next(e); }
   });
 
