@@ -129,7 +129,13 @@ function StaffPage() {
                         </div>
                         {s.mobile && (
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Phone className="h-3 w-3" /> {s.mobile}
+                            <Phone className="h-3 w-3 shrink-0" />
+                            <a
+                              href={`tel:${s.mobile}`}
+                              className="hover:underline hover:text-primary transition-colors"
+                            >
+                              {s.mobile}
+                            </a>
                           </div>
                         )}
                       </div>
@@ -214,7 +220,13 @@ function StaffPage() {
                   </div>
                   {s.mobile && (
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <Phone className="h-4 w-4 shrink-0" /> <span>{s.mobile}</span>
+                      <Phone className="h-4 w-4 shrink-0" />
+                      <a
+                        href={`tel:${s.mobile}`}
+                        className="hover:underline hover:text-primary transition-colors"
+                      >
+                        {s.mobile}
+                      </a>
                     </div>
                   )}
                   <div className="mt-1">

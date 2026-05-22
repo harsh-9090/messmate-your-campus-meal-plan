@@ -275,7 +275,17 @@ function MembersPage() {
                           <div className="font-semibold leading-tight">{m.name}</div>
                           <div className="text-xs text-muted-foreground">
                             {m.memberId}
-                            {m.mobile && <> · 📞 {m.mobile}</>}
+                            {m.mobile && (
+                              <>
+                                {" · "}
+                                <a
+                                  href={`tel:${m.mobile}`}
+                                  className="hover:underline hover:text-primary transition-colors inline-flex items-center"
+                                >
+                                  📞 {m.mobile}
+                                </a>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -474,7 +484,17 @@ function MembersPage() {
                               <div className="font-medium leading-tight">{m.name}</div>
                               <div className="text-xs text-muted-foreground">
                                 {m.memberId}
-                                {m.mobile && <> · 📞 {m.mobile}</>}
+                                {m.mobile && (
+                                  <>
+                                    {" · "}
+                                    <a
+                                      href={`tel:${m.mobile}`}
+                                      className="hover:underline hover:text-primary transition-colors inline-flex items-center"
+                                    >
+                                      📞 {m.mobile}
+                                    </a>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
