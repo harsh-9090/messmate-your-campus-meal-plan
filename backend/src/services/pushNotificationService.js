@@ -1,28 +1,25 @@
 import webpush from "web-push";
 import { query } from "../db/index.js";
 
-// Auto-generate or get VAPID keys
-let vapidKeys = {
-  publicKey: process.env.VAPID_PUBLIC_KEY,
-  privateKey: process.env.VAPID_PRIVATE_KEY,
-};
+const publicKey = process.env.VAPID_PUBLIC_KEY;
+const privateKey = process.env.VAPID_PRIVATE_KEY;
+const subject = process.env.VAPID_SUBJECT || "mailto:admin@momskitchen.com";
 
-// Check if we need to auto-generate keys (helpful for local dev or first-time setup)
-if (!vapidKeys.publicKey || !vapidKeys.privateKey) {
-  console.warn("[PUSH] VAPID keys not configured in environment. Generating temporary keys...");
-  const keys = webpush.generateVAPIDKeys();
-  vapidKeys.publicKey = keys.publicKey;
-  vapidKeys.privateKey = keys.privateKey;
+if (!publicKey || !privateKey) {
+  if (process.env.NODE_ENV === "production") {
+    console.error("❌ CRITICAL: VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY must be configured in production environment variables!");
+    process.exit(1);
+  } else {
+    console.warn("⚠️ [PUSH] VAPID keys not configured in environment. Web push notifications will not function.");
+  }
 }
 
-webpush.setVapidDetails(
-  process.env.VAPID_SUBJECT || "mailto:admin@momskitchen.com",
-  vapidKeys.publicKey,
-  vapidKeys.privateKey
-);
+if (publicKey && privateKey) {
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+}
 
 export function getVapidPublicKey() {
-  return vapidKeys.publicKey;
+  return publicKey || null;
 }
 
 /**
