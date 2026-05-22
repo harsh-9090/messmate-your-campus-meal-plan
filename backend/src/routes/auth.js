@@ -10,7 +10,7 @@ import { delByPattern, blacklistToken, isTokenBlacklisted, getCache, setCache, d
 import { addDays, format } from "date-fns";
 import crypto from "node:crypto";
 import { sendPasswordResetEmail, sendRegistrationReceivedEmail, sendVerificationOTPEmail } from "../services/notificationService.js";
-import { sendPushToAdminsAndStaff } from "../services/pushNotificationService.js";
+import { sendPushToAdmins } from "../services/pushNotificationService.js";
 
 const fmtDate = (d) => format(d, "yyyy-MM-dd");
 
@@ -116,8 +116,8 @@ router.post("/register",
         console.error("[NOTIFY-ERROR] Failed to send registration email background:", err.message);
       });
 
-      // Dispatch push notification to admins and staff
-      sendPushToAdminsAndStaff({
+      // Dispatch push notification to admins
+      sendPushToAdmins({
         title: "New Registration 📝",
         body: `${name} (${mid}) has registered. Please activate their account.`,
         url: `/admin/members?search=${mid}`,

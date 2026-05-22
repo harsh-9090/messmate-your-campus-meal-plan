@@ -120,6 +120,54 @@ export async function sendPushToAdminsAndStaff(payload) {
 }
 
 /**
+ * Send a web push notification only to admins (not staff).
+ */
+export async function sendPushToAdmins(payload) {
+  try {
+    const { rows } = await query(
+      `SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth, m.member_id 
+       FROM push_subscriptions ps
+       JOIN members m ON ps.member_id = m.member_id
+       WHERE m.role = 'admin'`
+    );
+
+    if (rows.length === 0) {
+      console.log(`[PUSH] No active push subscriptions for Admins`);
+      return;
+    }
+
+    console.log(`[PUSH] Dispatching notification to ${rows.length} devices for Admins`);
+
+    const notificationPayload = typeof payload === "string" ? payload : JSON.stringify(payload);
+
+    const promises = rows.map(async (sub) => {
+      const subscription = {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth,
+        },
+      };
+
+      try {
+        await webpush.sendNotification(subscription, notificationPayload);
+      } catch (err) {
+        if (err.statusCode === 410 || err.statusCode === 404) {
+          console.log(`[PUSH] Admin subscription inactive. Deleting subscription id: ${sub.id}`);
+          await query("DELETE FROM push_subscriptions WHERE id = $1", [sub.id]);
+        } else {
+          console.error(`[PUSH-ERROR] Failed to send push to admin subscription id ${sub.id}:`, err.message);
+        }
+      }
+    });
+
+    await Promise.all(promises);
+  } catch (err) {
+    console.error(`[PUSH-ERROR] Failed to dispatch push notifications for Admins:`, err.message);
+  }
+}
+
+/**
  * Send a web push notification to all active student members.
  */
 export async function sendPushToAllMembers(payload) {
