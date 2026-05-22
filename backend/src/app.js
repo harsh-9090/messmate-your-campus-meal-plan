@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import compression from "compression";
 
 import authRoutes from "./routes/auth.js";
 import memberRoutes from "./routes/members.js";
@@ -25,6 +26,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 export const app = express();
 
 app.use(helmet());
+app.use(compression());
 app.use(cors({ origin: process.env.CLIENT_ORIGIN?.split(",") ?? "*", credentials: true }));
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());

@@ -14,6 +14,7 @@ export const pool = new Pool({
   max: parseInt(process.env.PG_POOL_MAX || "10", 10),
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 10_000,
+  keepAlive: true,
   allowExitOnIdle: process.env.NODE_ENV !== "production",
 });
 
