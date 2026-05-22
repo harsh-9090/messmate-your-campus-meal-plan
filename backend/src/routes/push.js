@@ -13,7 +13,7 @@ router.get("/vapid-key", verifyToken, (req, res) => {
 // Subscribe to push notifications
 router.post("/subscribe", verifyToken, async (req, res, next) => {
   try {
-    const memberId = req.user.memberId;
+    const memberId = req.user.sub;
     const { endpoint, keys } = req.body;
 
     if (!endpoint || !keys || !keys.p256dh || !keys.auth) {

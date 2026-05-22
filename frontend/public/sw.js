@@ -8,8 +8,8 @@ self.addEventListener("push", (event) => {
     const title = payload.title || "Mom's Kitchen";
     const options = {
       body: payload.body || "You have a new notification.",
-      icon: "/android-chrome-192x192.png", // Use fallback or actual PWA assets if exist
-      badge: "/favicon-32x32.png",
+      icon: "/icons/icon-192x192.png",
+      badge: "/favicon.png",
       vibrate: [100, 50, 100],
       data: {
         url: payload.url || "/dashboard",
@@ -22,8 +22,8 @@ self.addEventListener("push", (event) => {
     const text = event.data.text();
     const options = {
       body: text,
-      icon: "/android-chrome-192x192.png",
-      badge: "/favicon-32x32.png",
+      icon: "/icons/icon-192x192.png",
+      badge: "/favicon.png",
       data: {
         url: "/dashboard",
       },
