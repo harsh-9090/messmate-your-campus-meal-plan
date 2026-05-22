@@ -1,4 +1,5 @@
 import "dotenv/config";
+import "./config/validateEnv.js";
 import { app } from "./app.js";
 import { pool } from "./db/index.js";
 import { connectRedis } from "./db/redis.js";
