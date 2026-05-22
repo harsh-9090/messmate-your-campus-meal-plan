@@ -9,8 +9,7 @@ import { verifyToken } from "../middleware/authMiddleware.js";
 import { delByPattern, blacklistToken, isTokenBlacklisted, getCache, setCache, delCache } from "../db/redis.js";
 import { addDays, format } from "date-fns";
 import crypto from "node:crypto";
-import { sendPasswordResetEmail, sendRegistrationReceivedEmail, sendVerificationOTPEmail } from "../services/notificationService.js";
-import { sendPushToAdmins } from "../services/pushNotificationService.js";
+import { queueEmailJob, queuePushJob } from "../queues/notificationQueue.js";
 
 const fmtDate = (d) => format(d, "yyyy-MM-dd");
 
@@ -122,18 +121,16 @@ router.post("/register",
       
       await delByPattern("member:list");
       
-      // Dispatch welcome email asynchronously
-      sendRegistrationReceivedEmail({ memberId: mid, name, email }).catch((err) => {
-        console.error("[NOTIFY-ERROR] Failed to send registration email background:", err.message);
-      });
-
-      // Dispatch push notification to admins
-      sendPushToAdmins({
-        title: "New Registration 📝",
-        body: `${name} (${mid}) has registered. Please activate their account.`,
-        url: `/admin/members?search=${mid}`,
-      }).catch((pushErr) => {
-        console.error("[PUSH-ERROR] Failed to send push on registration:", pushErr.message);
+      // Dispatch welcome email asynchronously via queue
+      queueEmailJob("registration_received", { member: { memberId: mid, name, email } });
+      
+      // Dispatch push notification to admins via queue
+      queuePushJob("admins", {
+        payload: {
+          title: "New Registration 📝",
+          body: `${name} (${mid}) has registered. Please activate their account.`,
+          url: `/admin/members?search=${mid}`,
+        }
       });
       
       res.status(201).json({ ok: true, message: "Registration successful. Please visit the mess office for activation." });
@@ -219,8 +216,8 @@ router.post("/forgot-password",
       const origin = process.env.FRONTEND_URL || req.headers.origin || "http://localhost:5173";
       const resetLink = `${origin}/reset-password?token=${token}&memberId=${m.memberId}`;
 
-      // Dispatch password reset email
-      await sendPasswordResetEmail(m, resetLink);
+      // Dispatch password reset email via queue
+      await queueEmailJob("password_reset", { member: m, resetLink });
 
       res.json({ ok: true, message: "If an account exists, a reset link was sent." });
     } catch (e) { next(e); }
@@ -322,10 +319,8 @@ router.post("/resend-verification", verifyToken, async (req, res, next) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     await setCache(`messmate:member:${memberId}:email-otp`, otp, 300); // 5 minutes
 
-    // Send email
-    sendVerificationOTPEmail({ memberId: m.memberId, name: m.name, email: m.email }, otp).catch((err) => {
-      console.error("[NOTIFY-ERROR] Failed to send verification email background:", err.message);
-    });
+    // Send email via queue
+    queueEmailJob("otp", { member: m, otp });
 
     res.json({ ok: true, message: "Verification code resent successfully!" });
   } catch (e) { next(e); }

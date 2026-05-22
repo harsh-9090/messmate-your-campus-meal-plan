@@ -4,8 +4,7 @@ import { query } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import crypto from "crypto";
 import { format } from "date-fns";
-import { sendGuestPassEmail } from "../services/notificationService.js";
-import { sendPushToMember, sendPushToAdminsAndStaff } from "../services/pushNotificationService.js";
+import { queueEmailJob, queuePushJob } from "../queues/notificationQueue.js";
 import { getISTDateStr } from "../services/qrService.js";
 
 const router = Router();
@@ -60,18 +59,20 @@ router.post(
         [memberId, guestName || "Guest", date, meal, qrToken, price]
       );
 
-      // Notify admins and staff about the pending approval pass
+      // Notify admins and staff about the pending approval pass via queue
       (async () => {
         try {
           const memberRes = await query("SELECT name FROM members WHERE member_id = $1", [memberId]);
           const hostName = memberRes.rows[0]?.name || "A member";
-          await sendPushToAdminsAndStaff({
-            title: "Pending Guest Pass Approval",
-            body: `${hostName} requested a guest pass for ${guestName || "Guest"} (${meal} on ${format(new Date(date), "yyyy-MM-dd")})`,
-            url: "/admin/guest-passes",
+          queuePushJob("admins_staff", {
+            payload: {
+              title: "Pending Guest Pass Approval",
+              body: `${hostName} requested a guest pass for ${guestName || "Guest"} (${meal} on ${format(new Date(date), "yyyy-MM-dd")})`,
+              url: "/admin/guest-passes",
+            }
           });
         } catch (pushErr) {
-          console.error("[PUSH-ERROR] Failed to send push on guest pass creation:", pushErr.message);
+          console.error("[PUSH-ERROR] Failed to queue push on guest pass creation:", pushErr.message);
         }
       })();
 
@@ -170,14 +171,15 @@ router.patch("/:id/approve", verifyToken, requireRole("admin"), async (req, res,
       [id]
     );
 
-    // Notify member about the guest pass approval
+    // Notify member about the guest pass approval via queue
     if (gp.member_id) {
-      sendPushToMember(gp.member_id, {
-        title: "Guest Pass Approved! 🎉",
-        body: `Your guest pass request for ${gp.guest_name || "Guest"} has been approved for ${gp.meal} on ${format(new Date(gp.date), "yyyy-MM-dd")}.`,
-        url: "/dashboard",
-      }).catch((pushErr) => {
-        console.error("[PUSH-ERROR] Failed to send push on guest pass approval:", pushErr.message);
+      queuePushJob("member", {
+        memberId: gp.member_id,
+        payload: {
+          title: "Guest Pass Approved! 🎉",
+          body: `Your guest pass request for ${gp.guest_name || "Guest"} has been approved for ${gp.meal} on ${format(new Date(gp.date), "yyyy-MM-dd")}.`,
+          url: "/dashboard",
+        }
       });
     }
 
@@ -255,14 +257,16 @@ router.post(
 
       const pass = rows[0];
 
-      // Dispatch guest pass email asynchronously
-      sendGuestPassEmail(guestEmail, guestName, {
-        date: format(new Date(date), "yyyy-MM-dd"),
-        meal,
-        price,
-        qrToken,
-      }).catch((err) => {
-        console.error("[NOTIFY-ERROR] Failed to send walk-in guest pass email:", err.message);
+      // Dispatch guest pass email asynchronously via queue
+      queueEmailJob("guest_pass", {
+        email: guestEmail,
+        guestName,
+        passDetails: {
+          date: format(new Date(date), "yyyy-MM-dd"),
+          meal,
+          price,
+          qrToken,
+        }
       });
 
       res.status(201).json({

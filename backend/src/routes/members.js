@@ -6,7 +6,7 @@ import { query, rowToMember, stripPassword, withTx } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { getCache, setCache, delCache, delByPattern } from "../db/redis.js";
 import { nextMemberId } from "../services/memberIdService.js";
-import { sendPlanActivatedEmail, sendVerificationOTPEmail } from "../services/notificationService.js";
+import { queueEmailJob } from "../queues/notificationQueue.js";
 import { calculateAbsenceCredits } from "../services/absenceService.js";
 
 const router = Router();
@@ -228,8 +228,9 @@ router.post("/",
 
       const memberObj = rowToMember(m);
       if (role === "member") {
-        try {
-          await sendPlanActivatedEmail(memberObj, {
+        queueEmailJob("activation", {
+          member: memberObj,
+          planDetails: {
             label: memberObj.subscription.planLabel,
             meals: memberObj.subscription.meals,
             startDate: memberObj.subscription.startDate,
@@ -237,18 +238,12 @@ router.post("/",
             price: memberObj.subscription.pricePerMonth,
             amountPaid: memberObj.subscription.amountPaid,
             dueAmount: memberObj.subscription.dueAmount,
-          });
-        } catch (mailErr) {
-          console.error("[MEMBERS-ERROR] Failed to send initial plan activation email:", mailErr.message);
-        }
+          }
+        });
 
-        try {
-          const otp = Math.floor(100000 + Math.random() * 900000).toString();
-          await setCache(`messmate:member:${id}:email-otp`, otp, 300); // 5 minutes TTL
-          await sendVerificationOTPEmail(memberObj, otp);
-        } catch (otpErr) {
-          console.error("[MEMBERS-ERROR] Failed to send email verification OTP:", otpErr.message);
-        }
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        await setCache(`messmate:member:${id}:email-otp`, otp, 300); // 5 minutes TTL
+        queueEmailJob("otp", { member: memberObj, otp });
       }
 
       res.status(201).json(stripPassword(memberObj));
@@ -406,19 +401,19 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
     await delByPattern("member:list");
     await delByPattern("report:expiring");
 
-    // Dispatch plan activation email asynchronously
+    // Dispatch plan activation email asynchronously via queue
     if (updatedMember.email_verified === false) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 300);
-      sendVerificationOTPEmail(
-        { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
+      queueEmailJob("otp", {
+        member: { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
         otp
-      ).catch(err => console.error("[NOTIFY-ERROR] Failed to send verification email background:", err.message));
+      });
     }
 
-    sendPlanActivatedEmail(
-      { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
-      {
+    queueEmailJob("activation", {
+      member: { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
+      planDetails: {
         label: updatedMember.sub_plan_label,
         meals: updatedMember.sub_meals,
         startDate: updatedMember.sub_start_date ? fmtDate(new Date(updatedMember.sub_start_date)) : "",
@@ -427,9 +422,9 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
         amountPaid: updatedMember.sub_amount_paid,
         dueAmount: Math.max(0, updatedMember.sub_price_per_month - updatedMember.sub_amount_paid)
       }
-    ).catch(err => console.error("[NOTIFY-ERROR] Failed to send activation email background:", err.message));
+    });
     
-    res.json(rowToMember(rows[0]).subscription);
+    res.json(rowToMember(updatedMember).subscription);
   } catch (e) { next(e); }
 });
 
@@ -475,19 +470,19 @@ router.put("/:id/payment", requireRole("admin"),
       await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
       await delByPattern("member:list");
 
-      // Dispatch plan activation email asynchronously
+      // Dispatch plan activation email asynchronously via queue
       if (updatedMember.email_verified === false) {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 300);
-        sendVerificationOTPEmail(
-          { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
+        queueEmailJob("otp", {
+          member: { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
           otp
-        ).catch(err => console.error("[NOTIFY-ERROR] Failed to send verification email background:", err.message));
+        });
       }
 
-      sendPlanActivatedEmail(
-        { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
-        {
+      queueEmailJob("activation", {
+        member: { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
+        planDetails: {
           label: updatedMember.sub_plan_label,
           meals: updatedMember.sub_meals,
           startDate: updatedMember.sub_start_date ? fmtDate(new Date(updatedMember.sub_start_date)) : "",
@@ -496,7 +491,7 @@ router.put("/:id/payment", requireRole("admin"),
           amountPaid: updatedMember.sub_amount_paid,
           dueAmount: Math.max(0, updatedMember.sub_price_per_month - updatedMember.sub_amount_paid)
         }
-      ).catch(err => console.error("[NOTIFY-ERROR] Failed to send activation email background:", err.message));
+      });
       
       res.json(rowToMember(updatedMember).subscription);
     } catch (e) { next(e); }

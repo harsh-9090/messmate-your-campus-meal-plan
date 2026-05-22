@@ -27,10 +27,19 @@ const createRedisLimiter = (prefix, windowMs, max) => {
         // Fail-open gracefully if Redis is down/unreachable
         if (!client.isOpen) {
           console.warn(`[RateLimiter] Redis is offline. Rate limiter '${prefix}' bypassed.`);
+          const isScriptCmd = (typeof args[0] === "string" && args[0].toLowerCase() === "script") ||
+                              (Array.isArray(args[0]) && typeof args[0][0] === "string" && args[0][0].toLowerCase() === "script");
+          if (isScriptCmd) {
+            return "0000000000000000000000000000000000000000";
+          }
           // Return a dummy count of 1 to allow request to pass without exceeding max
           return 1;
         }
 
+        // If arguments are nested (e.g. [[cmd, args...]]), flatten them or pass directly
+        if (args.length === 1 && Array.isArray(args[0])) {
+          return client.sendCommand(args[0]);
+        }
         return client.sendCommand(args);
       },
       prefix: `messmate:limiter:${prefix}:`,

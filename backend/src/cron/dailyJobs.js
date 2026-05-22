@@ -1,8 +1,7 @@
 import cron from "node-cron";
 import { differenceInCalendarDays, format } from "date-fns";
 import { query, rowToMember } from "../db/index.js";
-import { notifyExpiringSoon, notifyExpired } from "../services/notificationService.js";
-import { sendPushToMember } from "../services/pushNotificationService.js";
+import { queueEmailJob, queuePushJob } from "../queues/notificationQueue.js";
 import { delCache, delByPattern } from "../db/redis.js";
 
 const getISTDate = () => {
@@ -31,13 +30,14 @@ export async function runDailyTasks() {
   for (const r of soon) {
     const m = rowToMember(r);
     const daysLeft = differenceInCalendarDays(new Date(m.subscription.endDate), getISTDate());
-    await notifyExpiringSoon(m, daysLeft);
-    sendPushToMember(m.memberId, {
-      title: "Subscription Expiring Soon ⚠️",
-      body: `Your meal plan subscription expires in ${daysLeft} days (on ${m.subscription.endDate}). Please visit the mess office to renew.`,
-      url: "/dashboard",
-    }).catch((err) => {
-      console.error(`[PUSH-ERROR] Failed to send push subscription expiry warning to member ${m.memberId}:`, err.message);
+    await queueEmailJob("expiring_soon", { member: m, daysLeft });
+    await queuePushJob("member", {
+      memberId: m.memberId,
+      payload: {
+        title: "Subscription Expiring Soon ⚠️",
+        body: `Your meal plan subscription expires in ${daysLeft} days (on ${m.subscription.endDate}). Please visit the mess office to renew.`,
+        url: "/dashboard",
+      }
     });
   }
 
@@ -47,7 +47,9 @@ export async function runDailyTasks() {
         AND sub_end_date >= CURRENT_DATE - INTERVAL '1 day'
         AND sub_end_date <  CURRENT_DATE`
   );
-  for (const r of gone) await notifyExpired(rowToMember(r));
+  for (const r of gone) {
+    await queueEmailJob("expired", { member: rowToMember(r) });
+  }
 
   console.log(`[CRON] Done. expiringSoon=${soon.length} expiredToday=${gone.length}`);
   return { expiringSoon: soon.length, expired: gone.length };
