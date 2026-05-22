@@ -48,9 +48,9 @@ router.get("/", requireRole("admin"), async (req, res, next) => {
       where.push(`sub_plan_id = $${params.length}`);
     }
     const today = fmtDate(new Date());
-    if (status === "expired") where.push(`sub_end_date < DATE '${today}'`);
+    if (status === "expired") { params.push(today); where.push(`sub_end_date < $${params.length}::date`); }
     if (status === "unpaid") where.push(`sub_is_paid = FALSE`);
-    if (status === "active") where.push(`sub_is_paid = TRUE AND sub_end_date >= DATE '${today}'`);
+    if (status === "active") { params.push(today); where.push(`sub_is_paid = TRUE AND sub_end_date >= $${params.length}::date`); }
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
     const lim = parseInt(limit, 10), pg = parseInt(page, 10);
