@@ -71,8 +71,14 @@ router.put("/:id",
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
 
       const { name, email, mobile, role, password, memberId } = req.body;
-    const sets = [];
-    const params = [];
+
+      // Role escalation guard: only admin can modify or assign roles
+      if (role && req.user.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Only administrators can modify roles" });
+      }
+
+      const sets = [];
+      const params = [];
 
     if (memberId && memberId !== req.params.id) {
       const existing = await query(`SELECT 1 FROM members WHERE member_id = $1`, [memberId]);

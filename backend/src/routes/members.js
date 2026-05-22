@@ -266,9 +266,14 @@ router.put("/:id",
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
 
-      const existingRes = await query("SELECT email, email_verified FROM members WHERE member_id = $1", [req.params.id]);
+      const existingRes = await query("SELECT email, email_verified, role FROM members WHERE member_id = $1", [req.params.id]);
       if (!existingRes.rows[0]) return res.status(404).json({ error: "Not found" });
       const existing = existingRes.rows[0];
+
+      // Role escalation guard: only admin can modify or assign roles
+      if ("role" in req.body && req.user.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden: Only administrators can modify roles" });
+      }
 
       const allowed = { name: "name", email: "email", mobile: "mobile", role: "role", photoUrl: "photo_url" };
       const sets = [];
