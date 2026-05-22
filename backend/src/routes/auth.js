@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { body, validationResult } from "express-validator";
-import { query, rowToMember, stripPassword } from "../db/index.js";
+import { query, rowToMember, stripPassword, withTx } from "../db/index.js";
 import { nextMemberId } from "../services/memberIdService.js";
 import { authLimiter } from "../middleware/rateLimiter.js";
 import { verifyToken } from "../middleware/authMiddleware.js";
