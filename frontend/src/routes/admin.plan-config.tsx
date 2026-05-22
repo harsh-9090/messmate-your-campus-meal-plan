@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import type { Meal, Plan } from "@/lib/messmate/types";
+import { ConfirmDialog } from "@/components/messmate/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/plan-config")({
   head: () => ({ meta: [{ title: "Plan Config - Mom's Kitchen Admin" }] }),
@@ -50,6 +51,7 @@ function PlanConfigPage() {
 
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Plan | null>(null);
+  const [deletingPlan, setDeletingPlan] = useState<Plan | null>(null);
 
   const plans = plansQ.data ?? [];
   const windows = windowsQ.data ?? [];
@@ -161,9 +163,7 @@ function PlanConfigPage() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => {
-                        if (confirm("Permanently delete this plan?")) deletePlanM.mutate(p.planId);
-                      }}
+                      onClick={() => setDeletingPlan(p)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -289,6 +289,24 @@ function PlanConfigPage() {
           onDeactivate={(isActive) => deactivatePlanM.mutate({ planId: editing.planId, isActive })}
         />
       )}
+      <ConfirmDialog
+        isOpen={deletingPlan !== null}
+        onClose={() => setDeletingPlan(null)}
+        onConfirm={() => {
+          if (deletingPlan) {
+            deletePlanM.mutate(deletingPlan.planId);
+            setDeletingPlan(null);
+          }
+        }}
+        title="Delete Plan?"
+        description={
+          deletingPlan
+            ? `Are you sure you want to permanently delete the subscription plan "${deletingPlan.label}"? This action cannot be undone.`
+            : ""
+        }
+        confirmText="Delete"
+        isPending={deletePlanM.isPending}
+      />
     </div>
   );
 }

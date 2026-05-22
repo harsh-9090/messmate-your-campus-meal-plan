@@ -17,6 +17,7 @@ import { formatINR, formatTimestamp } from "@/lib/messmate/dateHelpers";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog } from "@/components/messmate/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/payments")({
   head: () => ({ meta: [{ title: "Payments - Mom's Kitchen Admin" }] }),
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/admin/payments")({
 function PaymentsPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [deletingPayment, setDeletingPayment] = useState<any | null>(null);
   const paymentsQ = useQuery({
     queryKey: ["payments"],
     queryFn: () => paymentsApi.list({ limit: 200 }),
@@ -156,10 +158,7 @@ function PaymentsPage() {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => {
-                          if (confirm("Delete this payment record? This cannot be undone."))
-                            deletePaymentM.mutate(p.id);
-                        }}
+                        onClick={() => setDeletingPayment(p)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -236,10 +235,7 @@ function PaymentsPage() {
                     variant="outline"
                     size="sm"
                     className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      if (confirm("Delete this payment record? This cannot be undone."))
-                        deletePaymentM.mutate(p.id);
-                    }}
+                    onClick={() => setDeletingPayment(p)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -249,6 +245,24 @@ function PaymentsPage() {
           )}
         </div>
       </Card>
+      <ConfirmDialog
+        isOpen={deletingPayment !== null}
+        onClose={() => setDeletingPayment(null)}
+        onConfirm={() => {
+          if (deletingPayment) {
+            deletePaymentM.mutate(deletingPayment.id);
+            setDeletingPayment(null);
+          }
+        }}
+        title="Delete Payment Record?"
+        description={
+          deletingPayment
+            ? `Are you sure you want to delete the payment record of ₹${deletingPayment.amount} for ${deletingPayment.memberName || "Unknown"}? This action cannot be undone.`
+            : ""
+        }
+        confirmText="Delete"
+        isPending={deletePaymentM.isPending}
+      />
     </div>
   );
 }

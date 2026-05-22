@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import type { Member } from "@/lib/messmate/types";
 import { useAuth } from "@/lib/messmate/auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ConfirmDialog } from "@/components/messmate/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/staff")({
   head: () => ({ meta: [{ title: "Staff Management - Mom's Kitchen Admin" }] }),
@@ -38,6 +39,7 @@ function StaffPage() {
   const { user: currentUser } = useAuth();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Member | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState<Member | null>(null);
 
   const staffQ = useQuery({
     queryKey: ["staff"],
@@ -155,10 +157,7 @@ function StaffPage() {
                           size="icon"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           disabled={s.memberId === currentUser?.id}
-                          onClick={() => {
-                            if (confirm("Permanently delete this account?"))
-                              deleteM.mutate(s.memberId);
-                          }}
+                          onClick={() => setDeletingStaff(s)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -242,9 +241,7 @@ function StaffPage() {
                     size="sm"
                     className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
                     disabled={s.memberId === currentUser?.id}
-                    onClick={() => {
-                      if (confirm("Permanently delete this account?")) deleteM.mutate(s.memberId);
-                    }}
+                    onClick={() => setDeletingStaff(s)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -260,6 +257,24 @@ function StaffPage() {
         open={!!editingStaff}
         onOpenChange={(open) => !open && setEditingStaff(null)}
         staff={editingStaff}
+      />
+      <ConfirmDialog
+        isOpen={deletingStaff !== null}
+        onClose={() => setDeletingStaff(null)}
+        onConfirm={() => {
+          if (deletingStaff) {
+            deleteM.mutate(deletingStaff.memberId);
+            setDeletingStaff(null);
+          }
+        }}
+        title="Delete Staff Account?"
+        description={
+          deletingStaff
+            ? `Are you sure you want to permanently delete the account of ${deletingStaff.name} (${deletingStaff.role})? This action cannot be undone.`
+            : ""
+        }
+        confirmText="Delete"
+        isPending={deleteM.isPending}
       />
     </div>
   );

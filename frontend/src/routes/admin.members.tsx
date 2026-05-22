@@ -37,6 +37,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { ConfirmDialog } from "@/components/messmate/ConfirmDialog";
 
 const PAYMENT_METHODS = ["Cash", "Online", "UPI", "Card"];
 
@@ -57,6 +58,7 @@ function MembersPage() {
   const [editing, setEditing] = useState<Member | null>(null);
   const [renewing, setRenewing] = useState<Member | null>(null);
   const [paying, setPaying] = useState<Member | null>(null);
+  const [deletingMember, setDeletingMember] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
 
   const membersQ = useQuery({
@@ -385,9 +387,7 @@ function MembersPage() {
                         size="sm"
                         variant="outline"
                         className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => {
-                          if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId);
-                        }}
+                        onClick={() => setDeletingMember(m)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -561,9 +561,7 @@ function MembersPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => {
-                                if (confirm(`Delete ${m.name}?`)) deleteM.mutate(m.memberId);
-                              }}
+                              onClick={() => setDeletingMember(m)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -668,6 +666,20 @@ function MembersPage() {
           onSaved={invalidate}
         />
       )}
+      <ConfirmDialog
+        isOpen={deletingMember !== null}
+        onClose={() => setDeletingMember(null)}
+        onConfirm={() => {
+          if (deletingMember) {
+            deleteM.mutate(deletingMember.memberId);
+            setDeletingMember(null);
+          }
+        }}
+        title="Delete Member?"
+        description={`Are you sure you want to delete ${deletingMember?.name}? This action cannot be undone and will permanently remove their records.`}
+        confirmText="Delete"
+        isPending={deleteM.isPending}
+      />
     </div>
   );
 }

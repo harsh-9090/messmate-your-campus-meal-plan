@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { DashboardNotification } from "@/lib/messmate/types";
+import { ConfirmDialog } from "@/components/messmate/ConfirmDialog";
 
 export const Route = createFileRoute("/admin/notifications")({
   head: () => ({ meta: [{ title: "Announcements - Mom's Kitchen Admin" }] }),
@@ -52,6 +53,7 @@ function NotificationsPage() {
   const qc = useQueryClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingNotification, setEditingNotification] = useState<DashboardNotification | null>(null);
+  const [deletingNotification, setDeletingNotification] = useState<DashboardNotification | null>(null);
 
   const notificationsQ = useQuery({
     queryKey: ["notifications-all"],
@@ -209,10 +211,7 @@ function NotificationsPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => {
-                            if (confirm("Permanently delete this announcement?"))
-                              deleteM.mutate(n.id);
-                          }}
+                          onClick={() => setDeletingNotification(n)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -313,9 +312,7 @@ function NotificationsPage() {
                       variant="outline"
                       size="sm"
                       className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
-                      onClick={() => {
-                        if (confirm("Permanently delete this announcement?")) deleteM.mutate(n.id);
-                      }}
+                      onClick={() => setDeletingNotification(n)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -332,6 +329,24 @@ function NotificationsPage() {
         open={!!editingNotification}
         onOpenChange={(open) => !open && setEditingNotification(null)}
         notification={editingNotification}
+      />
+      <ConfirmDialog
+        isOpen={deletingNotification !== null}
+        onClose={() => setDeletingNotification(null)}
+        onConfirm={() => {
+          if (deletingNotification) {
+            deleteM.mutate(deletingNotification.id);
+            setDeletingNotification(null);
+          }
+        }}
+        title="Delete Announcement?"
+        description={
+          deletingNotification
+            ? `Are you sure you want to permanently delete the announcement "${deletingNotification.title}"? This action cannot be undone.`
+            : ""
+        }
+        confirmText="Delete"
+        isPending={deleteM.isPending}
       />
     </div>
   );
