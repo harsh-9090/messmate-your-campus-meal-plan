@@ -1,5 +1,46 @@
 import rateLimit from "express-rate-limit";
+import RedisStore from "rate-limit-redis";
+import { client } from "../db/redis.js";
 
-export const scanLimiter = rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false });
-export const qrLimiter = rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false });
-export const authLimiter = rateLimit({ windowMs: 15 * 60_000, max: 30 });
+const createRedisLimiter = (prefix, windowMs, max) => {
+  return rateLimit({
+    windowMs,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: new RedisStore({
+      sendCommand: async (...args) => {
+        // Wait at most 1 second for Redis to connect during boot-up
+        if (!client.isOpen) {
+          let elapsed = 0;
+          await new Promise((resolve) => {
+            const check = setInterval(() => {
+              elapsed += 50;
+              if (client.isOpen || elapsed >= 1000) {
+                clearInterval(check);
+                resolve();
+              }
+            }, 50);
+          });
+        }
+
+        // Fail-open gracefully if Redis is down/unreachable
+        if (!client.isOpen) {
+          console.warn(`[RateLimiter] Redis is offline. Rate limiter '${prefix}' bypassed.`);
+          // Return a dummy count of 1 to allow request to pass without exceeding max
+          return 1;
+        }
+
+        return client.sendCommand(args);
+      },
+      prefix: `messmate:limiter:${prefix}:`,
+    }),
+  });
+};
+
+export const scanLimiter = createRedisLimiter("scan", 60_000, 30);
+export const qrLimiter = createRedisLimiter("qr", 60_000, 30);
+export const authLimiter = createRedisLimiter("auth", 15 * 60_000, 30);
+
+
+
