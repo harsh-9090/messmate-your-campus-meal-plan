@@ -7,11 +7,15 @@ const ssl =
     ? { rejectUnauthorized: false }
     : undefined;
 
-export const pool = new Pool(
-  process.env.DATABASE_URL
+export const pool = new Pool({
+  ...(process.env.DATABASE_URL
     ? { connectionString: process.env.DATABASE_URL, ssl }
-    : { ssl }, // falls back to PGHOST/PGUSER/PGPASSWORD/PGDATABASE/PGPORT env vars
-);
+    : { ssl }),
+  max: parseInt(process.env.PG_POOL_MAX || "10", 10),
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 10_000,
+  allowExitOnIdle: process.env.NODE_ENV !== "production",
+});
 
 pool.on("error", (err) => console.error("[pg] idle client error:", err));
 pool.on("connect", (client) => {
