@@ -6,8 +6,23 @@ import crypto from "crypto";
 import { format } from "date-fns";
 import { sendGuestPassEmail } from "../services/notificationService.js";
 import { sendPushToMember, sendPushToAdminsAndStaff } from "../services/pushNotificationService.js";
+import { getISTDateStr } from "../services/qrService.js";
 
 const router = Router();
+
+async function autoExpirePasses() {
+  try {
+    const todayStr = getISTDateStr();
+    await query(
+      `UPDATE guest_passes 
+       SET status = 'expired', updated_at = NOW() 
+       WHERE status IN ('active', 'pending_approval') AND date < $1`,
+      [todayStr]
+    );
+  } catch (err) {
+    console.error("[AUTO-EXPIRE-ERROR] Failed to auto expire guest passes:", err.message);
+  }
+}
 
 
 
@@ -72,6 +87,7 @@ router.post(
 router.get("/my-passes", verifyToken, requireRole("member"), async (req, res, next) => {
   try {
     const memberId = req.user.sub;
+    await autoExpirePasses();
     const { rows } = await query(
       `SELECT * FROM guest_passes WHERE member_id = $1 ORDER BY created_at DESC`,
       [memberId]
@@ -91,6 +107,7 @@ router.get("/my-passes", verifyToken, requireRole("member"), async (req, res, ne
 // GET /pending
 router.get("/pending", verifyToken, requireRole("admin"), async (req, res, next) => {
   try {
+    await autoExpirePasses();
     const { rows } = await query(
       `SELECT gp.*, m.name as host_name, m.mobile as host_mobile
        FROM guest_passes gp
@@ -112,6 +129,7 @@ router.get("/pending", verifyToken, requireRole("admin"), async (req, res, next)
 // GET /
 router.get("/", verifyToken, requireRole("admin"), async (req, res, next) => {
   try {
+    await autoExpirePasses();
     const { rows } = await query(
       `SELECT gp.*, COALESCE(m.name, 'Admin (Walk-in)') as host_name, m.mobile as host_mobile
        FROM guest_passes gp
@@ -174,6 +192,7 @@ router.patch("/:id/approve", verifyToken, requireRole("admin"), async (req, res,
 router.get("/public/:token", async (req, res, next) => {
   try {
     const { token } = req.params;
+    await autoExpirePasses();
     const { rows } = await query(
       `SELECT gp.guest_name, gp.date, gp.meal, gp.status, gp.price, gp.qr_token, COALESCE(m.name, 'Admin (Walk-in)') as host_name
        FROM guest_passes gp
