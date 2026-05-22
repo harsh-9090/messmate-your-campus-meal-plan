@@ -65,7 +65,7 @@ export function PullToRefresh({ children }: PullToRefreshProps) {
 
         try {
           // Perform high-performance soft query refetch of active views
-          await qc.refetchQueries({ active: true });
+          await qc.refetchQueries({ type: "active" });
         } catch (err) {
           console.error("Pull-to-refresh failed to update queries:", err);
         } finally {
