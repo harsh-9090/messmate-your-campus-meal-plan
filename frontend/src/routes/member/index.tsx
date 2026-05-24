@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/messmate/auth";
 import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi, skipsApi, ratingsApi, guestPassesApi } from "@/lib/messmate/api";
@@ -404,6 +404,19 @@ function MemberPortal() {
     enabled: !!authUser,
   });
   const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
+
+  // Automatically focus the "pass" tab on initial login if any dining meal window is currently active
+  const hasAutoRedirected = useRef(false);
+  useEffect(() => {
+    const windows = windowsQ.data ?? [];
+    if (windows.length > 0 && !hasAutoRedirected.current) {
+      const isAnyWindowActive = windows.some((w) => isWithinWindow(new Date(), w));
+      if (isAnyWindowActive) {
+        setActiveTab("pass");
+      }
+      hasAutoRedirected.current = true;
+    }
+  }, [windowsQ.data]);
   const logsQ = useQuery({
     queryKey: ["my-logs"],
     queryFn: () => scanApi.logs({ limit: 14 }),
