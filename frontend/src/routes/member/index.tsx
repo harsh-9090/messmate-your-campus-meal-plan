@@ -591,55 +591,38 @@ function MemberPortal() {
         </div>
       </header>
 
-      {/* Tactile Mobile Tab Selector (Hidden on md and up) */}
-      <div className="md:hidden flex border-b bg-background sticky top-[65px] z-10 p-1 bg-slate-50 dark:bg-slate-900 border-b">
-        <button
-          onClick={() => setActiveTab("today")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold transition-all rounded-lg cursor-pointer ${
-            activeTab === "today"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <UtensilsCrossed className="h-4 w-4" /> Today
-        </button>
-        <button
-          onClick={() => setActiveTab("pass")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold transition-all rounded-lg cursor-pointer ${
-            activeTab === "pass"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <QrCode className="h-4 w-4" /> Pass
-        </button>
-        <button
-          onClick={() => setActiveTab("skips")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold transition-all rounded-lg cursor-pointer ${
-            activeTab === "skips"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <TrendingDown className="h-4 w-4" /> Skips
-        </button>
-        <button
-          onClick={() => setActiveTab("account")}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold transition-all rounded-lg cursor-pointer ${
-            activeTab === "account"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <CreditCard className="h-4 w-4" /> Account
-        </button>
+      {/* Premium Segmented Tab Selector — visible on all screen sizes */}
+      <div className="flex border-b bg-background/80 backdrop-blur sticky top-[65px] z-10 px-4 py-2 justify-center">
+        <div className="flex w-full max-w-2xl bg-muted/50 dark:bg-muted/25 p-1 rounded-xl gap-1">
+          {([
+            { key: "today" as const, icon: <UtensilsCrossed className="h-4 w-4" />, label: "Today's Meals", shortLabel: "Today" },
+            { key: "pass" as const, icon: <QrCode className="h-4 w-4" />, label: "Dining Pass", shortLabel: "Pass" },
+            { key: "skips" as const, icon: <TrendingDown className="h-4 w-4" />, label: "Skip Planner", shortLabel: "Skips" },
+            { key: "account" as const, icon: <CreditCard className="h-4 w-4" />, label: "My Plan", shortLabel: "Account" },
+          ]).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 text-xs sm:text-sm font-bold transition-all duration-300 rounded-lg cursor-pointer",
+                activeTab === tab.key
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+              )}
+            >
+              {tab.icon}
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.shortLabel}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Main Grid: Stacks on mobile, side-by-side on desktop */}
-      <main className="mx-auto max-w-2xl md:max-w-7xl space-y-4 md:space-y-0 p-4 md:grid md:grid-cols-12 md:gap-6">
+      {/* Main Content — shows active tab only */}
+      <main className="mx-auto max-w-5xl space-y-4 p-4">
         {/* Enable Push Notifications Banner (User-gesture permission request) */}
         {showPushBanner && (
-          <Card className="md:col-span-12 p-4 border-indigo-200 dark:border-indigo-950/40 bg-gradient-to-r from-indigo-50/30 to-violet-50/30 dark:from-indigo-950/5 dark:to-violet-950/5 shadow-sm mb-4">
+          <Card className="p-4 border-indigo-200 dark:border-indigo-950/40 bg-gradient-to-r from-indigo-50/30 to-violet-50/30 dark:from-indigo-950/5 dark:to-violet-950/5 shadow-sm mb-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <span className="text-xl shrink-0">🔔</span>
@@ -691,7 +674,7 @@ function MemberPortal() {
 
         {/* Active Notifications Banner */}
         {notificationsQ.data && notificationsQ.data.length > 0 && (
-          <div className="md:col-span-12 space-y-3 mb-4">
+          <div className="space-y-3 mb-4">
             {notificationsQ.data.map((n) => {
               const isHoliday = n.type === "holiday";
               return (
@@ -736,7 +719,7 @@ function MemberPortal() {
 
         {/* Food Quality Feedback Widget */}
         {unratedQ.data && unratedQ.data.length > 0 && (
-          <div className="md:col-span-12 mb-4">
+          <div className="mb-4">
             <FeedbackWidget
               memberId={authUser.id}
               unratedMeals={unratedQ.data}
@@ -746,553 +729,566 @@ function MemberPortal() {
           </div>
         )}
 
-        {/* COLUMN 1: Pass & Access (Visible if activeTab === 'pass' on mobile) */}
-        <div className="md:col-span-4 space-y-4 block md:block">
-          {/* Expiry Warning */}
-          {!expired && left <= 3 && sub.isPaid && (
-            <Card className={cn("border-warning/40 bg-warning/10 p-4 animate-pulse transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "pass" ? "block" : "hidden md:block")}>
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="mt-0.5 h-5 w-5 text-warning animate-bounce" />
-                <div>
-                  <div className="font-semibold">
-                    Plan expires in {left} day{left === 1 ? "" : "s"}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Contact admin to renew before it expires.
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* Secure Dining Pass QR */}
-          <Card className={cn("p-5 sm:p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "pass" ? "block" : "hidden md:block")}>
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Your Pass
-                </div>
-                <div className="font-display text-xl font-bold">Scan at counter</div>
-              </div>
-              <UtensilsCrossed className="h-5 w-5 text-primary" />
-            </div>
-            <div className="grid place-items-center py-4">
-              {locked ? (
-                <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-destructive/40 bg-destructive/5 p-8 text-center w-full max-w-sm">
-                  <Lock className="h-10 w-10 text-destructive" />
-                  <div className="font-display text-xl font-bold text-destructive">
-                    {expired ? "Plan Expired" : "Payment Pending"}
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {expired
-                      ? "Your 30-day plan has ended. Contact admin to renew."
-                      : `Your subscription payment is pending (Due: ${formatINR(sub.dueAmount)}). Contact admin.`}
-                  </p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-4 w-full">
-                  {inGracePeriod && (
-                    <Badge
-                      variant="outline"
-                      className="border-amber-500 bg-amber-50 text-amber-600"
-                    >
-                      Grace Period: {gracePeriod - daysSinceStart} days left to pay
-                    </Badge>
-                  )}
-                  <QRCanvas meals={sub.meals} />
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {/* Guest Passes Card */}
-          <Card className={cn("p-5 sm:p-6 shadow-sm space-y-4 transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "pass" ? "block" : "hidden md:block")}>
-            <div className="flex items-center justify-between border-b pb-2">
-              <div>
-                <div className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Visitors
-                </div>
-                <div className="font-display text-lg font-bold">Guest Passes</div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 rounded-lg text-xs font-bold cursor-pointer"
-                onClick={() => setShowRequestForm(!showRequestForm)}
-              >
-                {showRequestForm ? "Cancel" : "+ Request Pass"}
-              </Button>
-            </div>
-
-            {showRequestForm && (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (!guestDate) return;
-                  createGuestPassM.mutate({
-                    guestName: guestName.trim() || "Guest",
-                    date: guestDate,
-                    meal: guestMeal,
-                  }, {
-                    onSuccess: () => {
-                      setGuestName("");
-                      setShowRequestForm(false);
-                    }
-                  });
-                }}
-                className="space-y-3 p-3.5 rounded-xl bg-muted/40 border border-border/50 animate-in fade-in slide-in-from-top-1 duration-250"
-              >
-                <div className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
-                  New Guest Ticket
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Guest Name</label>
-                  <Input
-                    placeholder="Enter guest name..."
-                    className="h-9 px-3 rounded-lg text-xs"
-                    value={guestName}
-                    onChange={(e) => setGuestName(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Date</label>
-                    <Input
-                      type="date"
-                      className="h-9 px-3 rounded-lg text-xs cursor-pointer"
-                      min={todayStr}
-                      value={guestDate}
-                      onChange={(e) => setGuestDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Meal</label>
-                    <select
-                      className="w-full h-9 px-2 rounded-lg border border-input bg-background text-xs font-semibold"
-                      value={guestMeal}
-                      onChange={(e) => setGuestMeal(e.target.value as Meal)}
-                    >
-                      <option value="Breakfast">Breakfast (₹{getGuestPriceOf("Breakfast")})</option>
-                      <option value="Lunch">Lunch (₹{getGuestPriceOf("Lunch")})</option>
-                      <option value="Dinner">Dinner (₹{getGuestPriceOf("Dinner")})</option>
-                    </select>
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full h-9 rounded-lg text-xs font-bold shadow-sm"
-                  disabled={createGuestPassM.isPending}
-                >
-                  {createGuestPassM.isPending ? (
-                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                  ) : null}
-                  Submit Request (₹{getGuestPriceOf(guestMeal)})
-                </Button>
-              </form>
-            )}
-
-            {/* List of passes (Collapsible) */}
-            <div className="border-t pt-3 space-y-3">
-              <button
-                type="button"
-                onClick={() => setShowPassesList(!showPassesList)}
-                className="w-full flex items-center justify-between text-[11px] font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors cursor-pointer"
-              >
-                <span>My Requested Passes ({myPassesQ.data?.length || 0})</span>
-                <ChevronDown className={`h-4 w-4 transition-transform duration-205 ${showPassesList ? "rotate-180" : ""}`} />
-              </button>
-
-              {showPassesList && (
-                <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                  {myPassesQ.isLoading ? (
-                    <div className="text-center py-4 text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1.5">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading passes...
+        {/* ═══════════════ TAB: DINING PASS ═══════════════ */}
+        {activeTab === "pass" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Left: QR Pass */}
+            <div className="space-y-4">
+              {/* Expiry Warning */}
+              {!expired && left <= 3 && sub.isPaid && (
+                <Card className="border-warning/40 bg-warning/10 p-4 animate-pulse transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="mt-0.5 h-5 w-5 text-warning animate-bounce" />
+                    <div>
+                      <div className="font-semibold">
+                        Plan expires in {left} day{left === 1 ? "" : "s"}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Contact admin to renew before it expires.
+                      </div>
                     </div>
-                  ) : myPassesQ.data?.length === 0 ? (
-                    <div className="text-center py-6 text-xs text-muted-foreground font-medium">
-                      No guest passes requested yet.
+                  </div>
+                </Card>
+              )}
+
+              {/* Secure Dining Pass QR */}
+              <Card className="p-5 sm:p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Your Pass
+                    </div>
+                    <div className="font-display text-xl font-bold">Scan at counter</div>
+                  </div>
+                  <UtensilsCrossed className="h-5 w-5 text-primary" />
+                </div>
+                <div className="grid place-items-center py-4">
+                  {locked ? (
+                    <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-destructive/40 bg-destructive/5 p-8 text-center w-full max-w-sm">
+                      <Lock className="h-10 w-10 text-destructive" />
+                      <div className="font-display text-xl font-bold text-destructive">
+                        {expired ? "Plan Expired" : "Payment Pending"}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {expired
+                          ? "Your 30-day plan has ended. Contact admin to renew."
+                          : `Your subscription payment is pending (Due: ${formatINR(sub.dueAmount)}). Contact admin.`}
+                      </p>
                     </div>
                   ) : (
-                    myPassesQ.data?.map((gp) => {
-                      const shareText = encodeURIComponent(
-                        `Here is your Mess Guest Pass for ${gp.meal} on ${gp.date}. Present this link to scan: ${window.location.origin}/guest-pass/${gp.qr_token}`
-                      );
-                      const whatsappLink = `https://api.whatsapp.com/send?text=${shareText}`;
-
-                      return (
-                        <div
-                          key={gp.id}
-                          className="p-3 rounded-xl border border-border/80 bg-background hover:bg-muted/10 transition-colors flex flex-col gap-2.5"
+                    <div className="flex flex-col items-center gap-4 w-full">
+                      {inGracePeriod && (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500 bg-amber-50 text-amber-600"
                         >
-                          <div className="flex items-start justify-between gap-1.5">
-                            <div className="min-w-0 flex-1">
-                              <div className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
-                                {gp.guest_name}
-                              </div>
-                              <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1">
-                                <span>{gp.date}</span>
-                                <span>•</span>
-                                <span className="font-bold text-primary">{gp.meal}</span>
-                              </div>
-                            </div>
-                            <Badge
-                              variant="secondary"
-                              className={`text-[9px] font-bold py-0 px-2 shrink-0 ${
-                                gp.status === "active"
-                                  ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-                                  : gp.status === "used"
-                                    ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                                    : gp.status === "pending_approval"
-                                      ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
-                                      : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
-                              }`}
-                            >
-                              {gp.status === "pending_approval" ? "Pending Cash" : gp.status}
-                            </Badge>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-2 border-t pt-2 mt-0.5">
-                            <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-400">
-                              ₹{gp.price}
-                            </span>
-
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                asChild
-                                className="h-7 px-2 rounded-md text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/5 cursor-pointer"
-                              >
-                                <Link to="/guest-pass/$token" params={{ token: gp.qr_token }}>
-                                  View Pass
-                                </Link>
-                              </Button>
-                              {gp.status === "active" && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  asChild
-                                  className="h-7 px-2.5 rounded-md text-[10px] font-bold border-emerald-500/30 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 cursor-pointer"
-                                >
-                                  <a
-                                    href={whatsappLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    Share Pass
-                                  </a>
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
+                          Grace Period: {gracePeriod - daysSinceStart} days left to pay
+                        </Badge>
+                      )}
+                      <QRCanvas meals={sub.meals} />
+                    </div>
                   )}
                 </div>
-              )}
+              </Card>
             </div>
-          </Card>
-        </div>
 
-        {/* COLUMN 2: Meals & Dining (Visible if activeTab === 'today' on mobile) */}
-        <div className="md:col-span-4 space-y-4 block md:block">
-          {/* Today's Menu */}
-          <Card className={cn("p-4 sm:p-5 shadow-sm border-border bg-card transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "today" ? "block" : "hidden md:block")}>
-            <div className="mb-3 flex items-center justify-between">
-              <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
-                <span>🍽️</span> Today's Menu
+            {/* Right: Guest Passes Card */}
+            <Card className="p-5 sm:p-6 shadow-sm space-y-4 transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+              <div className="flex items-center justify-between border-b pb-2">
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Visitors
+                  </div>
+                  <div className="font-display text-lg font-bold">Guest Passes</div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 rounded-lg text-xs font-bold cursor-pointer"
+                  onClick={() => setShowRequestForm(!showRequestForm)}
+                >
+                  {showRequestForm ? "Cancel" : "+ Request Pass"}
+                </Button>
               </div>
-              <Badge
-                variant="secondary"
-                className="text-[10px] font-semibold tracking-wide bg-primary/10 text-primary"
-              >
-                Fresh & Hygienic
-              </Badge>
-            </div>
-            <div className="space-y-3">
-              {menusQ.isLoading ? (
-                <div className="py-6 text-center text-xs text-muted-foreground">
-                  Loading today's menu…
-                </div>
-              ) : menus.length === 0 ? (
-                <div className="py-6 text-center text-xs text-muted-foreground italic">
-                  No menu items configured for today yet.
-                </div>
-              ) : (
-                (["Breakfast", "Lunch", "Dinner"] as Meal[]).map((mealType) => {
-                  const m = menus.find((x) => x.meal === mealType);
-                  const isActive = activeMeal === mealType;
-                  const w = windows.find((x) => x.meal === mealType);
-                  const timeStr = w
-                    ? `(${formatTime12h(w.startTime)} - ${formatTime12h(w.endTime)})`
-                    : "";
 
-                  return (
-                    <div
-                      key={mealType}
-                      className={cn(
-                        "rounded-xl p-3 border transition-all duration-200",
-                        isActive
-                          ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary/20"
-                          : "bg-muted/10 border-muted/40 opacity-75",
-                      )}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm">
-                            {mealType === "Breakfast" ? "🍳" : mealType === "Lunch" ? "🍛" : "🍲"}
-                          </span>
-                          <span className="font-bold text-sm">{mealType}</span>
-                          <span className="text-[10px] text-muted-foreground font-normal">
-                            {timeStr}
-                          </span>
-                        </div>
-                        {isActive && (
-                          <Badge className="bg-primary hover:bg-primary text-[9px] font-extrabold tracking-wider px-2 py-0.5 animate-pulse">
-                            ACTIVE MEAL
-                          </Badge>
-                        )}
-                      </div>
-                      {m && m.items.length > 0 ? (
-                        <div className="space-y-1.5">
-                          <div className="flex flex-wrap gap-1">
-                            {m.items.map((item) => (
-                              <span
-                                key={item}
-                                className="bg-background/80 dark:bg-background/40 border border-border text-foreground px-2 py-0.5 rounded-full text-[11px] font-medium shadow-xs"
-                              >
-                                {item}
-                              </span>
-                            ))}
-                          </div>
-                          {m.notes && (
-                            <p className="text-[11px] text-primary font-semibold italic mt-1 pl-1 border-l-2 border-primary/40">
-                              💡 {m.notes}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-[11px] text-muted-foreground/60 italic pl-1">
-                          No items added yet.
-                        </p>
-                      )}
+              {showRequestForm && (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!guestDate) return;
+                    createGuestPassM.mutate({
+                      guestName: guestName.trim() || "Guest",
+                      date: guestDate,
+                      meal: guestMeal,
+                    }, {
+                      onSuccess: () => {
+                        setGuestName("");
+                        setShowRequestForm(false);
+                      }
+                    });
+                  }}
+                  className="space-y-3 p-3.5 rounded-xl bg-muted/40 border border-border/50 animate-in fade-in slide-in-from-top-1 duration-250"
+                >
+                  <div className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                    New Guest Ticket
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Guest Name</label>
+                    <Input
+                      placeholder="Enter guest name..."
+                      className="h-9 px-3 rounded-lg text-xs"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Date</label>
+                      <Input
+                        type="date"
+                        className="h-9 px-3 rounded-lg text-xs cursor-pointer"
+                        min={todayStr}
+                        value={guestDate}
+                        onChange={(e) => setGuestDate(e.target.value)}
+                      />
                     </div>
-                  );
-                })
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Meal</label>
+                      <select
+                        className="w-full h-9 px-2 rounded-lg border border-input bg-background text-xs font-semibold"
+                        value={guestMeal}
+                        onChange={(e) => setGuestMeal(e.target.value as Meal)}
+                      >
+                        <option value="Breakfast">Breakfast (₹{getGuestPriceOf("Breakfast")})</option>
+                        <option value="Lunch">Lunch (₹{getGuestPriceOf("Lunch")})</option>
+                        <option value="Dinner">Dinner (₹{getGuestPriceOf("Dinner")})</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full h-9 rounded-lg text-xs font-bold shadow-sm"
+                    disabled={createGuestPassM.isPending}
+                  >
+                    {createGuestPassM.isPending ? (
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    ) : null}
+                    Submit Request (₹{getGuestPriceOf(guestMeal)})
+                  </Button>
+                </form>
               )}
-            </div>
-          </Card>
 
-          {/* Today's Meals Status */}
-          <Card className={cn("p-4 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "today" ? "block" : "hidden md:block")}>
-            <div className="mb-3 flex items-center justify-between">
-              <div className="font-display text-base sm:text-lg font-bold">Today's Meals</div>
-              <PlanBadge planId={sub.planId} label={sub.planLabel} />
-            </div>
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-              {MEALS.map((m) => (
-                <MealChip key={m} meal={m} state={stateOf(m)} />
-              ))}
-            </div>
-          </Card>
-        </div>
+              {/* List of passes (Collapsible) */}
+              <div className="border-t pt-3 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPassesList(!showPassesList)}
+                  className="w-full flex items-center justify-between text-[11px] font-bold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors cursor-pointer"
+                >
+                  <span>My Requested Passes ({myPassesQ.data?.length || 0})</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-205 ${showPassesList ? "rotate-180" : ""}`} />
+                </button>
 
-        {/* COLUMN 3: Status & Schedule (Visible on mobile skips/account tabs) */}
-        <div className="md:col-span-4 space-y-4 block md:block">
-          {/* Skip Meals Planner */}
-          <Card className={cn("p-4 sm:p-5 shadow-sm space-y-4 border-border bg-card transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "skips" ? "block" : "hidden md:block")}>
-            <div className="flex items-center justify-between border-b pb-2">
-              <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
-                <span>🗓️</span> Skip Meals
-              </div>
-              <Badge variant="secondary" className="text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                12h Cut-off
-              </Badge>
-            </div>
-
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Plan your absences in advance to help reduce kitchen food waste. Toggles lock 12h before meal windows start.
-            </p>
-
-            <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-              {skipsQ.isLoading || windowsQ.isLoading ? (
-                <div className="py-6 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  Loading skip calendar…
-                </div>
-              ) : (
-                upcomingDays.map((dateStr) => {
-                  const d = new Date(dateStr);
-                  const isToday = dateStr === todayStr;
-                  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                  
-                  return (
-                    <div
-                      key={dateStr}
-                      className={cn(
-                        "rounded-xl border p-3 space-y-2 bg-muted/5 transition-all",
-                        isToday && "border-primary/30 bg-primary/[0.02]"
-                      )}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-foreground">
-                          {dayNames[d.getDay()]}, {d.getDate()} {monthNames[d.getMonth()]}
-                          {isToday && (
-                            <span className="ml-1.5 text-[9px] uppercase tracking-wider font-extrabold text-primary bg-primary/10 rounded-full px-1.5 py-0.5">
-                              Today
-                            </span>
-                          )}
-                        </span>
+                {showPassesList && (
+                  <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {myPassesQ.isLoading ? (
+                      <div className="text-center py-4 text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1.5">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading passes...
                       </div>
+                    ) : myPassesQ.data?.length === 0 ? (
+                      <div className="text-center py-6 text-xs text-muted-foreground font-medium">
+                        No guest passes requested yet.
+                      </div>
+                    ) : (
+                      myPassesQ.data?.map((gp) => {
+                        const shareText = encodeURIComponent(
+                          `Here is your Mess Guest Pass for ${gp.meal} on ${gp.date}. Present this link to scan: ${window.location.origin}/guest-pass/${gp.qr_token}`
+                        );
+                        const whatsappLink = `https://api.whatsapp.com/send?text=${shareText}`;
 
-                      <div className="flex flex-col gap-1.5">
-                        {sub.meals.map((meal) => {
-                          const isSkippedVal = (skipsQ.data ?? []).some(
-                            (s) => s.date === dateStr && s.meal === meal
-                          );
-                          const isLockedVal = getIsLocked(dateStr, meal);
-                          const isPendingToggle =
-                            toggleSkipM.isPending &&
-                            toggleSkipM.variables?.date === dateStr &&
-                            toggleSkipM.variables?.meal === meal;
+                        return (
+                          <div
+                            key={gp.id}
+                            className="p-3 rounded-xl border border-border/80 bg-background hover:bg-muted/10 transition-colors flex flex-col gap-2.5"
+                          >
+                            <div className="flex items-start justify-between gap-1.5">
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate">
+                                  {gp.guest_name}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap items-center gap-1">
+                                  <span>{gp.date}</span>
+                                  <span>•</span>
+                                  <span className="font-bold text-primary">{gp.meal}</span>
+                                </div>
+                              </div>
+                              <Badge
+                                variant="secondary"
+                                className={`text-[9px] font-bold py-0 px-2 shrink-0 ${
+                                  gp.status === "active"
+                                    ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                                    : gp.status === "used"
+                                      ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                      : gp.status === "pending_approval"
+                                        ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                                        : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
+                                }`}
+                              >
+                                {gp.status === "pending_approval" ? "Pending Cash" : gp.status}
+                              </Badge>
+                            </div>
 
-                          return (
-                            <div
-                              key={meal}
-                              className="flex items-center justify-between text-xs bg-background/50 dark:bg-background/25 rounded-lg border border-border/40 px-2 py-1.5"
-                            >
-                              <span className="font-semibold text-muted-foreground/90 flex items-center gap-1">
-                                {meal === "Breakfast" ? "🌅" : meal === "Lunch" ? "🍱" : "🌙"}
-                                {meal}
+                            <div className="flex items-center justify-between gap-2 border-t pt-2 mt-0.5">
+                              <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-400">
+                                ₹{gp.price}
                               </span>
 
                               <div className="flex items-center gap-2">
-                                {isLockedVal ? (
-                                  <span className="text-[10px] text-muted-foreground/60 font-medium flex items-center gap-1 select-none">
-                                    <Lock className="h-3 w-3" /> Locked
-                                  </span>
-                                ) : null}
-
-                                <button
-                                  disabled={isLockedVal || isPendingToggle}
-                                  onClick={() =>
-                                    toggleSkipM.mutate({
-                                      date: dateStr,
-                                      meal,
-                                      skip: !isSkippedVal,
-                                    })
-                                  }
-                                  className={cn(
-                                    "px-2 py-1 rounded-md text-[10px] font-bold uppercase transition-all duration-150 cursor-pointer border",
-                                    isSkippedVal
-                                      ? "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 hover:bg-amber-200"
-                                      : "bg-primary/10 dark:bg-primary/20 text-primary border-primary/25 hover:bg-primary/20",
-                                    (isLockedVal || isPendingToggle) && "opacity-50 cursor-not-allowed"
-                                  )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  asChild
+                                  className="h-7 px-2 rounded-md text-[10px] font-bold text-primary hover:text-primary hover:bg-primary/5 cursor-pointer"
                                 >
-                                  {isPendingToggle ? (
-                                    <Loader2 className="h-3 w-3 animate-spin mx-auto" />
-                                  ) : isSkippedVal ? (
-                                    "Skipped"
-                                  ) : (
-                                    "Eating"
-                                  )}
-                                </button>
+                                  <Link to="/guest-pass/$token" params={{ token: gp.qr_token }}>
+                                    View Pass
+                                  </Link>
+                                </Button>
+                                {gp.status === "active" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    asChild
+                                    className="h-7 px-2.5 rounded-md text-[10px] font-bold border-emerald-500/30 text-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 cursor-pointer"
+                                  >
+                                    <a
+                                      href={whatsappLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Share Pass
+                                    </a>
+                                  </Button>
+                                )}
                               </div>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </Card>
-
-          {/* Subscription Progress Card */}
-          <Card className={cn("overflow-hidden p-0 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "account" ? "block" : "hidden md:block")}>
-            <div className="bg-gradient-primary p-5 text-white">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-xs uppercase tracking-wider opacity-70">Current Plan</div>
-                  <div className="font-display text-2xl font-bold">{sub.planLabel}</div>
-                  <div className="mt-1 text-sm opacity-80">
-                    {formatINR(sub.pricePerMonth)} / month
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
-                </div>
-                <div className="text-right">
-                  <Badge
-                    className={
-                      sub.isPaid
-                        ? "bg-success text-success-foreground"
-                        : "bg-destructive text-destructive-foreground"
-                    }
-                  >
-                    {sub.isPaid ? "Paid" : "Unpaid"}
-                  </Badge>
-                  {sub.dueAmount > 0 && (
-                    <div className="mt-1 text-[10px] font-bold text-white">
-                      Due: {formatINR(sub.dueAmount)}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
-              <div className="mt-3 flex gap-2 text-2xl">
-                {sub.meals.includes("Breakfast") && <span>🌅</span>}
-                {sub.meals.includes("Lunch") && <span>🍱</span>}
-                {sub.meals.includes("Dinner") && <span>🌙</span>}
-              </div>
-            </div>
-            <div className="p-5">
-              <SubscriptionBar sub={sub} />
-            </div>
-          </Card>
+            </Card>
+          </div>
+        )}
 
-          {/* Historical Check-in Scan logs */}
-          <Card className={cn("p-4 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "account" ? "block" : "hidden md:block")}>
-            <div className="mb-3 flex items-center gap-2 border-b pb-2">
-              <History className="h-4 w-4 text-muted-foreground" />
-              <div className="font-display text-lg font-bold">Recent Scans</div>
-            </div>
-            {myLogs.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">No scans yet.</p>
-            ) : (
-              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
-                {myLogs.map((l) => (
-                  <div
-                    key={l.id}
-                    className="flex items-center justify-between rounded-lg border p-3 text-sm bg-muted/5 hover:bg-muted/10 transition-all"
-                  >
-                    <div>
-                      <div className="font-medium">
-                        {l.meal}{" "}
-                        <span className="text-[10px] text-muted-foreground font-normal">
-                          · {formatTimestamp(l.timestamp)}
-                        </span>
-                      </div>
-                      {l.status === "denied" && (
-                        <div className="text-[10px] text-destructive font-medium mt-0.5">
-                          {l.denialReason}
+        {/* ═══════════════ TAB: TODAY'S MEALS ═══════════════ */}
+        {activeTab === "today" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Today's Menu */}
+            <Card className="p-4 sm:p-5 shadow-sm border-border bg-card transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
+                  <span>🍽️</span> Today's Menu
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="text-[10px] font-semibold tracking-wide bg-primary/10 text-primary"
+                >
+                  Fresh & Hygienic
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {menusQ.isLoading ? (
+                  <div className="py-6 text-center text-xs text-muted-foreground">
+                    Loading today's menu…
+                  </div>
+                ) : menus.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-muted-foreground italic">
+                    No menu items configured for today yet.
+                  </div>
+                ) : (
+                  (["Breakfast", "Lunch", "Dinner"] as Meal[]).map((mealType) => {
+                    const m = menus.find((x) => x.meal === mealType);
+                    const isActive = activeMeal === mealType;
+                    const w = windows.find((x) => x.meal === mealType);
+                    const timeStr = w
+                      ? `(${formatTime12h(w.startTime)} - ${formatTime12h(w.endTime)})`
+                      : "";
+
+                    return (
+                      <div
+                        key={mealType}
+                        className={cn(
+                          "rounded-xl p-3 border transition-all duration-200",
+                          isActive
+                            ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary/20"
+                            : "bg-muted/10 border-muted/40 opacity-75",
+                        )}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">
+                              {mealType === "Breakfast" ? "🍳" : mealType === "Lunch" ? "🍛" : "🍲"}
+                            </span>
+                            <span className="font-bold text-sm">{mealType}</span>
+                            <span className="text-[10px] text-muted-foreground font-normal">
+                              {timeStr}
+                            </span>
+                          </div>
+                          {isActive && (
+                            <Badge className="bg-primary hover:bg-primary text-[9px] font-extrabold tracking-wider px-2 py-0.5 animate-pulse">
+                              ACTIVE MEAL
+                            </Badge>
+                          )}
                         </div>
-                      )}
-                    </div>
-                    <Badge
-                      variant={l.status === "allowed" ? "default" : "destructive"}
-                      className={l.status === "allowed" ? "bg-success text-success-foreground" : ""}
-                    >
-                      {l.status}
-                    </Badge>
-                  </div>
+                        {m && m.items.length > 0 ? (
+                          <div className="space-y-1.5">
+                            <div className="flex flex-wrap gap-1">
+                              {m.items.map((item) => (
+                                <span
+                                  key={item}
+                                  className="bg-background/80 dark:bg-background/40 border border-border text-foreground px-2 py-0.5 rounded-full text-[11px] font-medium shadow-xs"
+                                >
+                                  {item}
+                                </span>
+                              ))}
+                            </div>
+                            {m.notes && (
+                              <p className="text-[11px] text-primary font-semibold italic mt-1 pl-1 border-l-2 border-primary/40">
+                                💡 {m.notes}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-muted-foreground/60 italic pl-1">
+                            No items added yet.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </Card>
+
+            {/* Today's Meals Status */}
+            <Card className="p-4 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="font-display text-base sm:text-lg font-bold">Today's Meals</div>
+                <PlanBadge planId={sub.planId} label={sub.planLabel} />
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {MEALS.map((m) => (
+                  <MealChip key={m} meal={m} state={stateOf(m)} />
                 ))}
               </div>
-            )}
-          </Card>
-        </div>
+            </Card>
+          </div>
+        )}
+
+        {/* ═══════════════ TAB: SKIP PLANNER ═══════════════ */}
+        {activeTab === "skips" && (
+          <div className="max-w-2xl mx-auto w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <Card className="p-4 sm:p-5 shadow-sm space-y-4 border-border bg-card transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+              <div className="flex items-center justify-between border-b pb-2">
+                <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
+                  <span>🗓️</span> Skip Meals
+                </div>
+                <Badge variant="secondary" className="text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                  12h Cut-off
+                </Badge>
+              </div>
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Plan your absences in advance to help reduce kitchen food waste. Toggles lock 12h before meal windows start.
+              </p>
+
+              <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
+                {skipsQ.isLoading || windowsQ.isLoading ? (
+                  <div className="py-6 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    Loading skip calendar…
+                  </div>
+                ) : (
+                  upcomingDays.map((dateStr) => {
+                    const d = new Date(dateStr);
+                    const isToday = dateStr === todayStr;
+                    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    
+                    return (
+                      <div
+                        key={dateStr}
+                        className={cn(
+                          "rounded-xl border p-3 space-y-2 bg-muted/5 transition-all",
+                          isToday && "border-primary/30 bg-primary/[0.02]"
+                        )}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-foreground">
+                            {dayNames[d.getDay()]}, {d.getDate()} {monthNames[d.getMonth()]}
+                            {isToday && (
+                              <span className="ml-1.5 text-[9px] uppercase tracking-wider font-extrabold text-primary bg-primary/10 rounded-full px-1.5 py-0.5">
+                                Today
+                              </span>
+                            )}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                          {sub.meals.map((meal) => {
+                            const isSkippedVal = (skipsQ.data ?? []).some(
+                              (s) => s.date === dateStr && s.meal === meal
+                            );
+                            const isLockedVal = getIsLocked(dateStr, meal);
+                            const isPendingToggle =
+                              toggleSkipM.isPending &&
+                              toggleSkipM.variables?.date === dateStr &&
+                              toggleSkipM.variables?.meal === meal;
+
+                            return (
+                              <div
+                                key={meal}
+                                className="flex items-center justify-between text-xs bg-background/50 dark:bg-background/25 rounded-lg border border-border/40 px-2 py-1.5"
+                              >
+                                <span className="font-semibold text-muted-foreground/90 flex items-center gap-1">
+                                  {meal === "Breakfast" ? "🌅" : meal === "Lunch" ? "🍱" : "🌙"}
+                                  {meal}
+                                </span>
+
+                                <div className="flex items-center gap-2">
+                                  {isLockedVal ? (
+                                    <span className="text-[10px] text-muted-foreground/60 font-medium flex items-center gap-1 select-none">
+                                      <Lock className="h-3 w-3" /> Locked
+                                    </span>
+                                  ) : null}
+
+                                  <button
+                                    disabled={isLockedVal || isPendingToggle}
+                                    onClick={() =>
+                                      toggleSkipM.mutate({
+                                        date: dateStr,
+                                        meal,
+                                        skip: !isSkippedVal,
+                                      })
+                                    }
+                                    className={cn(
+                                      "px-2 py-1 rounded-md text-[10px] font-bold uppercase transition-all duration-150 cursor-pointer border",
+                                      isSkippedVal
+                                        ? "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 hover:bg-amber-200"
+                                        : "bg-primary/10 dark:bg-primary/20 text-primary border-primary/25 hover:bg-primary/20",
+                                      (isLockedVal || isPendingToggle) && "opacity-50 cursor-not-allowed"
+                                    )}
+                                  >
+                                    {isPendingToggle ? (
+                                      <Loader2 className="h-3 w-3 animate-spin mx-auto" />
+                                    ) : isSkippedVal ? (
+                                      "Skipped"
+                                    ) : (
+                                      "Eating"
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* ═══════════════ TAB: MY PLAN / ACCOUNT ═══════════════ */}
+        {activeTab === "account" && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Subscription Progress Card */}
+            <Card className="overflow-hidden p-0 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+              <div className="bg-gradient-primary p-5 text-white">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-xs uppercase tracking-wider opacity-70">Current Plan</div>
+                    <div className="font-display text-2xl font-bold">{sub.planLabel}</div>
+                    <div className="mt-1 text-sm opacity-80">
+                      {formatINR(sub.pricePerMonth)} / month
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge
+                      className={
+                        sub.isPaid
+                          ? "bg-success text-success-foreground"
+                          : "bg-destructive text-destructive-foreground"
+                      }
+                    >
+                      {sub.isPaid ? "Paid" : "Unpaid"}
+                    </Badge>
+                    {sub.dueAmount > 0 && (
+                      <div className="mt-1 text-[10px] font-bold text-white">
+                        Due: {formatINR(sub.dueAmount)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-2 text-2xl">
+                  {sub.meals.includes("Breakfast") && <span>🌅</span>}
+                  {sub.meals.includes("Lunch") && <span>🍱</span>}
+                  {sub.meals.includes("Dinner") && <span>🌙</span>}
+                </div>
+              </div>
+              <div className="p-5">
+                <SubscriptionBar sub={sub} />
+              </div>
+            </Card>
+
+            {/* Historical Check-in Scan logs */}
+            <Card className="p-4 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
+              <div className="mb-3 flex items-center gap-2 border-b pb-2">
+                <History className="h-4 w-4 text-muted-foreground" />
+                <div className="font-display text-lg font-bold">Recent Scans</div>
+              </div>
+              {myLogs.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">No scans yet.</p>
+              ) : (
+                <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+                  {myLogs.map((l) => (
+                    <div
+                      key={l.id}
+                      className="flex items-center justify-between rounded-lg border p-3 text-sm bg-muted/5 hover:bg-muted/10 transition-all"
+                    >
+                      <div>
+                        <div className="font-medium">
+                          {l.meal}{" "}
+                          <span className="text-[10px] text-muted-foreground font-normal">
+                            · {formatTimestamp(l.timestamp)}
+                          </span>
+                        </div>
+                        {l.status === "denied" && (
+                          <div className="text-[10px] text-destructive font-medium mt-0.5">
+                            {l.denialReason}
+                          </div>
+                        )}
+                      </div>
+                      <Badge
+                        variant={l.status === "allowed" ? "default" : "destructive"}
+                        className={l.status === "allowed" ? "bg-success text-success-foreground" : ""}
+                      >
+                        {l.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
       </main>
     </div>
   );
