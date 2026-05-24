@@ -16,11 +16,11 @@ export function MealChip({ meal, state }: { meal: Meal; state: State }) {
   return (
     <div
       className={cn(
-        "flex flex-col items-start gap-1 rounded-xl border p-2 sm:p-3 transition-all min-w-0 w-full",
-        state === "used" && "border-success/30 bg-success/10",
-        state === "available" && "border-primary/30 bg-primary/5",
-        state === "window-closed" && "border-warning/30 bg-warning/10",
-        state === "not-in-plan" && "border-border bg-muted/40 opacity-60",
+        "flex flex-col items-start gap-1 rounded-xl border p-2 sm:p-3 transition-all duration-300 min-w-0 w-full hover:scale-[1.03] hover:shadow-xs cursor-pointer",
+        state === "used" && "border-success/30 bg-success/5 dark:bg-success/5 hover:border-success/55",
+        state === "available" && "border-primary/30 bg-primary/[0.03] dark:bg-primary/[0.03] hover:border-primary/55",
+        state === "window-closed" && "border-warning/30 bg-warning/5 dark:bg-warning/5 hover:border-warning/55",
+        state === "not-in-plan" && "border-border bg-muted/40 opacity-60 hover:opacity-80",
       )}
     >
       <div className="flex items-center gap-1 sm:gap-2 min-w-0 w-full">

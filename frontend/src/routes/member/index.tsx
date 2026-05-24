@@ -551,7 +551,11 @@ function MemberPortal() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-12">
+    <div className="min-h-screen bg-linear-to-b from-background via-background/98 to-primary/[0.01] pb-12 relative overflow-hidden">
+      {/* Decorative premium ambient glow circles */}
+      <div className="absolute top-[-10%] left-[-15%] w-[50%] h-[40%] bg-primary/[0.03] dark:bg-primary/[0.015] blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-15%] w-[50%] h-[40%] bg-primary/[0.02] dark:bg-primary/[0.01] blur-[120px] rounded-full pointer-events-none" />
+
       {!isOnline && (
         <div className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-4 py-2.5 text-center text-xs font-semibold flex items-center justify-center gap-2 shadow-sm border-b border-white/10 animate-in slide-in-from-top duration-300">
           <span className="inline-block h-2 w-2 rounded-full bg-white animate-pulse shrink-0" />
@@ -742,118 +746,11 @@ function MemberPortal() {
           </div>
         )}
 
-        {/* COLUMN 1: Today's Menu & Meals Status (Visible if activeTab === 'today' on mobile) */}
-        <div
-          className={`md:col-span-3 space-y-4 ${activeTab === "today" ? "block" : "hidden md:block"}`}
-        >
-          {/* Today's Menu */}
-          <Card className="p-4 sm:p-5 shadow-sm border-border bg-card">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
-                <span>🍽️</span> Today's Menu
-              </div>
-              <Badge
-                variant="secondary"
-                className="text-[10px] font-semibold tracking-wide bg-primary/10 text-primary"
-              >
-                Fresh & Hygienic
-              </Badge>
-            </div>
-            <div className="space-y-3">
-              {menusQ.isLoading ? (
-                <div className="py-6 text-center text-xs text-muted-foreground">
-                  Loading today's menu…
-                </div>
-              ) : menus.length === 0 ? (
-                <div className="py-6 text-center text-xs text-muted-foreground italic">
-                  No menu items configured for today yet.
-                </div>
-              ) : (
-                (["Breakfast", "Lunch", "Dinner"] as Meal[]).map((mealType) => {
-                  const m = menus.find((x) => x.meal === mealType);
-                  const isActive = activeMeal === mealType;
-                  const w = windows.find((x) => x.meal === mealType);
-                  const timeStr = w
-                    ? `(${formatTime12h(w.startTime)} - ${formatTime12h(w.endTime)})`
-                    : "";
-
-                  return (
-                    <div
-                      key={mealType}
-                      className={cn(
-                        "rounded-xl p-3 border transition-all duration-200",
-                        isActive
-                          ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary/20"
-                          : "bg-muted/10 border-muted/40 opacity-75",
-                      )}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm">
-                            {mealType === "Breakfast" ? "🍳" : mealType === "Lunch" ? "🍛" : "🍲"}
-                          </span>
-                          <span className="font-bold text-sm">{mealType}</span>
-                          <span className="text-[10px] text-muted-foreground font-normal">
-                            {timeStr}
-                          </span>
-                        </div>
-                        {isActive && (
-                          <Badge className="bg-primary hover:bg-primary text-[9px] font-extrabold tracking-wider px-2 py-0.5 animate-pulse">
-                            ACTIVE MEAL
-                          </Badge>
-                        )}
-                      </div>
-                      {m && m.items.length > 0 ? (
-                        <div className="space-y-1.5">
-                          <div className="flex flex-wrap gap-1">
-                            {m.items.map((item) => (
-                              <span
-                                key={item}
-                                className="bg-background/80 dark:bg-background/40 border border-border text-foreground px-2 py-0.5 rounded-full text-[11px] font-medium shadow-xs"
-                              >
-                                {item}
-                              </span>
-                            ))}
-                          </div>
-                          {m.notes && (
-                            <p className="text-[11px] text-primary font-semibold italic mt-1 pl-1 border-l-2 border-primary/40">
-                              💡 {m.notes}
-                            </p>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-[11px] text-muted-foreground/60 italic pl-1">
-                          No items added yet.
-                        </p>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </Card>
-
-          {/* Today's Meals Status */}
-          <Card className="p-4 sm:p-5 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <div className="font-display text-base sm:text-lg font-bold">Today's Meals</div>
-              <PlanBadge planId={sub.planId} label={sub.planLabel} />
-            </div>
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-              {MEALS.map((m) => (
-                <MealChip key={m} meal={m} state={stateOf(m)} />
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        {/* COLUMN 2: Pass & Warnings (Visible if activeTab === 'pass' on mobile) */}
-        <div
-          className={`md:col-span-3 space-y-4 ${activeTab === "pass" ? "block" : "hidden md:block"}`}
-        >
+        {/* COLUMN 1: Pass & Access (Visible if activeTab === 'pass' on mobile) */}
+        <div className="md:col-span-4 space-y-4 block md:block">
           {/* Expiry Warning */}
           {!expired && left <= 3 && sub.isPaid && (
-            <Card className="border-warning/40 bg-warning/10 p-4 animate-pulse">
+            <Card className={cn("border-warning/40 bg-warning/10 p-4 animate-pulse transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "pass" ? "block" : "hidden md:block")}>
               <div className="flex items-start gap-3">
                 <AlertTriangle className="mt-0.5 h-5 w-5 text-warning animate-bounce" />
                 <div>
@@ -869,7 +766,7 @@ function MemberPortal() {
           )}
 
           {/* Secure Dining Pass QR */}
-          <Card className="p-5 sm:p-6 shadow-sm">
+          <Card className={cn("p-5 sm:p-6 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "pass" ? "block" : "hidden md:block")}>
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <div className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -909,7 +806,7 @@ function MemberPortal() {
           </Card>
 
           {/* Guest Passes Card */}
-          <Card className="p-5 sm:p-6 shadow-sm space-y-4">
+          <Card className={cn("p-5 sm:p-6 shadow-sm space-y-4 transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "pass" ? "block" : "hidden md:block")}>
             <div className="flex items-center justify-between border-b pb-2">
               <div>
                 <div className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -1100,11 +997,113 @@ function MemberPortal() {
           </Card>
         </div>
 
-        {/* COLUMN 3: Skip Meals Planner (Visible if activeTab === 'skips' on mobile) */}
-        <div
-          className={`md:col-span-3 space-y-4 ${activeTab === "skips" ? "block" : "hidden md:block"}`}
-        >
-          <Card className="p-4 sm:p-5 shadow-sm space-y-4 border-border bg-card">
+        {/* COLUMN 2: Meals & Dining (Visible if activeTab === 'today' on mobile) */}
+        <div className="md:col-span-4 space-y-4 block md:block">
+          {/* Today's Menu */}
+          <Card className={cn("p-4 sm:p-5 shadow-sm border-border bg-card transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "today" ? "block" : "hidden md:block")}>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
+                <span>🍽️</span> Today's Menu
+              </div>
+              <Badge
+                variant="secondary"
+                className="text-[10px] font-semibold tracking-wide bg-primary/10 text-primary"
+              >
+                Fresh & Hygienic
+              </Badge>
+            </div>
+            <div className="space-y-3">
+              {menusQ.isLoading ? (
+                <div className="py-6 text-center text-xs text-muted-foreground">
+                  Loading today's menu…
+                </div>
+              ) : menus.length === 0 ? (
+                <div className="py-6 text-center text-xs text-muted-foreground italic">
+                  No menu items configured for today yet.
+                </div>
+              ) : (
+                (["Breakfast", "Lunch", "Dinner"] as Meal[]).map((mealType) => {
+                  const m = menus.find((x) => x.meal === mealType);
+                  const isActive = activeMeal === mealType;
+                  const w = windows.find((x) => x.meal === mealType);
+                  const timeStr = w
+                    ? `(${formatTime12h(w.startTime)} - ${formatTime12h(w.endTime)})`
+                    : "";
+
+                  return (
+                    <div
+                      key={mealType}
+                      className={cn(
+                        "rounded-xl p-3 border transition-all duration-200",
+                        isActive
+                          ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary/20"
+                          : "bg-muted/10 border-muted/40 opacity-75",
+                      )}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm">
+                            {mealType === "Breakfast" ? "🍳" : mealType === "Lunch" ? "🍛" : "🍲"}
+                          </span>
+                          <span className="font-bold text-sm">{mealType}</span>
+                          <span className="text-[10px] text-muted-foreground font-normal">
+                            {timeStr}
+                          </span>
+                        </div>
+                        {isActive && (
+                          <Badge className="bg-primary hover:bg-primary text-[9px] font-extrabold tracking-wider px-2 py-0.5 animate-pulse">
+                            ACTIVE MEAL
+                          </Badge>
+                        )}
+                      </div>
+                      {m && m.items.length > 0 ? (
+                        <div className="space-y-1.5">
+                          <div className="flex flex-wrap gap-1">
+                            {m.items.map((item) => (
+                              <span
+                                key={item}
+                                className="bg-background/80 dark:bg-background/40 border border-border text-foreground px-2 py-0.5 rounded-full text-[11px] font-medium shadow-xs"
+                              >
+                                {item}
+                              </span>
+                            ))}
+                          </div>
+                          {m.notes && (
+                            <p className="text-[11px] text-primary font-semibold italic mt-1 pl-1 border-l-2 border-primary/40">
+                              💡 {m.notes}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground/60 italic pl-1">
+                          No items added yet.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </Card>
+
+          {/* Today's Meals Status */}
+          <Card className={cn("p-4 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "today" ? "block" : "hidden md:block")}>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="font-display text-base sm:text-lg font-bold">Today's Meals</div>
+              <PlanBadge planId={sub.planId} label={sub.planLabel} />
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+              {MEALS.map((m) => (
+                <MealChip key={m} meal={m} state={stateOf(m)} />
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        {/* COLUMN 3: Status & Schedule (Visible on mobile skips/account tabs) */}
+        <div className="md:col-span-4 space-y-4 block md:block">
+          {/* Skip Meals Planner */}
+          <Card className={cn("p-4 sm:p-5 shadow-sm space-y-4 border-border bg-card transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "skips" ? "block" : "hidden md:block")}>
             <div className="flex items-center justify-between border-b pb-2">
               <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
                 <span>🗓️</span> Skip Meals
@@ -1214,14 +1213,9 @@ function MemberPortal() {
               )}
             </div>
           </Card>
-        </div>
 
-        {/* COLUMN 4: Subscription & Historical logs (Visible if activeTab === 'account' on mobile) */}
-        <div
-          className={`md:col-span-3 space-y-4 ${activeTab === "account" ? "block" : "hidden md:block"}`}
-        >
           {/* Subscription Progress Card */}
-          <Card className="overflow-hidden p-0 shadow-sm">
+          <Card className={cn("overflow-hidden p-0 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "account" ? "block" : "hidden md:block")}>
             <div className="bg-gradient-primary p-5 text-white">
               <div className="flex items-start justify-between">
                 <div>
@@ -1260,7 +1254,7 @@ function MemberPortal() {
           </Card>
 
           {/* Historical Check-in Scan logs */}
-          <Card className="p-4 sm:p-5 shadow-sm">
+          <Card className={cn("p-4 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]", activeTab === "account" ? "block" : "hidden md:block")}>
             <div className="mb-3 flex items-center gap-2 border-b pb-2">
               <History className="h-4 w-4 text-muted-foreground" />
               <div className="font-display text-lg font-bold">Recent Scans</div>
