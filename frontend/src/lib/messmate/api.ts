@@ -386,7 +386,7 @@ export const menusApi = {
     if (params.endDate) q.set("endDate", params.endDate);
     return request<Menu[]>(`/menus?${q.toString()}`);
   },
-  save: (data: { date: string; meal: string; items: string[]; notes?: string }) =>
+  save: (data: { date: string; meal: string; dietType?: "Veg" | "Non-Veg"; items: string[]; notes?: string }) =>
     request<Menu>("/menus", { method: "POST", body: JSON.stringify(data) }),
   remove: (id: number) => request<{ ok: boolean }>(`/menus/${id}`, { method: "DELETE" }),
 };
