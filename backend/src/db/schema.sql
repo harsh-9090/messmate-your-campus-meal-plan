@@ -281,7 +281,8 @@ BEGIN
       sub_paid_at = latest_sub.paid_at,
       sub_price_per_month = latest_sub.price_per_month,
       sub_amount_paid = latest_sub.amount_paid,
-      sub_renewed_at = latest_sub.renewed_at
+      sub_renewed_at = latest_sub.renewed_at,
+      sub_diet_type = latest_sub.diet_type
     WHERE member_id = NEW.member_id;
   END IF;
   RETURN NEW;
@@ -294,3 +295,14 @@ AFTER INSERT OR UPDATE ON subscriptions
 FOR EACH ROW
 EXECUTE FUNCTION sync_member_subscription();
 
+-- Veg/Non-Veg Diet Support Migrations
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS diet_type TEXT NOT NULL DEFAULT 'Veg' CHECK (diet_type IN ('Veg', 'Non-Veg', 'Both'));
+ALTER TABLE members ADD COLUMN IF NOT EXISTS sub_diet_type TEXT NOT NULL DEFAULT 'Veg' CHECK (sub_diet_type IN ('Veg', 'Non-Veg', 'Both'));
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS diet_type TEXT NOT NULL DEFAULT 'Veg' CHECK (diet_type IN ('Veg', 'Non-Veg', 'Both'));
+
+ALTER TABLE menus ADD COLUMN IF NOT EXISTS diet_type TEXT NOT NULL DEFAULT 'Veg' CHECK (diet_type IN ('Veg', 'Non-Veg'));
+ALTER TABLE menus DROP CONSTRAINT IF EXISTS menus_date_meal_key;
+ALTER TABLE menus DROP CONSTRAINT IF EXISTS menus_date_meal_diet_type_key;
+ALTER TABLE menus ADD CONSTRAINT menus_date_meal_diet_type_key UNIQUE (date, meal, diet_type);
+
+ALTER TABLE scan_logs ADD COLUMN IF NOT EXISTS diet_served TEXT CHECK (diet_served IN ('Veg', 'Non-Veg'));

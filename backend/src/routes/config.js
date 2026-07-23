@@ -48,6 +48,10 @@ const planCreateSchema = [
     .optional()
     .isBoolean()
     .withMessage("isActive must be a boolean"),
+  body("dietType")
+    .optional()
+    .isIn(["Veg", "Non-Veg", "Both"])
+    .withMessage("dietType must be Veg, Non-Veg, or Both"),
   validate
 ];
 
@@ -85,6 +89,10 @@ const planUpdateSchema = [
     .optional()
     .isBoolean()
     .withMessage("isActive must be a boolean"),
+  body("dietType")
+    .optional()
+    .isIn(["Veg", "Non-Veg", "Both"])
+    .withMessage("dietType must be Veg, Non-Veg, or Both"),
   validate
 ];
 
@@ -119,7 +127,7 @@ router.get("/plans", async (_req, res, next) => {
 
     const { rows } = await query(`SELECT * FROM plans WHERE is_active = TRUE ORDER BY price_per_month DESC`);
     const result = rows.map((p) => ({
-      planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active,
+      planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active, dietType: p.diet_type,
     }));
     await setCache("messmate:plan:list", result, 1800); // 30 min
     res.json(result);
@@ -146,23 +154,23 @@ router.use(verifyToken);
 
 router.post("/plans", requireRole("admin"), planCreateSchema, async (req, res, next) => {
   try {
-    const { planId, label, meals, pricePerMonth, durationMonths = 1, isActive = true } = req.body;
+    const { planId, label, meals, pricePerMonth, durationMonths = 1, isActive = true, dietType = "Veg" } = req.body;
     const { rows } = await query(
-      `INSERT INTO plans (plan_id, label, meals, price_per_month, duration_months, is_active)
-       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [planId, label, meals, pricePerMonth, durationMonths, isActive]
+      `INSERT INTO plans (plan_id, label, meals, price_per_month, duration_months, is_active, diet_type)
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      [planId, label, meals, pricePerMonth, durationMonths, isActive, dietType]
     );
     
     await delCache(["messmate:plan:list", `messmate:plan:${planId}`]);
     
     const p = rows[0];
-    res.status(201).json({ planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active });
+    res.status(201).json({ planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active, dietType: p.diet_type });
   } catch (e) { next(e); }
 });
 
 router.put("/plans/:planId", requireRole("admin"), planUpdateSchema, async (req, res, next) => {
   try {
-    const allowed = { label: "label", meals: "meals", pricePerMonth: "price_per_month", durationMonths: "duration_months", isActive: "is_active" };
+    const allowed = { label: "label", meals: "meals", pricePerMonth: "price_per_month", durationMonths: "duration_months", isActive: "is_active", dietType: "diet_type" };
     const sets = []; const params = [];
     for (const [k, col] of Object.entries(allowed)) {
       if (k in req.body) { params.push(req.body[k]); sets.push(`${col} = $${params.length}`); }
@@ -179,7 +187,7 @@ router.put("/plans/:planId", requireRole("admin"), planUpdateSchema, async (req,
     await delCache(["messmate:plan:list", `messmate:plan:${req.params.planId}`]);
     
     const p = rows[0];
-    res.json({ planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active });
+    res.json({ planId: p.plan_id, label: p.label, meals: p.meals, pricePerMonth: p.price_per_month, durationMonths: p.duration_months, isActive: p.is_active, dietType: p.diet_type });
   } catch (e) { next(e); }
 });
 

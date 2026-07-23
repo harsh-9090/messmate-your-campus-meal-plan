@@ -1025,7 +1025,15 @@ function MemberPortal() {
                   </div>
                 ) : (
                   (["Breakfast", "Lunch", "Dinner"] as Meal[]).map((mealType) => {
-                    const m = menus.find((x) => x.meal === mealType);
+                    const dietType = sub.dietType || "Veg";
+                    const mealMenus = menus.filter(
+                      (x) =>
+                        x.meal === mealType &&
+                        (dietType === "Both"
+                          ? true
+                          : x.dietType === dietType || (!x.dietType && dietType === "Veg"))
+                    );
+
                     const isActive = activeMeal === mealType;
                     const w = windows.find((x) => x.meal === mealType);
                     const timeStr = w
@@ -1058,27 +1066,35 @@ function MemberPortal() {
                             </Badge>
                           )}
                         </div>
-                        {m && m.items.length > 0 ? (
-                          <div className="space-y-1.5">
-                            <div className="flex flex-wrap gap-1">
-                              {m.items.map((item) => (
-                                <span
-                                  key={item}
-                                  className="bg-background/80 dark:bg-background/40 border border-border text-foreground px-2 py-0.5 rounded-full text-[11px] font-medium shadow-xs"
-                                >
-                                  {item}
-                                </span>
-                              ))}
+
+                        {mealMenus.length > 0 ? (
+                          mealMenus.map((m, i) => (
+                            <div key={i} className={cn("space-y-1.5", i > 0 && "mt-3 pt-3 border-t border-border/50")}>
+                              {dietType === "Both" && m.dietType && (
+                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                                  {m.dietType} Option
+                                </div>
+                              )}
+                              <div className="flex flex-wrap gap-1">
+                                {m.items.map((item) => (
+                                  <span
+                                    key={item}
+                                    className="bg-background/80 dark:bg-background/40 border border-border text-foreground px-2 py-0.5 rounded-full text-[11px] font-medium shadow-xs"
+                                  >
+                                    {item}
+                                  </span>
+                                ))}
+                              </div>
+                              {m.notes && (
+                                <p className="text-[11px] text-primary font-semibold italic mt-1 pl-1 border-l-2 border-primary/40">
+                                  💡 {m.notes}
+                                </p>
+                              )}
                             </div>
-                            {m.notes && (
-                              <p className="text-[11px] text-primary font-semibold italic mt-1 pl-1 border-l-2 border-primary/40">
-                                💡 {m.notes}
-                              </p>
-                            )}
-                          </div>
+                          ))
                         ) : (
                           <p className="text-[11px] text-muted-foreground/60 italic pl-1">
-                            No items added yet.
+                            No menu items added yet.
                           </p>
                         )}
                       </div>

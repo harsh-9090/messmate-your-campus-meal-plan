@@ -18,6 +18,7 @@ export interface Plan {
   pricePerMonth: number;
   durationMonths: number;
   isActive?: boolean;
+  dietType?: "Veg" | "Non-Veg" | "Both";
 }
 
 export interface Subscription {
@@ -32,6 +33,7 @@ export interface Subscription {
   pricePerMonth: number;
   renewedAt?: string;
   renewalCount: number;
+  dietType?: "Veg" | "Non-Veg" | "Both";
 }
 
 export interface Member {
@@ -84,6 +86,7 @@ export interface ScanResult {
   mealsRemainingToday?: number;
   daysRemainingInPlan?: number;
   planLabel?: string;
+  dietType?: "Veg" | "Non-Veg" | "Both";
 }
 
 export interface Payment {
@@ -103,6 +106,7 @@ export interface Menu {
   id: number;
   date: string; // YYYY-MM-DD
   meal: Meal;
+  dietType?: "Veg" | "Non-Veg";
   items: string[];
   notes?: string;
   createdAt: string;

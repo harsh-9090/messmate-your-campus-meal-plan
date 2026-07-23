@@ -25,6 +25,13 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MEALS } from "@/lib/messmate/constants";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -131,6 +138,12 @@ function PlanConfigPage() {
                         <Badge variant="outline" className="text-[9px] h-3.5 px-1">
                           Inactive
                         </Badge>
+                      )}
+                      {p.dietType === "Non-Veg" && (
+                        <Badge variant="destructive" className="text-[9px] h-3.5 px-1">Non-Veg</Badge>
+                      )}
+                      {p.dietType === "Both" && (
+                        <Badge variant="secondary" className="text-[9px] h-3.5 px-1">Both</Badge>
                       )}
                     </div>
                     <div className="mt-1">
@@ -324,6 +337,7 @@ function AddPlanDialog({
   const [label, setLabel] = useState("");
   const [price, setPrice] = useState("");
   const [duration, setDuration] = useState("1");
+  const [dietType, setDietType] = useState<"Veg" | "Non-Veg" | "Both">("Veg");
   const [meals, setMeals] = useState<Meal[]>(["Breakfast", "Lunch", "Dinner"]);
 
   const createM = useMutation({
@@ -333,6 +347,7 @@ function AddPlanDialog({
         label,
         pricePerMonth: parseInt(price) || 0,
         durationMonths: parseInt(duration) || 1,
+        dietType,
         meals,
       }),
     onSuccess: () => {
@@ -343,6 +358,7 @@ function AddPlanDialog({
       setLabel("");
       setPrice("");
       setDuration("1");
+      setDietType("Veg");
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
@@ -394,6 +410,19 @@ function AddPlanDialog({
             </div>
           </div>
           <div className="space-y-2">
+            <Label>Diet Type</Label>
+            <Select value={dietType} onValueChange={(v: any) => setDietType(v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Diet Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Veg">Veg Only</SelectItem>
+                <SelectItem value="Non-Veg">Non-Veg Included</SelectItem>
+                <SelectItem value="Both">Both (Choice)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>Included Meals</Label>
             <div className="flex gap-4">
               {MEALS.map((m) => (
@@ -440,6 +469,7 @@ function EditPlanDialog({
   const [label, setLabel] = useState(plan.label);
   const [price, setPrice] = useState(plan.pricePerMonth.toString());
   const [duration, setDuration] = useState((plan.durationMonths ?? 1).toString());
+  const [dietType, setDietType] = useState<"Veg" | "Non-Veg" | "Both">(plan.dietType || "Veg");
   const [meals, setMeals] = useState<Meal[]>(plan.meals);
 
   const saveM = useMutation({
@@ -448,6 +478,7 @@ function EditPlanDialog({
         label,
         pricePerMonth: parseInt(price) || 0,
         durationMonths: parseInt(duration) || 1,
+        dietType,
         meals,
       }),
     onSuccess: () => {
@@ -484,6 +515,19 @@ function EditPlanDialog({
                 onChange={(e) => setDuration(e.target.value)}
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Diet Type</Label>
+            <Select value={dietType} onValueChange={(v: any) => setDietType(v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Diet Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Veg">Veg Only</SelectItem>
+                <SelectItem value="Non-Veg">Non-Veg Included</SelectItem>
+                <SelectItem value="Both">Both (Choice)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Included Meals</Label>

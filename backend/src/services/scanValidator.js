@@ -21,12 +21,12 @@ const inWindow = (now, w) => {
   return cur >= sh * 60 + sm && cur <= eh * 60 + em;
 };
 
-async function logScan({ memberId, memberName, meal, status, code, reason, scannedBy, deviceInfo }) {
+async function logScan({ memberId, memberName, meal, status, code, reason, scannedBy, deviceInfo, dietServed }) {
   const date = todayStr();
   await query(
-    `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by, device_info)
-     VALUES ($1,$2,$3,$4,NOW(),$5,$6,$7,$8,$9)`,
-    [memberId || null, memberName || null, meal, date, status, code || null, reason || null, scannedBy || null, deviceInfo || null]
+    `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by, device_info, diet_served)
+     VALUES ($1,$2,$3,$4,NOW(),$5,$6,$7,$8,$9,$10)`,
+    [memberId || null, memberName || null, meal, date, status, code || null, reason || null, scannedBy || null, deviceInfo || null, dietServed || null]
   );
   
   // Invalidate scan logs caches
@@ -51,7 +51,7 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
   }
 
   const sub = member.subscription || {};
-  const base = { memberId: member.memberId, memberName: member.name, meal, scannedBy, deviceInfo };
+  const base = { memberId: member.memberId, memberName: member.name, meal, scannedBy, deviceInfo, dietServed: sub.dietType || 'Veg' };
 
   if (!sub.isPaid) {
     const start = sub.startDate ? new Date(sub.startDate) : new Date(member.createdAt);
@@ -157,7 +157,7 @@ export async function validateAndRecord({ member, meal, scannedBy, deviceInfo })
   const daysLeft = sub.endDate ? Math.max(0, differenceInCalendarDays(new Date(sub.endDate), now)) : 0;
 
   return {
-    status: "allowed", meal, member: memberInfo, planLabel: sub.planLabel,
+    status: "allowed", meal, member: memberInfo, planLabel: sub.planLabel, dietType: sub.dietType || 'Veg',
     mealsUsedToday: used, mealsRemainingToday: Math.max(0, totalToday - used), daysRemainingInPlan: daysLeft,
   };
 }

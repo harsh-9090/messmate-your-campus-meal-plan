@@ -49,7 +49,7 @@ export function rowToMember(r) {
     member_id, name, email, mobile, photo_url, role, is_active,
     sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
     sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewed_at, sub_renewal_count,
-    password_hash, created_at, updated_at,
+    sub_diet_type, password_hash, created_at, updated_at,
     email_verified,
   } = r;
   return {
@@ -73,6 +73,7 @@ export function rowToMember(r) {
       pricePerMonth: sub_price_per_month,
       renewedAt: sub_renewed_at,
       renewalCount: sub_renewal_count,
+      dietType: sub_diet_type || 'Veg',
     },
     createdAt: created_at,
     updatedAt: updated_at,

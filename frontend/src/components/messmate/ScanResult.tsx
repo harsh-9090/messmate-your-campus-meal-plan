@@ -129,6 +129,34 @@ export function ScanResultScreen({
             {result.meal}
             {result.code ? ` · ${result.code.replace(/_/g, " ")}` : ""}
           </p>
+
+          {allowed && result.dietType && (
+            <div className="mt-6 flex justify-center">
+              <div
+                className={cn(
+                  "flex items-center gap-3 px-6 py-3 rounded-2xl border-4 font-black text-3xl tracking-widest uppercase shadow-xl bg-white",
+                  result.dietType === "Non-Veg"
+                    ? "border-red-600 text-red-700"
+                    : "border-green-600 text-green-700"
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex items-center justify-center h-8 w-8 border-[3px] rounded-sm",
+                    result.dietType === "Non-Veg" ? "border-red-600" : "border-green-600"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "h-4 w-4 rounded-full",
+                      result.dietType === "Non-Veg" ? "bg-red-600" : "bg-green-600"
+                    )}
+                  />
+                </div>
+                {result.dietType}
+              </div>
+            </div>
+          )}
         </div>
 
         {result.member ? (

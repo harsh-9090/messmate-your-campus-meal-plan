@@ -39,12 +39,8 @@ function MenuPlannerPage() {
   const qc = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
 
-  // Tag inputs state for each meal
-  const [tagInputs, setTagInputs] = useState<Record<Meal, string>>({
-    Breakfast: "",
-    Lunch: "",
-    Dinner: "",
-  });
+  // Tag inputs state for each panel (key is meal_dietType)
+  const [tagInputs, setTagInputs] = useState<Record<string, string>>({});
 
   // Calculate 14 days around selectedDate for horizontal slider (7 days before, 7 days after)
   const dateList = useMemo(() => {
@@ -82,28 +78,29 @@ function MenuPlannerPage() {
     return menusMap.get(selectedDate) ?? [];
   }, [menusMap, selectedDate]);
 
+  // Available configuration panels
+  const CONFIG_PANELS: { meal: Meal; dietType: "Veg" | "Non-Veg" }[] = [
+    { meal: "Breakfast", dietType: "Veg" },
+    { meal: "Lunch", dietType: "Veg" },
+    { meal: "Lunch", dietType: "Non-Veg" },
+    { meal: "Dinner", dietType: "Veg" },
+    { meal: "Dinner", dietType: "Non-Veg" },
+  ];
+
   // Set up local form state dynamically based on activeMenus
-  const [mealConfigs, setMealConfigs] = useState<Record<Meal, MealConfig>>({
-    Breakfast: { items: [], notes: "" },
-    Lunch: { items: [], notes: "" },
-    Dinner: { items: [], notes: "" },
-  });
+  const [mealConfigs, setMealConfigs] = useState<Record<string, MealConfig>>({});
 
   // Hydrate local states once data is fetched or selectedDate changes
   React.useEffect(() => {
-    const nextConfigs: Record<Meal, MealConfig> = {
-      Breakfast: { items: [], notes: "" },
-      Lunch: { items: [], notes: "" },
-      Dinner: { items: [], notes: "" },
-    };
+    const nextConfigs: Record<string, MealConfig> = {};
 
-    activeMenus.forEach((m) => {
-      if (nextConfigs[m.meal]) {
-        nextConfigs[m.meal] = {
-          items: m.items,
-          notes: m.notes ?? "",
-        };
-      }
+    CONFIG_PANELS.forEach(({ meal, dietType }) => {
+      const key = `${meal}_${dietType}`;
+      const m = activeMenus.find((x) => x.meal === meal && x.dietType === dietType) || activeMenus.find((x) => x.meal === meal && !x.dietType && dietType === "Veg");
+      nextConfigs[key] = {
+        items: m?.items || [],
+        notes: m?.notes || "",
+      };
     });
 
     setMealConfigs(nextConfigs);
@@ -111,10 +108,11 @@ function MenuPlannerPage() {
 
   // Mutation to save/update a specific meal menu
   const saveMenuM = useMutation({
-    mutationFn: (args: { meal: Meal; config: MealConfig }) =>
+    mutationFn: (args: { meal: Meal; dietType: "Veg" | "Non-Veg"; config: MealConfig }) =>
       menusApi.save({
         date: selectedDate,
         meal: args.meal,
+        dietType: args.dietType,
         items: args.config.items,
         notes: args.config.notes,
       }),
@@ -136,8 +134,8 @@ function MenuPlannerPage() {
     },
   });
 
-  const handleAddTag = (meal: Meal) => {
-    const val = tagInputs[meal].trim();
+  const handleAddTag = (key: string) => {
+    const val = (tagInputs[key] || "").trim();
     if (!val) return;
 
     // Support comma-separated item entries
@@ -148,32 +146,32 @@ function MenuPlannerPage() {
 
     setMealConfigs((prev) => ({
       ...prev,
-      [meal]: {
-        ...prev[meal],
-        items: [...new Set([...prev[meal].items, ...newItems])],
+      [key]: {
+        ...prev[key],
+        items: [...new Set([...(prev[key]?.items || []), ...newItems])],
       },
     }));
 
-    setTagInputs((prev) => ({ ...prev, [meal]: "" }));
+    setTagInputs((prev) => ({ ...prev, [key]: "" }));
   };
 
-  const handleRemoveTag = (meal: Meal, tag: string) => {
+  const handleRemoveTag = (key: string, tag: string) => {
     setMealConfigs((prev) => ({
       ...prev,
-      [meal]: {
-        ...prev[meal],
-        items: prev[meal].items.filter((x) => x !== tag),
+      [key]: {
+        ...prev[key],
+        items: prev[key].items.filter((x) => x !== tag),
       },
     }));
   };
 
-  const handleSaveMeal = (meal: Meal) => {
-    const config = mealConfigs[meal];
-    if (config.items.length === 0) {
-      toast.warning(`Please add at least one dish for ${meal}`);
+  const handleSaveMeal = (meal: Meal, dietType: "Veg" | "Non-Veg", key: string) => {
+    const config = mealConfigs[key];
+    if (!config || config.items.length === 0) {
+      toast.warning(`Please add at least one dish for ${meal} (${dietType})`);
       return;
     }
-    saveMenuM.mutate({ meal, config });
+    saveMenuM.mutate({ meal, dietType, config });
   };
 
   const handleCopyYesterday = () => {
@@ -187,7 +185,9 @@ function MenuPlannerPage() {
 
     const nextConfigs = { ...mealConfigs };
     yesterdayMenus.forEach((m) => {
-      nextConfigs[m.meal] = {
+      const dt = m.dietType || "Veg";
+      const key = `${m.meal}_${dt}`;
+      nextConfigs[key] = {
         items: m.items,
         notes: m.notes ?? "",
       };
@@ -301,15 +301,18 @@ function MenuPlannerPage() {
       </div>
 
       {/* Meals Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {(["Breakfast", "Lunch", "Dinner"] as Meal[]).map((meal) => {
-          const config = mealConfigs[meal];
-          const dbMenu = activeMenus.find((m) => m.meal === meal);
-          const isSaving = saveMenuM.isPending && saveMenuM.variables?.meal === meal;
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {CONFIG_PANELS.map(({ meal, dietType }) => {
+          const key = `${meal}_${dietType}`;
+          const config = mealConfigs[key] || { items: [], notes: "" };
+          const dbMenu = activeMenus.find(
+            (m) => m.meal === meal && (m.dietType === dietType || (!m.dietType && dietType === "Veg"))
+          );
+          const isSaving = saveMenuM.isPending && saveMenuM.variables?.meal === meal && saveMenuM.variables?.dietType === dietType;
 
           return (
             <Card
-              key={meal}
+              key={key}
               className={cn(
                 "flex flex-col overflow-hidden border-border bg-card shadow-sm hover:shadow-md transition-all duration-200",
                 config.items.length > 0 && "border-primary/20",
@@ -322,7 +325,12 @@ function MenuPlannerPage() {
                     <UtensilsCrossed className="h-4 w-4" />
                   </div>
                   <div>
-                    <h3 className="font-display font-bold leading-tight">{meal}</h3>
+                    <h3 className="font-display font-bold leading-tight flex items-center gap-1.5">
+                      {meal}
+                      <Badge variant={dietType === "Veg" ? "default" : "destructive"} className="text-[9px] px-1 h-3.5 leading-none">
+                        {dietType}
+                      </Badge>
+                    </h3>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
                       {(() => {
                         const w = windows.find((x) => x.meal === meal);
@@ -356,18 +364,18 @@ function MenuPlannerPage() {
                   <div className="flex gap-2">
                     <Input
                       placeholder="Type dish & hit Enter or Add…"
-                      value={tagInputs[meal]}
+                      value={tagInputs[key] || ""}
                       onChange={(e) =>
-                        setTagInputs((prev) => ({ ...prev, [meal]: e.target.value }))
+                        setTagInputs((prev) => ({ ...prev, [key]: e.target.value }))
                       }
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
-                          handleAddTag(meal);
+                          handleAddTag(key);
                         }
                       }}
                     />
-                    <Button size="icon" variant="secondary" onClick={() => handleAddTag(meal)}>
+                    <Button size="icon" variant="secondary" onClick={() => handleAddTag(key)}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
@@ -387,7 +395,7 @@ function MenuPlannerPage() {
                         >
                           {item}
                           <button
-                            onClick={() => handleRemoveTag(meal, item)}
+                            onClick={() => handleRemoveTag(key, item)}
                             className="text-muted-foreground group-hover:text-destructive rounded-full p-0.5 hover:bg-muted transition-all duration-150"
                           >
                             <X className="h-3 w-3" />
@@ -409,7 +417,7 @@ function MenuPlannerPage() {
                     onChange={(e) =>
                       setMealConfigs((prev) => ({
                         ...prev,
-                        [meal]: { ...prev[meal], notes: e.target.value },
+                        [key]: { ...prev[key], notes: e.target.value },
                       }))
                     }
                   />
@@ -421,7 +429,7 @@ function MenuPlannerPage() {
                 <Button
                   className="w-full font-bold shadow-sm"
                   disabled={isSaving}
-                  onClick={() => handleSaveMeal(meal)}
+                  onClick={() => handleSaveMeal(meal, dietType, key)}
                 >
                   {isSaving ? (
                     <>

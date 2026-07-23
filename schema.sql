@@ -128,6 +128,7 @@ CREATE INDEX IF NOT EXISTS menus_date_idx ON menus(date);
 
 -- Migration for email verification status
 ALTER TABLE members ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+UPDATE members SET email_verified = TRUE WHERE is_active = TRUE OR role IN ('admin', 'staff');
 
 CREATE TABLE IF NOT EXISTS dashboard_notifications (
   id             SERIAL PRIMARY KEY,
@@ -191,6 +192,7 @@ CREATE TABLE IF NOT EXISTS guest_passes (
 CREATE INDEX IF NOT EXISTS guest_passes_token_idx ON guest_passes (qr_token);
 
 ALTER TABLE meal_windows ADD COLUMN IF NOT EXISTS guest_price INTEGER NOT NULL DEFAULT 120;
+UPDATE meal_windows SET guest_price = 80 WHERE meal = 'Breakfast' AND guest_price = 120;
 
 -- Push Notifications Subscriptions
 CREATE TABLE IF NOT EXISTS push_subscriptions (
@@ -224,3 +226,83 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 );
 
 CREATE INDEX IF NOT EXISTS subscriptions_member_idx ON subscriptions(member_id);
+
+-- Safely backfill subscriptions table if it is currently empty
+INSERT INTO subscriptions (
+  member_id, plan_id, plan_label, meals, start_date, end_date, 
+  price_per_month, amount_paid, is_paid, paid_at, renewed_at, status
+)
+SELECT 
+  m.member_id, 
+  m.sub_plan_id, 
+  COALESCE(m.sub_plan_label, 'Default Plan'), 
+  COALESCE(m.sub_meals, '{}'), 
+  COALESCE(m.sub_start_date, CURRENT_DATE), 
+  COALESCE(m.sub_end_date, CURRENT_DATE + INTERVAL '30 days'), 
+  COALESCE(m.sub_price_per_month, 0), 
+  m.sub_amount_paid, 
+  m.sub_is_paid, 
+  m.sub_paid_at, 
+  m.sub_renewed_at,
+  CASE 
+    WHEN m.is_active = FALSE THEN 'pending'
+    WHEN m.sub_end_date >= CURRENT_DATE THEN 'active'
+    ELSE 'expired'
+  END
+FROM members m
+WHERE m.sub_plan_id IS NOT NULL 
+  AND NOT EXISTS (SELECT 1 FROM subscriptions LIMIT 1);
+
+-- PostgreSQL trigger function to keep members table denormalized columns in sync with subscriptions ledger
+CREATE OR REPLACE FUNCTION sync_member_subscription()
+RETURNS TRIGGER AS $$
+DECLARE
+  latest_sub RECORD;
+BEGIN
+  -- Fetch the latest active or pending subscription for this member, fallback to latest expired
+  SELECT * INTO latest_sub 
+  FROM subscriptions 
+  WHERE member_id = NEW.member_id
+  ORDER BY 
+    CASE WHEN status = 'active' THEN 1 WHEN status = 'pending' THEN 2 ELSE 3 END,
+    end_date DESC, 
+    created_at DESC 
+  LIMIT 1;
+
+  IF latest_sub.id IS NOT NULL THEN
+    UPDATE members
+    SET 
+      sub_plan_id = latest_sub.plan_id,
+      sub_plan_label = latest_sub.plan_label,
+      sub_meals = latest_sub.meals,
+      sub_start_date = latest_sub.start_date,
+      sub_end_date = latest_sub.end_date,
+      sub_is_paid = latest_sub.is_paid,
+      sub_paid_at = latest_sub.paid_at,
+      sub_price_per_month = latest_sub.price_per_month,
+      sub_amount_paid = latest_sub.amount_paid,
+      sub_renewed_at = latest_sub.renewed_at,
+      sub_diet_type = latest_sub.diet_type
+    WHERE member_id = NEW.member_id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_sync_member_subscription ON subscriptions;
+CREATE TRIGGER trg_sync_member_subscription
+AFTER INSERT OR UPDATE ON subscriptions
+FOR EACH ROW
+EXECUTE FUNCTION sync_member_subscription();
+
+-- Veg/Non-Veg Diet Support Migrations
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS diet_type TEXT NOT NULL DEFAULT 'Veg' CHECK (diet_type IN ('Veg', 'Non-Veg', 'Both'));
+ALTER TABLE members ADD COLUMN IF NOT EXISTS sub_diet_type TEXT NOT NULL DEFAULT 'Veg' CHECK (sub_diet_type IN ('Veg', 'Non-Veg', 'Both'));
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS diet_type TEXT NOT NULL DEFAULT 'Veg' CHECK (diet_type IN ('Veg', 'Non-Veg', 'Both'));
+
+ALTER TABLE menus ADD COLUMN IF NOT EXISTS diet_type TEXT NOT NULL DEFAULT 'Veg' CHECK (diet_type IN ('Veg', 'Non-Veg'));
+ALTER TABLE menus DROP CONSTRAINT IF EXISTS menus_date_meal_key;
+ALTER TABLE menus DROP CONSTRAINT IF EXISTS menus_date_meal_diet_type_key;
+ALTER TABLE menus ADD CONSTRAINT menus_date_meal_diet_type_key UNIQUE (date, meal, diet_type);
+
+ALTER TABLE scan_logs ADD COLUMN IF NOT EXISTS diet_served TEXT CHECK (diet_served IN ('Veg', 'Non-Veg'));

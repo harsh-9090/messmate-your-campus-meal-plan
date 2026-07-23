@@ -39,6 +39,7 @@ router.get("/", async (req, res, next) => {
         id: r.id,
         date: dStr,
         meal: r.meal,
+        dietType: r.diet_type,
         items: r.items,
         notes: r.notes || "",
         createdAt: r.created_at,
@@ -51,7 +52,7 @@ router.get("/", async (req, res, next) => {
 // POST /menus -> upsert a menu for a specific date and meal (Admin only)
 router.post("/", requireRole("admin"), async (req, res, next) => {
   try {
-    const { date, meal, items, notes = "" } = req.body;
+    const { date, meal, dietType = 'Veg', items, notes = "" } = req.body;
     
     if (!date || !meal || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "date, meal, and non-empty items array are required" });
@@ -62,12 +63,12 @@ router.post("/", requireRole("admin"), async (req, res, next) => {
     }
     
     const { rows } = await query(`
-      INSERT INTO menus (date, meal, items, notes, updated_at)
-      VALUES ($1, $2, $3, $4, NOW())
-      ON CONFLICT (date, meal)
+      INSERT INTO menus (date, meal, diet_type, items, notes, updated_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+      ON CONFLICT (date, meal, diet_type)
       DO UPDATE SET items = EXCLUDED.items, notes = EXCLUDED.notes, updated_at = NOW()
       RETURNING *
-    `, [date, meal, items, notes]);
+    `, [date, meal, dietType, items, notes]);
     
     const r = rows[0];
     let dStr = r.date;
@@ -81,6 +82,7 @@ router.post("/", requireRole("admin"), async (req, res, next) => {
       id: r.id,
       date: dStr,
       meal: r.meal,
+      dietType: r.diet_type,
       items: r.items,
       notes: r.notes || "",
       createdAt: r.created_at,
