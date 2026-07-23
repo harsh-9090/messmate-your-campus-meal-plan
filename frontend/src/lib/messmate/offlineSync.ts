@@ -221,6 +221,7 @@ export const offlineSync = {
       }
     } catch (e) {
       console.error("Failed to upload offline logs", e);
+      throw e;
     }
   }
 };

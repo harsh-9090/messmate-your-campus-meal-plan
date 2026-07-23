@@ -7,7 +7,7 @@ import { verifyQRToken, getISTDateStr } from "../services/qrService.js";
 import { query, rowToMember, stripPassword, withTx } from "../db/index.js";
 import { validateAndRecord } from "../services/scanValidator.js";
 
-import { getCache, setCache } from "../db/redis.js";
+import { getCache, setCache, delCache } from "../db/redis.js";
 
 const router = Router();
 router.use(verifyToken);
