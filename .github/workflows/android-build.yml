@@ -29,6 +29,12 @@ jobs:
         working-directory: frontend
         run: npm install
 
+      - name: Create Dummy Dist
+        working-directory: frontend
+        run: |
+          mkdir -p dist
+          echo "<html><body>Mom's Kitchen</body></html>" > dist/index.html
+
       - name: Capacitor Sync
         working-directory: frontend
         run: npx cap sync android
