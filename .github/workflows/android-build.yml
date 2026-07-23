@@ -64,9 +64,12 @@ jobs:
             --ks-pass pass:"$KEYSTORE_PASSWORD" \
             --key-pass pass:"$KEY_PASSWORD" \
             frontend/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          
+          # Rename to Moms-Kitchen.apk for better user experience
+          mv frontend/android/app/build/outputs/apk/release/app-release-unsigned.apk frontend/android/app/build/outputs/apk/release/Moms-Kitchen.apk
 
       - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: Messmate-App
-          path: frontend/android/app/build/outputs/apk/release/app-release-unsigned.apk
+          name: Moms-Kitchen-App
+          path: frontend/android/app/build/outputs/apk/release/Moms-Kitchen.apk
