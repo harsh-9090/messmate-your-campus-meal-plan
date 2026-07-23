@@ -199,10 +199,16 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   id              BIGSERIAL PRIMARY KEY,
   member_id       TEXT REFERENCES members(member_id) ON DELETE CASCADE,
   endpoint        TEXT UNIQUE NOT NULL,
-  p256dh          TEXT NOT NULL,
-  auth            TEXT NOT NULL,
+  p256dh          TEXT,
+  auth            TEXT,
+  client_type     TEXT NOT NULL DEFAULT 'web' CHECK (client_type IN ('web', 'android')),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migrations for FCM support
+ALTER TABLE push_subscriptions ADD COLUMN IF NOT EXISTS client_type TEXT NOT NULL DEFAULT 'web' CHECK (client_type IN ('web', 'android'));
+ALTER TABLE push_subscriptions ALTER COLUMN p256dh DROP NOT NULL;
+ALTER TABLE push_subscriptions ALTER COLUMN auth DROP NOT NULL;
 
 CREATE INDEX IF NOT EXISTS push_subscriptions_member_idx ON push_subscriptions (member_id);
 

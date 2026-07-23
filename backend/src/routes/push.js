@@ -14,18 +14,33 @@ router.get("/vapid-key", verifyToken, (req, res) => {
 router.post("/subscribe", verifyToken, async (req, res, next) => {
   try {
     const memberId = req.user.sub;
-    const { endpoint, keys } = req.body;
+    const { endpoint, keys, type, token } = req.body;
+
+    if (type === "android") {
+      if (!token) {
+        return res.status(400).json({ error: "Invalid android push token" });
+      }
+      await query(
+        `INSERT INTO push_subscriptions (member_id, endpoint, client_type)
+         VALUES ($1, $2, 'android')
+         ON CONFLICT (endpoint) 
+         DO UPDATE SET member_id = EXCLUDED.member_id, client_type = 'android'`,
+        [memberId, token]
+      );
+      console.log(`[PUSH] Subscribed Android FCM token for member: ${memberId}`);
+      return res.json({ ok: true });
+    }
 
     if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
-      return res.status(400).json({ error: "Invalid push subscription object" });
+      return res.status(400).json({ error: "Invalid web push subscription object" });
     }
 
     // Upsert subscription for this member & endpoint
     await query(
-      `INSERT INTO push_subscriptions (member_id, endpoint, p256dh, auth)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO push_subscriptions (member_id, endpoint, p256dh, auth, client_type)
+       VALUES ($1, $2, $3, $4, 'web')
        ON CONFLICT (endpoint) 
-       DO UPDATE SET member_id = EXCLUDED.member_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth`,
+       DO UPDATE SET member_id = EXCLUDED.member_id, p256dh = EXCLUDED.p256dh, auth = EXCLUDED.auth, client_type = 'web'`,
       [memberId, endpoint, keys.p256dh, keys.auth]
     );
 

@@ -1,5 +1,26 @@
 import webpush from "web-push";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getMessaging } from "firebase-admin/messaging";
+import fs from "fs";
+import path from "path";
 import { query } from "../db/index.js";
+
+// Initialize Firebase Admin SDK
+let firebaseApp = null;
+try {
+  const serviceAccountPath = path.resolve(process.cwd(), "firebase-adminsdk.json");
+  if (fs.existsSync(serviceAccountPath)) {
+    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+    firebaseApp = initializeApp({
+      credential: cert(serviceAccount)
+    });
+    console.log("[PUSH] Firebase Admin SDK initialized successfully");
+  } else {
+    console.warn("⚠️ [PUSH] firebase-adminsdk.json not found. Android native push will not function.");
+  }
+} catch (err) {
+  console.error("❌ CRITICAL: Failed to initialize Firebase Admin SDK", err);
+}
 
 const publicKey = process.env.VAPID_PUBLIC_KEY;
 const privateKey = process.env.VAPID_PRIVATE_KEY;
@@ -28,7 +49,7 @@ export function getVapidPublicKey() {
 export async function sendPushToMember(memberId, payload) {
   try {
     const { rows } = await query(
-      "SELECT id, endpoint, p256dh, auth FROM push_subscriptions WHERE member_id = $1",
+      "SELECT id, endpoint, p256dh, auth, client_type FROM push_subscriptions WHERE member_id = $1",
       [memberId]
     );
 
@@ -42,19 +63,35 @@ export async function sendPushToMember(memberId, payload) {
     const notificationPayload = typeof payload === "string" ? payload : JSON.stringify(payload);
 
     const promises = rows.map(async (sub) => {
-      const subscription = {
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: sub.p256dh,
-          auth: sub.auth,
-        },
-      };
-
       try {
-        await webpush.sendNotification(subscription, notificationPayload);
+        if (sub.client_type === 'android') {
+          // Dispatch via Firebase Cloud Messaging
+          if (!firebaseApp) throw new Error("Firebase Admin SDK not initialized");
+          
+          let parsedPayload;
+          try { parsedPayload = JSON.parse(notificationPayload); } catch { parsedPayload = { title: "New Notification", body: notificationPayload }; }
+          
+          await getMessaging().send({
+            token: sub.endpoint, // We saved FCM token in endpoint col
+            notification: {
+              title: parsedPayload.title || "Mom's Kitchen",
+              body: parsedPayload.body || notificationPayload
+            },
+            data: {
+              url: parsedPayload.url || "/",
+              payload: notificationPayload
+            }
+          });
+        } else {
+          // Dispatch via Web Push
+          await webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          }, notificationPayload);
+        }
       } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404) {
-          console.log(`[PUSH] Subscription is inactive (statusCode: ${err.statusCode}). Deleting subscription id: ${sub.id}`);
+        if (err.statusCode === 410 || err.statusCode === 404 || err.code === 'messaging/registration-token-not-registered') {
+          console.log(`[PUSH] Subscription is inactive (statusCode: ${err.statusCode || err.code}). Deleting subscription id: ${sub.id}`);
           await query("DELETE FROM push_subscriptions WHERE id = $1", [sub.id]);
         } else {
           console.error(`[PUSH-ERROR] Failed to send push to subscription id ${sub.id}:`, err.message);
@@ -74,7 +111,7 @@ export async function sendPushToMember(memberId, payload) {
 export async function sendPushToAdminsAndStaff(payload) {
   try {
     const { rows } = await query(
-      `SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth, m.member_id 
+      `SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth, ps.client_type, m.member_id 
        FROM push_subscriptions ps
        JOIN members m ON ps.member_id = m.member_id
        WHERE m.role IN ('admin', 'staff')`
@@ -90,18 +127,27 @@ export async function sendPushToAdminsAndStaff(payload) {
     const notificationPayload = typeof payload === "string" ? payload : JSON.stringify(payload);
 
     const promises = rows.map(async (sub) => {
-      const subscription = {
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: sub.p256dh,
-          auth: sub.auth,
-        },
-      };
-
       try {
-        await webpush.sendNotification(subscription, notificationPayload);
+        if (sub.client_type === 'android') {
+          if (!firebaseApp) throw new Error("Firebase Admin SDK not initialized");
+          let parsedPayload;
+          try { parsedPayload = JSON.parse(notificationPayload); } catch { parsedPayload = { title: "New Notification", body: notificationPayload }; }
+          await getMessaging().send({
+            token: sub.endpoint,
+            notification: {
+              title: parsedPayload.title || "Mom's Kitchen",
+              body: parsedPayload.body || notificationPayload
+            },
+            data: { url: parsedPayload.url || "/", payload: notificationPayload }
+          });
+        } else {
+          await webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          }, notificationPayload);
+        }
       } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404) {
+        if (err.statusCode === 410 || err.statusCode === 404 || err.code === 'messaging/registration-token-not-registered') {
           console.log(`[PUSH] Admin/Staff subscription inactive. Deleting subscription id: ${sub.id}`);
           await query("DELETE FROM push_subscriptions WHERE id = $1", [sub.id]);
         } else {
@@ -122,7 +168,7 @@ export async function sendPushToAdminsAndStaff(payload) {
 export async function sendPushToAdmins(payload) {
   try {
     const { rows } = await query(
-      `SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth, m.member_id 
+      `SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth, ps.client_type, m.member_id 
        FROM push_subscriptions ps
        JOIN members m ON ps.member_id = m.member_id
        WHERE m.role = 'admin'`
@@ -138,18 +184,27 @@ export async function sendPushToAdmins(payload) {
     const notificationPayload = typeof payload === "string" ? payload : JSON.stringify(payload);
 
     const promises = rows.map(async (sub) => {
-      const subscription = {
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: sub.p256dh,
-          auth: sub.auth,
-        },
-      };
-
       try {
-        await webpush.sendNotification(subscription, notificationPayload);
+        if (sub.client_type === 'android') {
+          if (!firebaseApp) throw new Error("Firebase Admin SDK not initialized");
+          let parsedPayload;
+          try { parsedPayload = JSON.parse(notificationPayload); } catch { parsedPayload = { title: "New Notification", body: notificationPayload }; }
+          await getMessaging().send({
+            token: sub.endpoint,
+            notification: {
+              title: parsedPayload.title || "Mom's Kitchen",
+              body: parsedPayload.body || notificationPayload
+            },
+            data: { url: parsedPayload.url || "/", payload: notificationPayload }
+          });
+        } else {
+          await webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          }, notificationPayload);
+        }
       } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404) {
+        if (err.statusCode === 410 || err.statusCode === 404 || err.code === 'messaging/registration-token-not-registered') {
           console.log(`[PUSH] Admin subscription inactive. Deleting subscription id: ${sub.id}`);
           await query("DELETE FROM push_subscriptions WHERE id = $1", [sub.id]);
         } else {
@@ -170,7 +225,7 @@ export async function sendPushToAdmins(payload) {
 export async function sendPushToAllMembers(payload) {
   try {
     const { rows } = await query(
-      `SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth, m.member_id 
+      `SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth, ps.client_type, m.member_id 
        FROM push_subscriptions ps
        JOIN members m ON ps.member_id = m.member_id
        WHERE m.role = 'member' AND m.is_active = TRUE`
@@ -186,18 +241,27 @@ export async function sendPushToAllMembers(payload) {
     const notificationPayload = typeof payload === "string" ? payload : JSON.stringify(payload);
 
     const promises = rows.map(async (sub) => {
-      const subscription = {
-        endpoint: sub.endpoint,
-        keys: {
-          p256dh: sub.p256dh,
-          auth: sub.auth,
-        },
-      };
-
       try {
-        await webpush.sendNotification(subscription, notificationPayload);
+        if (sub.client_type === 'android') {
+          if (!firebaseApp) throw new Error("Firebase Admin SDK not initialized");
+          let parsedPayload;
+          try { parsedPayload = JSON.parse(notificationPayload); } catch { parsedPayload = { title: "New Notification", body: notificationPayload }; }
+          await getMessaging().send({
+            token: sub.endpoint,
+            notification: {
+              title: parsedPayload.title || "Mom's Kitchen",
+              body: parsedPayload.body || notificationPayload
+            },
+            data: { url: parsedPayload.url || "/", payload: notificationPayload }
+          });
+        } else {
+          await webpush.sendNotification({
+            endpoint: sub.endpoint,
+            keys: { p256dh: sub.p256dh, auth: sub.auth },
+          }, notificationPayload);
+        }
       } catch (err) {
-        if (err.statusCode === 410 || err.statusCode === 404) {
+        if (err.statusCode === 410 || err.statusCode === 404 || err.code === 'messaging/registration-token-not-registered') {
           console.log(`[PUSH] Student member subscription inactive. Deleting subscription id: ${sub.id}`);
           await query("DELETE FROM push_subscriptions WHERE id = $1", [sub.id]);
         } else {

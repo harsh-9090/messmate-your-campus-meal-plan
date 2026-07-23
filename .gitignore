@@ -47,3 +47,4 @@ frontend/.lovable/
 # Android Keystore
 *.jks
 keystore_base64.txt
+firebase-adminsdk.json

@@ -1,4 +1,6 @@
 import { pushApi } from "./api";
+import { Capacitor } from "@capacitor/core";
+import { PushNotifications } from "@capacitor/push-notifications";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -16,6 +18,35 @@ function urlBase64ToUint8Array(base64String: string) {
 export async function checkAndRegisterPush() {
   if (typeof window === "undefined") return;
   
+  if (Capacitor.isNativePlatform()) {
+    try {
+      // Native Android/iOS push via FCM
+      let permStatus = await PushNotifications.checkPermissions();
+      if (permStatus.receive === "prompt") {
+        permStatus = await PushNotifications.requestPermissions();
+      }
+      if (permStatus.receive !== "granted") {
+        console.warn("[PUSH] Native push permission denied.");
+        return;
+      }
+
+      await PushNotifications.register();
+
+      PushNotifications.addListener("registration", async (token) => {
+        console.log("[PUSH] Native FCM token received:", token.value);
+        await pushApi.subscribe({ type: "android", token: token.value });
+      });
+
+      PushNotifications.addListener("registrationError", (error) => {
+        console.error("[PUSH-ERROR] Failed to register native push:", error);
+      });
+      return;
+    } catch (err: any) {
+      console.error("[PUSH-ERROR] Native push setup failed:", err.message || err);
+      return;
+    }
+  }
+
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
     console.warn("[PUSH] Push notifications or service workers are not supported by this browser.");
     return;
