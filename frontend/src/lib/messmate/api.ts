@@ -111,14 +111,14 @@ async function request<T>(
 
 // ---------- Auth ----------
 export const authApi = {
-  login: (memberId: string, password: string) =>
+  login: (memberId: string, password: string, rememberMe = true) =>
     request<{
       accessToken: string;
       user: { id: string; name: string; role: "admin" | "staff" | "member"; emailVerified?: boolean };
     }>("/auth/login", {
       method: "POST",
       auth: false,
-      body: JSON.stringify({ memberId, password }),
+      body: JSON.stringify({ memberId, password, rememberMe }),
     }),
   verifyEmail: (otp: string) =>
     request<{ ok: true; message: string }>("/auth/verify-email", {

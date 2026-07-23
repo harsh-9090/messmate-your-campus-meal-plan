@@ -26,19 +26,25 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const login = useAuth((s) => s.login);
   const navigate = useNavigate();
-  const [memberId, setMemberId] = useState("");
+  const [memberId, setMemberId] = useState(() => localStorage.getItem("remembered_email") || "");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (rememberMe) {
+      localStorage.setItem("remembered_email", memberId.trim());
+    } else {
+      localStorage.removeItem("remembered_email");
+    }
     if (!memberId.trim() || !password) {
       toast.error("Enter credentials");
       return;
     }
     setSubmitting(true);
     try {
-      const user = await login(memberId.trim(), password);
+      const user = await login(memberId.trim(), password, rememberMe);
       toast.success(`Welcome, ${user.name}`);
       if (user.role === "admin") navigate({ to: "/admin" });
       else if (user.role === "staff") navigate({ to: "/staff/scanner" });
@@ -196,6 +202,20 @@ function LoginPage() {
                 />
               </div>
             </div>
+
+            <div className="flex items-center space-x-2 px-1">
+              <input 
+                type="checkbox" 
+                id="remember" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="h-4 w-4 rounded border-muted-foreground/30 text-primary focus:ring-primary/20 accent-primary cursor-pointer" 
+              />
+              <Label htmlFor="remember" className="text-[13px] font-semibold text-muted-foreground cursor-pointer">
+                Keep me logged in
+              </Label>
+            </div>
+
             <Button
               type="submit"
               className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98]"

@@ -17,7 +17,7 @@ interface AuthState {
   setHasHydrated: (state: boolean) => void;
   setAuth: (accessToken: string, user: AuthUser) => void;
   clear: () => void;
-  login: (memberId: string, password: string) => Promise<AuthUser>;
+  login: (memberId: string, password: string, rememberMe?: boolean) => Promise<AuthUser>;
   logout: () => Promise<void>;
 }
 
@@ -30,8 +30,8 @@ export const useAuth = create<AuthState>()(
       setHasHydrated: (state) => set({ _hasHydrated: state }),
       setAuth: (accessToken, user) => set({ accessToken, user }),
       clear: () => set({ accessToken: null, user: null }),
-      login: async (memberId, password) => {
-        const { accessToken, user } = await authApi.login(memberId, password);
+      login: async (memberId, password, rememberMe = true) => {
+        const { accessToken, user } = await authApi.login(memberId, password, rememberMe);
         set({ accessToken, user });
         return user;
       },

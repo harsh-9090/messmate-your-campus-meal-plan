@@ -41,11 +41,12 @@ router.post("/login",
   authLimiter,
   body("memberId").isString().trim().notEmpty(),
   body("password").isString().notEmpty(),
+  body("rememberMe").optional().isBoolean(),
   async (req, res, next) => {
     try {
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
-      const { memberId, password } = req.body;
+      const { memberId, password, rememberMe } = req.body;
       
       // Try exact, then uppercase for member_id
       let m = await findUser(memberId);
@@ -54,10 +55,15 @@ router.post("/login",
       if (!m || !(await bcrypt.compare(password, m.passwordHash)))
         return res.status(401).json({ error: "Invalid credentials" });
 
-      res.cookie("rt", signRefresh(m), {
-        httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
+      const cookieOptions = {
+        httpOnly: true, 
+        secure: process.env.NODE_ENV === "production", 
+        sameSite: "strict",
+      };
+      // If rememberMe is checked, store for 30 days. Else, store for 1 day (or session limit).
+      cookieOptions.maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+
+      res.cookie("rt", signRefresh(m), cookieOptions);
       res.json({ accessToken: signAccess(m), user: { id: m.memberId, name: m.name, role: m.role, emailVerified: m.emailVerified } });
     } catch (e) { next(e); }
   });
