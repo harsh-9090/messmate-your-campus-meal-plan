@@ -42,3 +42,4 @@ frontend/.lovable/
 *.njsproj
 *.sln
 *.sw?
+/data.txt
