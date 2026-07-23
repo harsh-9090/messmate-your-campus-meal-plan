@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mom\'s Kitchen</string>
+    <string name="title_activity_main">Mom\'s Kitchen</string>
+    <string name="package_name">com.momskitchen.messmate</string>
+    <string name="custom_url_scheme">com.momskitchen.messmate</string>
+</resources>

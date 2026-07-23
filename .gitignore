@@ -43,3 +43,7 @@ frontend/.lovable/
 *.sln
 *.sw?
 /data.txt
+
+# Android Keystore
+*.jks
+keystore_base64.txt
