@@ -87,6 +87,7 @@ function ScannerPage() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingSyncCount, setPendingSyncCount] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
 
   const refreshPendingCount = useCallback(async () => {
     const logs = await offlineSync.getOfflineLogs();
@@ -116,10 +117,17 @@ function ScannerPage() {
     const onOnline = async () => {
       setIsOnline(true);
       toast.success("Back online. Syncing data...");
-      await offlineSync.uploadOfflineLogs();
-      await offlineSync.downloadSyncData();
-      refreshPendingCount();
-      qc.invalidateQueries({ queryKey: ["scanner-logs"] });
+      setIsAutoSyncing(true);
+      try {
+        await offlineSync.uploadOfflineLogs();
+        await offlineSync.downloadSyncData();
+      } catch(e) {
+        console.error("Auto sync failed", e);
+      } finally {
+        setIsAutoSyncing(false);
+        refreshPendingCount();
+        qc.invalidateQueries({ queryKey: ["scanner-logs"] });
+      }
     };
     const onOffline = () => {
       setIsOnline(false);
@@ -149,8 +157,15 @@ function ScannerPage() {
         const res = await scanApi.validate(qrToken, meal);
         return res;
       } catch (e: any) {
-        if (e.message?.includes("fetch") || e.message?.includes("NetworkError")) {
-          // Fallback if network drops exactly during request
+        const msg = e.message || e.name || "";
+        if (
+          msg.includes("fetch") || 
+          msg.includes("NetworkError") || 
+          msg.includes("Cannot reach API") || 
+          msg.includes("Timeout") ||
+          msg.includes("Abort")
+        ) {
+          // Fallback if network drops or times out exactly during request
           return offlineSync.validateOffline(qrToken, meal, windows);
         }
         throw e;
@@ -305,11 +320,15 @@ function ScannerPage() {
         )}>
           {!isOnline ? (
             <><AlertTriangle className="h-3.5 w-3.5" /> Offline Mode Active - Scanning securely via local database.</>
-          ) : (
+          ) : (isAutoSyncing || isSyncing) ? (
             <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading pending offline scans to server...</>
+          ) : (
+            <><AlertTriangle className="h-3.5 w-3.5 text-warning" /> <span>Server connection unstable. Logs are queued locally.</span></>
           )}
           {pendingSyncCount > 0 && (
-            <span className="ml-2 font-bold underline">{pendingSyncCount} pending upload</span>
+            <span className="ml-2 font-bold underline cursor-pointer" onClick={handleManualSync}>
+              {pendingSyncCount} pending upload
+            </span>
           )}
         </div>
       )}

@@ -271,6 +271,7 @@ export const scanApi = {
     request<ScanResult>("/scan/validate", {
       method: "POST",
       body: JSON.stringify({ qrToken, meal }),
+      signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined
     }),
   lookup: (query: string) =>
     request<Member>(`/scan/lookup?query=${encodeURIComponent(query)}`),
@@ -297,7 +298,8 @@ export const scanApi = {
   syncData: () => request<any>("/scan/sync-data"),
   bulkSync: (logs: any[]) => request<{ syncedIds: string[] }>("/scan/bulk-sync", {
     method: "POST",
-    body: JSON.stringify({ logs })
+    body: JSON.stringify({ logs }),
+    signal: typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
   }),
 };
 
