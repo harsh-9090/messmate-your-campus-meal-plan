@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { runDailyTasks } from "../cron/dailyJobs.js";
+import { runDailyTasks, sendDailySummaryEmail } from "../cron/dailyJobs.js";
 
 const router = Router();
 
@@ -25,6 +25,25 @@ router.post("/daily", async (req, res, next) => {
     });
   } catch (err) {
     console.error("[CRON-ERROR] Failed to run daily tasks over HTTP:", err.message);
+    next(err);
+  }
+});
+
+// Secure endpoint to send daily summary email (called externally, e.g. at 23:30)
+router.post("/daily-summary", async (req, res, next) => {
+  try {
+    const cronToken = req.headers["x-cron-token"];
+    const secretToken = process.env.CRON_SECRET_TOKEN || "development_cron_secret_token";
+
+    if (!cronToken || cronToken !== secretToken) {
+      console.warn("[CRON-WARNING] Unauthorized daily summary attempt rejected.");
+      return res.status(403).json({ error: "Unauthorized access" });
+    }
+
+    const summary = await sendDailySummaryEmail();
+    res.json({ ok: true, summary });
+  } catch (err) {
+    console.error("[CRON-ERROR] Failed to run daily summary email over HTTP:", err.message);
     next(err);
   }
 });

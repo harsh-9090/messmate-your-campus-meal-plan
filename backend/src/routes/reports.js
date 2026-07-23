@@ -91,6 +91,47 @@ router.get("/daily", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.get("/daily-trend", async (req, res, next) => {
+  try {
+    const daysCount = parseInt(req.query.days || "7", 10);
+    const cacheKey = `messmate:report:daily-trend:${daysCount}`;
+    const cached = await getCache(cacheKey);
+    if (cached) return res.json(cached);
+
+    const days = Array.from({ length: daysCount }, (_, i) => format(addDays(getISTDate(), -daysCount + 1 + i), "yyyy-MM-dd"));
+    
+    const { rows } = await query(
+      `SELECT date,
+              COALESCE(SUM(CASE WHEN used_breakfast THEN 1 ELSE 0 END),0)::int AS b,
+              COALESCE(SUM(CASE WHEN used_lunch     THEN 1 ELSE 0 END),0)::int AS l,
+              COALESCE(SUM(CASE WHEN used_dinner    THEN 1 ELSE 0 END),0)::int AS d
+         FROM meal_usage 
+         WHERE date = ANY($1::date[]) 
+         GROUP BY date
+         ORDER BY date ASC`,
+      [days]
+    );
+
+    const byDateMap = new Map(rows.map((u) => [
+      format(u.date, "yyyy-MM-dd"), 
+      { Breakfast: u.b, Lunch: u.l, Dinner: u.d }
+    ]));
+
+    const result = days.map((d) => {
+      const counts = byDateMap.get(d) || { Breakfast: 0, Lunch: 0, Dinner: 0 };
+      return {
+        date: d,
+        Breakfast: counts.Breakfast,
+        Lunch: counts.Lunch,
+        Dinner: counts.Dinner
+      };
+    });
+
+    await setCache(cacheKey, result, 300); // 5 min cache
+    res.json(result);
+  } catch (e) { next(e); }
+});
+
 router.get("/weekly", async (_req, res, next) => {
   try {
     const cacheKey = "messmate:report:weekly";

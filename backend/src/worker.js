@@ -8,6 +8,7 @@ import {
   sendPlanActivatedEmail,
   sendVerificationOTPEmail,
   sendGuestPassEmail,
+  sendDailySummaryEmailToAdmin,
 } from "./services/notificationService.js";
 import {
   sendPushToMember,
@@ -55,6 +56,9 @@ export function startWorker() {
             break;
           case "guest_pass":
             await sendGuestPassEmail(data.email, data.guestName, data.passDetails);
+            break;
+          case "daily_summary":
+            await sendDailySummaryEmailToAdmin(data.email, data.date, data.totalPlates, data.breakdown);
             break;
           default:
             console.error(`[WORKER] Unknown email type: ${data.type}`);

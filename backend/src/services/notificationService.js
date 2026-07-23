@@ -379,4 +379,79 @@ export async function sendGuestPassEmail(email, guestName, passDetails) {
   }
 }
 
+export async function sendDailySummaryEmailToAdmin(email, date, totalPlates, breakdown) {
+  console.log(`[NOTIFY] Preparing daily summary email for ${email}`);
+
+  const b = breakdown || { Breakfast: {}, Lunch: {}, Dinner: {} };
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #e0e7ff; border-radius: 12px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #f3f4f6; padding-bottom: 15px;">
+        <h2 style="color: #4f46e5; margin: 0; font-size: 24px;">Daily Operations Summary 📊</h2>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 5px;">${date}</p>
+      </div>
+      
+      <p>Hello Admin,</p>
+      <p>Here is the daily summary of meals served at Mom's Kitchen for <strong>${date}</strong>.</p>
+      
+      <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0; font-size: 14px; color: #475569;"><strong>Total Plates Served</strong></p>
+        <p style="margin: 5px 0 0 0; font-size: 28px; font-weight: bold; color: #4f46e5;">${totalPlates}</p>
+      </div>
+
+      <h4 style="margin: 0 0 12px 0; color: #1e293b; font-size: 16px;">Breakdown by Meal:</h4>
+      
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;">
+        <thead>
+          <tr style="background-color: #f1f5f9; text-align: left;">
+            <th style="padding: 10px; border-bottom: 1px solid #cbd5e1;">Meal</th>
+            <th style="padding: 10px; border-bottom: 1px solid #cbd5e1;">Total</th>
+            <th style="padding: 10px; border-bottom: 1px solid #cbd5e1;">Veg</th>
+            <th style="padding: 10px; border-bottom: 1px solid #cbd5e1;">Non-Veg</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Breakfast</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${b.Breakfast?.total || 0}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${b.Breakfast?.Veg || 0}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${b.Breakfast?.["Non-Veg"] || 0}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Lunch</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${b.Lunch?.total || 0}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${b.Lunch?.Veg || 0}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${b.Lunch?.["Non-Veg"] || 0}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0; font-weight: bold;">Dinner</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${b.Dinner?.total || 0}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${b.Dinner?.Veg || 0}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e2e8f0;">${b.Dinner?.["Non-Veg"] || 0}</td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <p style="font-size: 14px; line-height: 1.5; color: #334155;">
+        You can view detailed metrics and historical trends on your Admin Dashboard.
+      </p>
+      
+      <hr style="border: 0; border-top: 1px solid #f3f4f6; margin: 25px 0;" />
+      <p style="font-size: 12px; color: #6b7280; text-align: center; margin: 0;">
+        Mom's Kitchen System Automation
+      </p>
+    </div>
+  `;
+
+  try {
+    await sendEmail({
+      to: email,
+      subject: `Mom's Kitchen - Daily Summary for ${date} 📊`,
+      html,
+    });
+    console.log(`[NOTIFY] Daily summary email sent to ${email}`);
+  } catch (err) {
+    console.error(`[NOTIFY-ERROR] Failed to send daily summary email to ${email}:`, err.message);
+  }
+}
+
 

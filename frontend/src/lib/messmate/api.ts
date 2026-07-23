@@ -367,6 +367,8 @@ export const reportsApi = {
     if (!res.ok) throw new ApiError("Export failed", res.status);
     return res.blob();
   },
+  getDailyTrend: (days: number = 7) =>
+    request<{ date: string; Breakfast: number; Lunch: number; Dinner: number }[]>(`/reports/daily-trend?days=${days}`),
 };
 
 export const staffApi = {

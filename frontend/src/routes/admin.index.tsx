@@ -35,7 +35,7 @@ import {
   formatTime12h,
 } from "@/lib/messmate/dateHelpers";
 import { PlanBadge } from "@/components/messmate/PlanBadge";
-import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
+import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell, Legend, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { Member } from "@/lib/messmate/types";
@@ -67,6 +67,10 @@ function AdminDashboard() {
     queryKey: ["reports", "daily-stats"],
     queryFn: () => reportsApi.getDailyStats(),
     refetchInterval: 60_000,
+  });
+  const trendQ = useQuery({
+    queryKey: ["reports", "daily-trend"],
+    queryFn: () => reportsApi.getDailyTrend(7),
   });
 
   const [viewingList, setViewingList] = useState<{ title: string; members: Member[] } | null>(null);
@@ -106,6 +110,7 @@ function AdminDashboard() {
     renewed_list: [],
     expired_list: [],
   };
+  const trendData = trendQ.data ?? [];
   const expiringSoon = (expiringQ.data ?? []).sort(
     (a, b) => daysRemaining(a.subscription.endDate) - daysRemaining(b.subscription.endDate),
   );
@@ -273,6 +278,36 @@ function AdminDashboard() {
           />
         </div>
       </div>
+
+      <Card className="p-5">
+        <h3 className="mb-4 font-display text-lg font-bold">7-Day Meal Trend</h3>
+        <div className="h-72">
+          <ResponsiveContainer>
+            <BarChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+              <XAxis 
+                dataKey="date" 
+                stroke="currentColor" 
+                fontSize={11} 
+                tickFormatter={(val) => formatDate(val).split(',')[0]} 
+              />
+              <YAxis stroke="currentColor" fontSize={11} allowDecimals={false} />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--popover)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                }}
+                labelFormatter={(val) => formatDate(val)}
+              />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
+              <Bar dataKey="Breakfast" fill="hsl(40 95% 60%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Lunch" fill="hsl(150 60% 50%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Dinner" fill="hsl(245 75% 60%)" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">

@@ -55,6 +55,57 @@ export async function runDailyTasks() {
   return { expiringSoon: soon.length, expired: gone.length };
 }
 
+export async function sendDailySummaryEmail() {
+  console.log("[CRON] Generating Daily Summary Email…");
+  const todayStr = format(getISTDate(), "yyyy-MM-dd");
+
+  const { rows: logs } = await query(
+    `SELECT meal, diet_served, COUNT(*)::int AS count
+     FROM scan_logs 
+     WHERE date = $1 AND status = 'allowed'
+     GROUP BY meal, diet_served`,
+    [todayStr]
+  );
+
+  const breakdown = {
+    Breakfast: { total: 0, Veg: 0, "Non-Veg": 0 },
+    Lunch: { total: 0, Veg: 0, "Non-Veg": 0 },
+    Dinner: { total: 0, Veg: 0, "Non-Veg": 0 }
+  };
+
+  let totalPlates = 0;
+  for (const r of logs) {
+    if (!breakdown[r.meal]) continue;
+    const diet = r.diet_served || "Veg";
+    breakdown[r.meal][diet] = (breakdown[r.meal][diet] || 0) + r.count;
+    breakdown[r.meal].total += r.count;
+    totalPlates += r.count;
+  }
+
+  // Fetch all active admins
+  const { rows: admins } = await query(
+    `SELECT email FROM members WHERE role = 'admin' AND is_active = TRUE AND email IS NOT NULL`
+  );
+
+  if (admins.length === 0) {
+    console.log("[CRON] No active admins found with email, skipping summary email.");
+    return { plates: totalPlates, adminsNotified: 0 };
+  }
+
+  for (const a of admins) {
+    if (!a.email) continue;
+    await queueEmailJob("daily_summary", {
+      email: a.email,
+      date: todayStr,
+      totalPlates,
+      breakdown
+    });
+  }
+
+  console.log(`[CRON] Daily Summary sent to ${admins.length} admins. Total Plates: ${totalPlates}`);
+  return { plates: totalPlates, adminsNotified: admins.length };
+}
+
 export function startCron() {
   // Only auto-run node-cron scheduler in local development/non-production env
   // if not triggered externally.
