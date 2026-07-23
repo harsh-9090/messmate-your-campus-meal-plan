@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { scanLimiter } from "../middleware/rateLimiter.js";
 import { verifyQRToken, getISTDateStr } from "../services/qrService.js";
-import { query, rowToMember, stripPassword } from "../db/index.js";
+import { query, rowToMember, stripPassword, withTx } from "../db/index.js";
 import { validateAndRecord } from "../services/scanValidator.js";
 
 import { getCache, setCache } from "../db/redis.js";
@@ -283,6 +283,123 @@ router.post("/validate",
       res.json(result);
     } catch (e) { next(e); }
   });
+
+// GET /scan/sync-data - fetch offline sync payload
+router.get("/sync-data", requireRole("staff", "admin"), async (req, res, next) => {
+  try {
+    const todayStr = getISTDateStr();
+
+    // 1. Get active members
+    const { rows: memberRows } = await query(`SELECT * FROM members WHERE is_active = TRUE`);
+    const members = memberRows.map(rowToMember).map(m => ({
+      memberId: m.memberId,
+      name: m.name,
+      createdAt: m.createdAt,
+      subscription: {
+        meals: m.subscription.meals,
+        isPaid: m.subscription.isPaid,
+        startDate: m.subscription.startDate,
+        endDate: m.subscription.endDate,
+        dietType: m.subscription.dietType || 'Veg',
+        dueAmount: m.subscription.dueAmount,
+        amountPaid: m.subscription.amountPaid,
+        planLabel: m.subscription.planLabel
+      }
+    }));
+
+    // 2. Get today's usage
+    const { rows: usage } = await query(
+      `SELECT member_id as "memberId", used_breakfast as "usedBreakfast", used_lunch as "usedLunch", used_dinner as "usedDinner" 
+       FROM meal_usage WHERE date = $1`,
+      [todayStr]
+    );
+
+    // 3. Get today's skips
+    const { rows: skips } = await query(
+      `SELECT member_id as "memberId", meal FROM meal_skips WHERE skip_date = $1`,
+      [todayStr]
+    );
+
+    // 4. Get today's holidays
+    const { rows: holidays } = await query(
+      `SELECT content, block_breakfast as "blockBreakfast", block_lunch as "blockLunch", block_dinner as "blockDinner" 
+       FROM dashboard_notifications WHERE type = 'holiday' AND holiday_date = $1 AND is_active = TRUE`,
+      [todayStr]
+    );
+
+    // 5. Get today's active guest passes
+    const { rows: guestPasses } = await query(
+      `SELECT gp.qr_token as "qrToken", gp.meal, gp.member_id as "memberId", m.name as "hostName", gp.guest_name as "guestName" 
+       FROM guest_passes gp 
+       JOIN members m ON gp.member_id = m.member_id 
+       WHERE gp.date = $1 AND gp.status = 'active'`,
+      [todayStr]
+    );
+
+    res.json({ members, usage, skips, holidays, guestPasses });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// POST /scan/bulk-sync - push offline logs
+router.post("/bulk-sync", requireRole("staff", "admin"), async (req, res, next) => {
+  try {
+    const { logs } = req.body;
+    if (!Array.isArray(logs) || logs.length === 0) {
+      return res.json({ syncedIds: [] });
+    }
+
+    const syncedIds = [];
+    
+    // Process logs sequentially to maintain consistency
+    for (const log of logs) {
+      const { id, memberId, memberName, meal, status, code, reason, timestamp, dietServed, isGuestPass, guestToken } = log;
+      const dateStr = format(new Date(timestamp), "yyyy-MM-dd");
+
+      await withTx(async (client) => {
+        // 1. Insert scan log
+        await client.query(
+          `INSERT INTO scan_logs (member_id, member_name, meal, date, ts, status, denial_code, denial_reason, scanned_by, device_info, diet_served)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          [memberId || null, memberName || null, meal, dateStr, new Date(timestamp), status, code || null, reason || null, req.user.sub, "Offline Scanner", dietServed || null]
+        );
+
+        // 2. If allowed, update usage
+        if (status === "allowed" && memberId) {
+          if (isGuestPass && guestToken) {
+            await client.query(`UPDATE guest_passes SET status = 'used', updated_at = NOW() WHERE qr_token = $1`, [guestToken]);
+          } else {
+            const col = meal === "Breakfast" ? "used_breakfast" : meal === "Lunch" ? "used_lunch" : "used_dinner";
+            await client.query(
+              `INSERT INTO meal_usage (member_id, date, ${col}, used_count, updated_at) 
+               VALUES ($1, $2, TRUE, 1, NOW())
+               ON CONFLICT (member_id, date) DO UPDATE 
+               SET ${col} = TRUE, used_count = meal_usage.used_count + CASE WHEN meal_usage.${col} = FALSE THEN 1 ELSE 0 END, updated_at = NOW()`,
+              [memberId, dateStr]
+            );
+          }
+        }
+      });
+
+      // Clear caches for this specific member/date to keep server fresh
+      await delCache([
+        `messmate:scan:log:${dateStr}`,
+        `messmate:scan:log:${dateStr}:${memberId}`,
+        `messmate:usage:${memberId}:${dateStr}`,
+        `messmate:usage:summary:${dateStr}`,
+        `messmate:report:daily:${dateStr}`,
+        ...(status === "denied" ? [`messmate:scan:denials:${dateStr}`] : [])
+      ]);
+
+      syncedIds.push(id); // Use the client-generated ID
+    }
+
+    res.json({ syncedIds });
+  } catch (e) {
+    next(e);
+  }
+});
 
 // GET /scan/logs?date=&memberId=&status=&code=&limit=&page=
 // admin/staff: full feed; member: only their own

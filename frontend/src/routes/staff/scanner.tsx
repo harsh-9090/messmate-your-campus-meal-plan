@@ -29,11 +29,13 @@ import {
   History,
   Settings2,
   Search,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
+import { offlineSync } from "@/lib/messmate/offlineSync";
 
 export const Route = createFileRoute("/staff/scanner")({
   head: () => ({
@@ -82,11 +84,82 @@ function ScannerPage() {
     refetchInterval: 5_000,
   });
 
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingSyncCount, setPendingSyncCount] = useState(0);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const refreshPendingCount = useCallback(async () => {
+    const logs = await offlineSync.getOfflineLogs();
+    setPendingSyncCount(logs.length);
+  }, []);
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      if (pendingSyncCount > 0) {
+        toast.info(`Uploading ${pendingSyncCount} offline scans...`);
+        await offlineSync.uploadOfflineLogs();
+        await refreshPendingCount();
+        qc.invalidateQueries({ queryKey: ["scanner-logs"] });
+      }
+      await offlineSync.downloadSyncData();
+      toast.success("Scanner data synced successfully!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to sync data. Are you online?");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshPendingCount();
+    const onOnline = async () => {
+      setIsOnline(true);
+      toast.success("Back online. Syncing data...");
+      await offlineSync.uploadOfflineLogs();
+      await offlineSync.downloadSyncData();
+      refreshPendingCount();
+      qc.invalidateQueries({ queryKey: ["scanner-logs"] });
+    };
+    const onOffline = () => {
+      setIsOnline(false);
+      toast.warning("You are offline. Scanner is running in Offline Mode.");
+    };
+
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    
+    // Auto download on load if online
+    if (navigator.onLine) {
+      offlineSync.downloadSyncData().catch(() => {});
+    }
+
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, [qc, refreshPendingCount]);
+
   const scanM = useMutation({
-    mutationFn: (qrToken: string) => scanApi.validate(qrToken, meal),
+    mutationFn: async (qrToken: string) => {
+      if (!isOnline) {
+        return offlineSync.validateOffline(qrToken, meal, windows);
+      }
+      try {
+        const res = await scanApi.validate(qrToken, meal);
+        return res;
+      } catch (e: any) {
+        if (e.message?.includes("fetch") || e.message?.includes("NetworkError")) {
+          // Fallback if network drops exactly during request
+          return offlineSync.validateOffline(qrToken, meal, windows);
+        }
+        throw e;
+      }
+    },
     onSuccess: (r) => {
       setResult(r);
-      qc.invalidateQueries({ queryKey: ["scanner-logs"] });
+      refreshPendingCount();
+      if (isOnline) qc.invalidateQueries({ queryKey: ["scanner-logs"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Scan failed"),
   });
@@ -214,7 +287,7 @@ function ScannerPage() {
               variant="ghost"
               size="sm"
               asChild
-              className="text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer"
+              className="text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer hidden sm:inline-flex"
             >
               <Link to="/login" onClick={() => logout()}>
                 <LogOut className="h-4 w-4" />
@@ -223,6 +296,23 @@ function ScannerPage() {
           </div>
         </div>
       </header>
+
+      {/* Sync Status Banner */}
+      {(!isOnline || pendingSyncCount > 0) && (
+        <div className={cn(
+          "w-full px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2",
+          !isOnline ? "bg-warning/20 text-warning-foreground border-b border-warning/30" : "bg-primary/10 text-primary border-b border-primary/20"
+        )}>
+          {!isOnline ? (
+            <><AlertTriangle className="h-3.5 w-3.5" /> Offline Mode Active - Scanning securely via local database.</>
+          ) : (
+            <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Uploading pending offline scans to server...</>
+          )}
+          {pendingSyncCount > 0 && (
+            <span className="ml-2 font-bold underline">{pendingSyncCount} pending upload</span>
+          )}
+        </div>
+      )}
 
       {/* Tactile Mobile Tab Selector (Hidden on md and up) */}
       <div className="md:hidden flex border-b bg-background sticky top-[61px] z-10 p-1 bg-slate-50 dark:bg-slate-900 border-b">
@@ -260,25 +350,37 @@ function ScannerPage() {
               <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                 <ScanLine className="h-4 w-4" /> Live QR Camera
               </div>
-              <Button
-                size="sm"
-                className="cursor-pointer"
-                variant={cameraOn ? "destructive" : "default"}
-                onClick={() => {
-                  setCamError(null);
-                  setCameraOn((v) => !v);
-                }}
-              >
-                {cameraOn ? (
-                  <>
-                    <CameraOff className="mr-1 h-4 w-4" /> Stop
-                  </>
-                ) : (
-                  <>
-                    <Camera className="mr-1 h-4 w-4" /> Start
-                  </>
-                )}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="cursor-pointer text-[10px] h-7 px-2"
+                  disabled={isSyncing || !isOnline}
+                  onClick={handleManualSync}
+                  title="Force Sync Database"
+                >
+                  <RefreshCw className={cn("h-3 w-3", isSyncing && "animate-spin")} />
+                </Button>
+                <Button
+                  size="sm"
+                  className="cursor-pointer"
+                  variant={cameraOn ? "destructive" : "default"}
+                  onClick={() => {
+                    setCamError(null);
+                    setCameraOn((v) => !v);
+                  }}
+                >
+                  {cameraOn ? (
+                    <>
+                      <CameraOff className="mr-1 h-4 w-4" /> Stop
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="mr-1 h-4 w-4" /> Start
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
 
             <div className="relative">

@@ -294,6 +294,11 @@ export const scanApi = {
     });
     return request<ScanLog[]>(`/scan/logs?${q.toString()}`);
   },
+  syncData: () => request<any>("/scan/sync-data"),
+  bulkSync: (logs: any[]) => request<{ syncedIds: string[] }>("/scan/bulk-sync", {
+    method: "POST",
+    body: JSON.stringify({ logs })
+  }),
 };
 
 // ---------- Usage / Reports ----------
