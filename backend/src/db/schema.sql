@@ -198,7 +198,7 @@ UPDATE meal_windows SET guest_price = 80 WHERE meal = 'Breakfast' AND guest_pric
 -- Push Notifications Subscriptions
 CREATE TABLE IF NOT EXISTS push_subscriptions (
   id              BIGSERIAL PRIMARY KEY,
-  member_id       TEXT REFERENCES members(member_id) ON DELETE CASCADE,
+  member_id       TEXT REFERENCES members(member_id) ON DELETE CASCADE ON UPDATE CASCADE,
   endpoint        TEXT UNIQUE NOT NULL,
   p256dh          TEXT,
   auth            TEXT,
