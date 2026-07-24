@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Mom\'s Kitchen',
   webDir: 'dist',
   server: {
-    url: 'https://messmate-your-campus-meal-plan.onrender.com',
+    url: 'https://momskitchenalandi.com',
     cleartext: true
   }
 };
