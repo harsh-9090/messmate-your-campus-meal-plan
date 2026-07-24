@@ -26,7 +26,9 @@ import {
   Clock,
   ArrowUpRight,
   Mail,
-  Check
+  Check,
+  Eye,
+  MessageCircle,
 } from "lucide-react";
 import { formatINR } from "@/lib/messmate/dateHelpers";
 import { toast } from "sonner";
@@ -47,6 +49,7 @@ function AdminGuestPassesPage() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
   const [walkInOpen, setWalkInOpen] = useState(false);
+  const [viewPass, setViewPass] = useState<(GuestPass & { guest_mobile?: string }) | null>(null);
 
   // Fetch pending approvals
   const pendingQ = useQuery({
@@ -334,12 +337,13 @@ function AdminGuestPassesPage() {
                     <TableHead>Date & Meal</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAll.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-semibold">
+                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground font-semibold">
                         {allQ.isLoading ? "Loading guest passes history..." : "No guest passes found."}
                       </TableCell>
                     </TableRow>
@@ -387,6 +391,17 @@ function AdminGuestPassesPage() {
                         </TableCell>
                         <TableCell className="text-right font-extrabold text-slate-700 dark:text-slate-300">
                           {formatINR(gp.price)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-xl h-8 px-3 shadow-sm"
+                            onClick={() => setViewPass(gp)}
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1.5" />
+                            View
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -456,6 +471,18 @@ function AdminGuestPassesPage() {
                       <span className="font-extrabold text-slate-700 dark:text-slate-300 text-xs">{formatINR(gp.price)}</span>
                     </div>
                   </div>
+                  
+                  <div className="pt-1 mt-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full rounded-xl h-9 shadow-sm"
+                      onClick={() => setViewPass(gp)}
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-2" />
+                      View Pass / Resend QR
+                    </Button>
+                  </div>
                 </Card>
               ))
             )}
@@ -463,6 +490,7 @@ function AdminGuestPassesPage() {
         </TabsContent>
       </Tabs>
       <WalkInPassDialog open={walkInOpen} onOpenChange={setWalkInOpen} />
+      <ViewPassDialog pass={viewPass} onOpenChange={(open) => { if (!open) setViewPass(null); }} />
     </div>
   );
 }
@@ -713,6 +741,106 @@ function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
 
             <Button onClick={() => onOpenChange(false)} className="w-full h-10 rounded-xl font-bold shadow-sm" variant="outline">
               Done
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface ViewPassDialogProps {
+  pass: (GuestPass & { guest_mobile?: string; host_name?: string }) | null;
+  onOpenChange: (open: boolean) => void;
+}
+
+function ViewPassDialog({ pass, onOpenChange }: ViewPassDialogProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (pass && pass.qr_token && canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, pass.qr_token, {
+        width: 180,
+        margin: 1,
+        color: { dark: "#0f172a", light: "#ffffff" },
+        errorCorrectionLevel: "H",
+      }).catch((err) => {
+        console.error("QR Code generation failed", err);
+      });
+    }
+  }, [pass]);
+
+  return (
+    <Dialog open={!!pass} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md w-[95vw] rounded-2xl">
+        {pass && (
+          <div className="text-center space-y-5 py-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center">
+              <Ticket className="h-6 w-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="font-bold text-slate-800 dark:text-slate-200">Guest Ticket Details</h3>
+              <Badge
+                variant="secondary"
+                className={`capitalize font-bold text-[10px] py-0 px-2 mt-1 ${
+                  pass.status === "active"
+                    ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                    : pass.status === "used"
+                      ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                      : pass.status === "pending_approval"
+                        ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                        : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
+                }`}
+              >
+                {pass.status === "pending_approval" ? "Pending Cash" : pass.status}
+              </Badge>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <canvas ref={canvasRef} className="border p-2.5 rounded-xl bg-white shadow-sm" />
+              <p className="text-[10px] text-muted-foreground font-semibold mt-2.5">
+                {pass.status === "active" ? "Scan this QR code directly for entry validation" : "QR code is inactive or used"}
+              </p>
+            </div>
+
+            <div className="bg-muted/40 rounded-xl p-3 text-left space-y-1.5 border border-border/40 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-semibold">Guest Name:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{pass.guest_name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground font-semibold">Host / Issuer:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">{pass.host_name || "Unknown"}</span>
+              </div>
+              <div className="flex justify-between border-t pt-1.5 mt-1">
+                <span className="text-muted-foreground font-semibold">Meal & Date:</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  {pass.meal} ({pass.date})
+                </span>
+              </div>
+            </div>
+
+            {pass.guest_mobile && pass.status === "active" && (
+              <Button 
+                className="w-full h-10 rounded-xl font-bold shadow-sm bg-[#25D366] hover:bg-[#128C7E] text-white"
+                onClick={() => {
+                  const message = `Here is your Mom's Kitchen walk-in ticket for ${pass.meal} on ${pass.date}.\n\nShow this QR code at the counter: https://momskitchenalandi.com/pass/${pass.qr_token}`;
+                  const encodedMsg = encodeURIComponent(message);
+                  const cleanNumber = pass.guest_mobile?.replace(/\D/g, '') || ''; 
+                  // Ensure country code is present (assuming +91 default for India if length is 10)
+                  const finalNumber = cleanNumber.length === 10 ? `91${cleanNumber}` : cleanNumber;
+                  // Opens WhatsApp app
+                  window.open(`whatsapp://send?text=${encodedMsg}&phone=${finalNumber}`, '_blank');
+                }}
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Resend Pass via WhatsApp
+              </Button>
+            )}
+
+            <Button onClick={() => onOpenChange(false)} className="w-full h-10 rounded-xl font-bold shadow-sm" variant="outline">
+              Close
             </Button>
           </div>
         )}
