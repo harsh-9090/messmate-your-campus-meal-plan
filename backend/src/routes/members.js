@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
-import { addDays, format } from "date-fns";
+import { addDays, format, differenceInDays } from "date-fns";
 import { body, validationResult } from "express-validator";
 import { query, rowToMember, stripPassword, withTx } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
@@ -344,11 +344,21 @@ router.delete("/:id", requireRole("admin"), async (req, res, next) => {
 
 router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
   try {
-    const today = new Date();
-    const { planId = null, amountPaid = 0, paymentMethod = "Cash", applyAbsenceCredits = false } = req.body;
+    const today = getISTDate();
+    const { planId = null, amountPaid = 0, paymentMethod = "Cash", applyAbsenceCredits = false, startDate } = req.body;
     
     // Fetch current member sub dates and target plan
     const currentMember = (await query(`SELECT sub_plan_id, sub_start_date, sub_end_date FROM members WHERE member_id = $1`, [req.params.id])).rows[0];
+    if (!currentMember) return res.status(404).json({ error: "Member not found" });
+
+    // Validate days left before renewing
+    if (currentMember.sub_end_date) {
+      const daysLeft = differenceInDays(new Date(currentMember.sub_end_date), today);
+      if (daysLeft > 2) {
+        return res.status(400).json({ error: "Cannot renew plan early. You can only renew when the plan is expired or within 2 days of expiration." });
+      }
+    }
+
     const targetPlanId = planId || currentMember?.sub_plan_id;
     const plan = (await query(`SELECT * FROM plans WHERE plan_id = $1`, [targetPlanId])).rows[0];
     
@@ -361,7 +371,8 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
       credits = calc.totalCreditDays;
     }
 
-    const end = addDays(today, (duration * 30 - 1) + credits);
+    const cycleStart = startDate ? new Date(startDate) : today;
+    const end = addDays(cycleStart, (duration * 30 - 1) + credits);
     const isPaid = amountPaid >= price && price > 0;
 
     const updatedMember = await withTx(async (client) => {
@@ -380,7 +391,7 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
           price_per_month, amount_paid, is_paid, paid_at, status, renewed_at
         )
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $9 THEN NOW() ELSE NULL END, 'active', NOW())`,
-        [req.params.id, plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(today), fmtDate(end), price, amountPaid, isPaid]
+        [req.params.id, plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(cycleStart), fmtDate(end), price, amountPaid, isPaid]
       );
 
       // 3. Update the member profile
@@ -394,7 +405,7 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
            is_active = TRUE,
            updated_at = NOW()
          WHERE member_id = $9 RETURNING *`,
-        [plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(today), fmtDate(end), isPaid, price, amountPaid, req.params.id]
+        [plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(cycleStart), fmtDate(end), isPaid, price, amountPaid, req.params.id]
       );
       return rows[0];
     });

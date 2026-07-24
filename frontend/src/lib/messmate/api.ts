@@ -217,6 +217,7 @@ export const membersApi = {
       amountPaid?: number;
       paymentMethod?: string;
       applyAbsenceCredits?: boolean;
+      startDate?: string;
     },
   ) => request(`/members/${id}/renew`, { method: "PUT", body: JSON.stringify(data) }),
   getAbsenceCredits: (id: string) =>

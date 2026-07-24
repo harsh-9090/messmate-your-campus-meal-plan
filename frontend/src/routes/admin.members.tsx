@@ -385,14 +385,17 @@ function MembersPage() {
                       >
                         <Edit3 className="h-4 w-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setRenewing(m)}
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
+                      <div title={!canRenew ? "Can only renew when expired or within 2 days of expiration" : undefined}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0"
+                          onClick={() => setRenewing(m)}
+                          disabled={!canRenew}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
@@ -575,9 +578,11 @@ function MembersPage() {
                             <Button size="sm" variant="ghost" onClick={() => setEditing(m)}>
                               <Edit3 className="h-3.5 w-3.5" />
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setRenewing(m)}>
-                              <RefreshCw className="h-3.5 w-3.5" />
-                            </Button>
+                            <div title={!canRenew ? "Can only renew when expired or within 2 days of expiration" : undefined}>
+                              <Button size="sm" variant="ghost" onClick={() => setRenewing(m)} disabled={!canRenew}>
+                                <RefreshCw className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                             <Button
                               size="sm"
                               variant="ghost"
@@ -1091,6 +1096,7 @@ function RenewMemberDialog({
   const [amountPaid, setAmountPaid] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [applyAbsenceCredits, setApplyAbsenceCredits] = useState(false);
+  const [startDate, setStartDate] = useState(todayISO());
 
   const selectedPlan = plans.find((p) => p.planId === planId);
   const price = selectedPlan?.pricePerMonth ?? 0;
@@ -1106,7 +1112,7 @@ function RenewMemberDialog({
   const totalDaysAdded =
     (selectedPlan?.durationMonths ?? 1) * 30 +
     (applyAbsenceCredits ? (creditsQ.data?.totalCreditDays ?? 0) : 0);
-  const projectedExpiry = formatDate(addDaysISO(todayISO(), totalDaysAdded));
+  const projectedExpiry = formatDate(addDaysISO(startDate, totalDaysAdded));
 
   const renewM = useMutation({
     mutationFn: () =>
@@ -1115,6 +1121,7 @@ function RenewMemberDialog({
         amountPaid: amountPaidNum,
         paymentMethod,
         applyAbsenceCredits,
+        startDate,
       }),
     onSuccess: () => {
       toast.success(`${member.name}'s plan renewed!`);
@@ -1134,20 +1141,26 @@ function RenewMemberDialog({
           </div>
         </DialogHeader>
         <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <Label>Select Plan</Label>
-            <Select value={planId} onValueChange={setPlanId}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {plans.map((p) => (
-                  <SelectItem key={p.planId} value={p.planId}>
-                    {p.label} (₹{p.pricePerMonth})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Select Plan</Label>
+              <Select value={planId} onValueChange={setPlanId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((p) => (
+                    <SelectItem key={p.planId} value={p.planId}>
+                      {p.label} (₹{p.pricePerMonth})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Start Date</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -1237,7 +1250,7 @@ function RenewMemberDialog({
             <div className="flex justify-between text-muted-foreground">
               <span>Standard Expiration:</span>
               <span className="font-medium text-foreground">
-                {formatDate(addDaysISO(todayISO(), (selectedPlan?.durationMonths ?? 1) * 30))}
+                {formatDate(addDaysISO(startDate, (selectedPlan?.durationMonths ?? 1) * 30))}
               </span>
             </div>
             {applyAbsenceCredits && (creditsQ.data?.totalCreditDays ?? 0) > 0 && (
