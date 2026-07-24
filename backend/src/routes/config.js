@@ -261,7 +261,6 @@ router.post("/factory-reset", requireRole("admin"), async (req, res, next) => {
           payments, 
           guest_passes, 
           push_subscriptions, 
-          feedback, 
           dashboard_notifications,
           menus,
           meal_skips,
