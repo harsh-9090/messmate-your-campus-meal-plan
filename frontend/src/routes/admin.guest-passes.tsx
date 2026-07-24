@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { guestPassesApi, configApi } from "@/lib/messmate/api";
-import { GuestPass } from "@/lib/messmate/types";
+import { Meal, GuestPass } from "@/lib/messmate/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -752,20 +752,6 @@ interface ViewPassDialogProps {
 }
 
 function ViewPassDialog({ pass, onOpenChange }: ViewPassDialogProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    if (pass && pass.qr_token && canvasRef.current) {
-      QRCode.toCanvas(canvasRef.current, pass.qr_token, {
-        width: 180,
-        margin: 1,
-        color: { dark: "#0f172a", light: "#ffffff" },
-        errorCorrectionLevel: "H",
-      }).catch((err) => {
-        console.error("QR Code generation failed", err);
-      });
-    }
-  }, [pass]);
 
   return (
     <Dialog open={!!pass} onOpenChange={onOpenChange}>
@@ -794,7 +780,7 @@ function ViewPassDialog({ pass, onOpenChange }: ViewPassDialogProps) {
             </div>
 
             <div className="flex flex-col items-center">
-              <canvas ref={canvasRef} className="border p-2.5 rounded-xl bg-white shadow-sm" />
+              <QRCodeDisplay token={pass.qr_token} />
               <p className="text-[10px] text-muted-foreground font-semibold mt-2.5">
                 {pass.status === "active" ? "Scan this QR code directly for entry validation" : "QR code is inactive or used"}
               </p>
@@ -843,4 +829,23 @@ function ViewPassDialog({ pass, onOpenChange }: ViewPassDialogProps) {
       </DialogContent>
     </Dialog>
   );
+}
+
+function QRCodeDisplay({ token }: { token: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (token && canvasRef.current) {
+      QRCode.toCanvas(canvasRef.current, token, {
+        width: 180,
+        margin: 1,
+        color: { dark: "#0f172a", light: "#ffffff" },
+        errorCorrectionLevel: "H",
+      }).catch((err) => {
+        console.error("QR Code generation failed", err);
+      });
+    }
+  }, [token]);
+
+  return <canvas ref={canvasRef} className="border p-2.5 rounded-xl bg-white shadow-sm" />;
 }
