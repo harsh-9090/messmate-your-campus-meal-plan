@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { guestPassesApi, configApi } from "@/lib/messmate/api";
-import { Meal, GuestPass } from "@/lib/messmate/types";
-import { MessageCircle } from "lucide-react";
+import { GuestPass } from "@/lib/messmate/types";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,14 +13,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { 
-  Ticket, 
-  CheckCircle, 
-  Search, 
-  Loader2, 
-  Calendar, 
-  User, 
-  IndianRupee, 
+import {
+  Ticket,
+  CheckCircle,
+  Search,
+  Loader2,
+  Calendar,
+  User,
+  IndianRupee,
   AlertCircle,
   Clock,
   ArrowUpRight,
@@ -376,15 +375,14 @@ function AdminGuestPassesPage() {
                         <TableCell>
                           <Badge
                             variant="secondary"
-                            className={`capitalize font-bold ${
-                              gp.status === "active"
-                                ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-                                : gp.status === "used"
-                                  ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                                  : gp.status === "pending_approval"
-                                    ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
-                                    : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
-                            }`}
+                            className={`capitalize font-bold ${gp.status === "active"
+                              ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                              : gp.status === "used"
+                                ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                                : gp.status === "pending_approval"
+                                  ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                                  : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
+                              }`}
                           >
                             {gp.status === "pending_approval" ? "Pending Cash" : gp.status}
                           </Badge>
@@ -436,15 +434,14 @@ function AdminGuestPassesPage() {
                     </div>
                     <Badge
                       variant="secondary"
-                      className={`capitalize font-bold text-[10px] py-0 px-2 ${
-                        gp.status === "active"
-                          ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-                          : gp.status === "used"
-                            ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                            : gp.status === "pending_approval"
-                              ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
-                              : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
-                      }`}
+                      className={`capitalize font-bold text-[10px] py-0 px-2 ${gp.status === "active"
+                        ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                        : gp.status === "used"
+                          ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                          : gp.status === "pending_approval"
+                            ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                            : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
+                        }`}
                     >
                       {gp.status === "pending_approval" ? "Pending Cash" : gp.status}
                     </Badge>
@@ -471,7 +468,7 @@ function AdminGuestPassesPage() {
                       <span className="font-extrabold text-slate-700 dark:text-slate-300 text-xs">{formatINR(gp.price)}</span>
                     </div>
                   </div>
-                  
+
                   <div className="pt-1 mt-1">
                     <Button
                       size="sm"
@@ -722,12 +719,12 @@ function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
             </div>
 
             {createdPass.guest_mobile && (
-              <Button 
+              <Button
                 className="w-full h-10 rounded-xl font-bold shadow-sm bg-[#25D366] hover:bg-[#128C7E] text-white"
                 onClick={() => {
                   const message = `Here is your Mom's Kitchen walk-in ticket for ${createdPass.meal} on ${createdPass.date}.\n\nShow this QR code at the counter: https://momskitchenalandi.com/pass/${createdPass.qr_token}`;
                   const encodedMsg = encodeURIComponent(message);
-                  const cleanNumber = createdPass.guest_mobile?.replace(/\D/g, '') || ''; 
+                  const cleanNumber = createdPass.guest_mobile?.replace(/\D/g, '') || '';
                   // Ensure country code is present (assuming +91 default for India if length is 10)
                   const finalNumber = cleanNumber.length === 10 ? `91${cleanNumber}` : cleanNumber;
                   // Opens WhatsApp app
@@ -783,15 +780,14 @@ function ViewPassDialog({ pass, onOpenChange }: ViewPassDialogProps) {
               <h3 className="font-bold text-slate-800 dark:text-slate-200">Guest Ticket Details</h3>
               <Badge
                 variant="secondary"
-                className={`capitalize font-bold text-[10px] py-0 px-2 mt-1 ${
-                  pass.status === "active"
-                    ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-                    : pass.status === "used"
-                      ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
-                      : pass.status === "pending_approval"
-                        ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
-                        : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
-                }`}
+                className={`capitalize font-bold text-[10px] py-0 px-2 mt-1 ${pass.status === "active"
+                  ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
+                  : pass.status === "used"
+                    ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
+                    : pass.status === "pending_approval"
+                      ? "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400"
+                      : "bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400"
+                  }`}
               >
                 {pass.status === "pending_approval" ? "Pending Cash" : pass.status}
               </Badge>
@@ -822,12 +818,12 @@ function ViewPassDialog({ pass, onOpenChange }: ViewPassDialogProps) {
             </div>
 
             {pass.guest_mobile && pass.status === "active" && (
-              <Button 
+              <Button
                 className="w-full h-10 rounded-xl font-bold shadow-sm bg-[#25D366] hover:bg-[#128C7E] text-white"
                 onClick={() => {
                   const message = `Here is your Mom's Kitchen walk-in ticket for ${pass.meal} on ${pass.date}.\n\nShow this QR code at the counter: https://momskitchenalandi.com/pass/${pass.qr_token}`;
                   const encodedMsg = encodeURIComponent(message);
-                  const cleanNumber = pass.guest_mobile?.replace(/\D/g, '') || ''; 
+                  const cleanNumber = pass.guest_mobile?.replace(/\D/g, '') || '';
                   // Ensure country code is present (assuming +91 default for India if length is 10)
                   const finalNumber = cleanNumber.length === 10 ? `91${cleanNumber}` : cleanNumber;
                   // Opens WhatsApp app
