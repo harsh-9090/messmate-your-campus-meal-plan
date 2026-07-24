@@ -399,14 +399,14 @@ router.post("/request-email-change-otp",
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
       
-      const { newEmail } = req.body;
+      const { newEmail, memberId, name } = req.body;
       
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       // Cache using the new email to ensure validation maps to this specific address
       await setCache(`messmate:email-change-otp:${newEmail}`, otp, 300); // 5 mins
       
       queueEmailJob("otp", { 
-        member: { name: "Admin", email: newEmail }, 
+        member: { memberId, name: name || "Member", email: newEmail }, 
         otp 
       });
       

@@ -137,10 +137,10 @@ export const authApi = {
       auth: false,
       body: JSON.stringify(data),
     }),
-  requestEmailOTP: (newEmail: string) =>
+  requestEmailOTP: (newEmail: string, memberId: string, name: string) =>
     request<{ ok: true; message: string }>("/auth/request-email-change-otp", {
       method: "POST",
-      body: JSON.stringify({ newEmail }),
+      body: JSON.stringify({ newEmail, memberId, name }),
     }),
   forgotPassword: (memberId: string) =>
     request<{ ok: boolean; message: string }>("/auth/forgot-password", {

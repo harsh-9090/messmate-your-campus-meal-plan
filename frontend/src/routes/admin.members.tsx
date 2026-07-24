@@ -930,7 +930,7 @@ function EditMemberDialog({
   const [otp, setOtp] = useState("");
 
   const requestOtpM = useMutation({
-    mutationFn: (newEmail: string) => authApi.requestEmailOTP(newEmail),
+    mutationFn: (newEmail: string) => authApi.requestEmailOTP(newEmail, member.memberId, name),
     onSuccess: () => {
       setShowOtpDialog(true);
       toast.success(`Verification code sent to ${email}`);
