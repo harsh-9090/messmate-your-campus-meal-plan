@@ -288,4 +288,21 @@ router.post(
   }
 );
 
+// 7. Delete/Revoke a guest pass (Admins only)
+// DELETE /:id
+router.delete("/:id", verifyToken, requireRole("admin"), async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { rowCount } = await query(`DELETE FROM guest_passes WHERE id = $1`, [id]);
+    
+    if (rowCount === 0) {
+      return res.status(404).json({ error: "Guest pass not found" });
+    }
+    
+    res.json({ message: "Guest pass deleted successfully" });
+  } catch (e) {
+    next(e);
+  }
+});
+
 export default router;

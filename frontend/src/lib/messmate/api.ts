@@ -466,6 +466,10 @@ export const guestPassesApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  deletePass: (id: string) =>
+    request<{ message: string }>(`/guest-passes/${id}`, {
+      method: "DELETE",
+    }),
 };
 
 export const pushApi = {

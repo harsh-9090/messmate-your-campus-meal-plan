@@ -28,6 +28,7 @@ import {
   Check,
   Eye,
   MessageCircle,
+  Trash2,
 } from "lucide-react";
 import { formatINR } from "@/lib/messmate/dateHelpers";
 import { toast } from "sonner";
@@ -72,6 +73,19 @@ function AdminGuestPassesPage() {
     },
     onError: (err: any) => {
       toast.error(err?.message || "Failed to approve guest pass");
+    },
+  });
+
+  // Delete mutation
+  const deleteM = useMutation({
+    mutationFn: (id: string) => guestPassesApi.deletePass(id),
+    onSuccess: () => {
+      toast.success("Guest pass deleted successfully");
+      qc.invalidateQueries({ queryKey: ["guest-passes-pending"] });
+      qc.invalidateQueries({ queryKey: ["guest-passes-all"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to delete guest pass");
     },
   });
 
@@ -391,15 +405,30 @@ function AdminGuestPassesPage() {
                           {formatINR(gp.price)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-xl h-8 px-3 shadow-sm"
-                            onClick={() => setViewPass(gp)}
-                          >
-                            <Eye className="h-3.5 w-3.5 mr-1.5" />
-                            View
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl h-8 px-3 shadow-sm"
+                              onClick={() => setViewPass(gp)}
+                            >
+                              <Eye className="h-3.5 w-3.5 mr-1.5" />
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="rounded-xl h-8 px-2 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to completely delete this guest pass? This action cannot be undone.")) {
+                                  deleteM.mutate(gp.id);
+                                }
+                              }}
+                              disabled={deleteM.isPending}
+                            >
+                              {deleteM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -469,15 +498,28 @@ function AdminGuestPassesPage() {
                     </div>
                   </div>
 
-                  <div className="pt-1 mt-1">
+                  <div className="pt-1 mt-1 flex gap-2">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full rounded-xl h-9 shadow-sm"
+                      className="flex-1 rounded-xl h-9 shadow-sm"
                       onClick={() => setViewPass(gp)}
                     >
                       <Eye className="h-3.5 w-3.5 mr-2" />
-                      View Pass / Resend QR
+                      View / Resend
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xl h-9 px-3 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 shadow-sm"
+                      onClick={() => {
+                        if (window.confirm("Are you sure you want to completely delete this guest pass? This action cannot be undone.")) {
+                          deleteM.mutate(gp.id);
+                        }
+                      }}
+                      disabled={deleteM.isPending}
+                    >
+                      {deleteM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                     </Button>
                   </div>
                 </Card>
