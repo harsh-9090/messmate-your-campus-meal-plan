@@ -258,6 +258,7 @@ function MembersPage() {
                 const left = daysRemaining(m.subscription.endDate);
                 const expired = left < 0;
                 const canRenew = expired || left <= 2;
+                const planDietType = plans.find((p) => p.planId === m.subscription.planId)?.dietType;
                 return (
                   <div
                     key={m.memberId}
@@ -330,6 +331,7 @@ function MembersPage() {
                           <PlanBadge
                             planId={m.subscription.planId}
                             label={m.subscription.planLabel}
+                            dietType={planDietType}
                           />
                         </div>
                       </div>
@@ -474,6 +476,7 @@ function MembersPage() {
                     const left = daysRemaining(m.subscription.endDate);
                     const expired = left < 0;
                     const canRenew = expired || left <= 2;
+                    const planDietType = plans.find((p) => p.planId === m.subscription.planId)?.dietType;
                     return (
                       <tr key={m.memberId} className="border-t hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3">
@@ -508,6 +511,7 @@ function MembersPage() {
                           <PlanBadge
                             planId={m.subscription.planId}
                             label={m.subscription.planLabel}
+                            dietType={planDietType}
                           />
                         </td>
                         <td className="px-4 py-3">
