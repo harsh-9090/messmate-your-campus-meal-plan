@@ -145,6 +145,9 @@ function PlanConfigPage() {
                       {p.dietType === "Both" && (
                         <Badge variant="secondary" className="text-[9px] h-3.5 px-1">Both</Badge>
                       )}
+                      {(!p.dietType || p.dietType === "Veg") && (
+                        <Badge variant="outline" className="text-[9px] h-3.5 px-1 text-green-600 border-green-600/30 bg-green-50/50">Veg</Badge>
+                      )}
                     </div>
                     <div className="mt-1">
                       <PlanIcons plan={p} />

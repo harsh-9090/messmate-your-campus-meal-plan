@@ -812,7 +812,12 @@ function AddMemberDialog({
               <SelectContent>
                 {plans.map((p) => (
                   <SelectItem key={p.planId} value={p.planId}>
-                    {p.label}
+                    <div className="flex items-center gap-2">
+                      <span>{p.label}</span>
+                      <span className="text-[10px] uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded-sm">
+                        {p.dietType || "Veg"}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -954,11 +959,16 @@ function EditMemberDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {plans.map((p) => (
-                  <SelectItem key={p.planId} value={p.planId}>
-                    {p.label}
-                  </SelectItem>
-                ))}
+                  {plans.map((p) => (
+                    <SelectItem key={p.planId} value={p.planId}>
+                      <div className="flex items-center gap-2">
+                        <span>{p.label}</span>
+                        <span className="text-[10px] uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded-sm">
+                          {p.dietType || "Veg"}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

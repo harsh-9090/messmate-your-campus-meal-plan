@@ -321,9 +321,14 @@ function RegisterPage() {
                         className="py-4 focus:bg-primary/10 rounded-xl cursor-pointer m-1 transition-colors"
                       >
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-foreground">
-                            {plan.label} - ₹{plan.pricePerMonth}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-foreground">
+                              {plan.label} - ₹{plan.pricePerMonth}
+                            </span>
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground bg-muted border border-border/50 px-1.5 py-0.5 rounded-sm">
+                              {plan.dietType || "Veg"}
+                            </span>
+                          </div>
                           <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold mt-0.5">
                             {plan.meals.join(" • ")}
                           </span>
