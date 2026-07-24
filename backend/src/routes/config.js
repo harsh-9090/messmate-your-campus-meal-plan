@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
-import { query } from "../db/index.js";
+import { query, withTx } from "../db/index.js";
 import { getCache, setCache, delCache } from "../db/redis.js";
 import { body, param, validationResult } from "express-validator";
 
@@ -246,6 +246,39 @@ router.put("/windows/:meal", requireRole("admin"), windowUpdateSchema, async (re
     
     const w = rows[0];
     res.json({ meal: w.meal, startTime: w.start_time, endTime: w.end_time, isActive: w.is_active, guestPrice: w.guest_price });
+  } catch (e) { next(e); }
+});
+
+// --- Factory Reset ---
+router.post("/factory-reset", requireRole("admin"), async (req, res, next) => {
+  try {
+    // This is extremely dangerous and should only be called if explicitly requested
+    await withTx(async (client) => {
+      await client.query(`
+        TRUNCATE TABLE 
+          meal_usage, 
+          scan_logs, 
+          payments, 
+          guest_passes, 
+          push_subscriptions, 
+          feedback, 
+          dashboard_notifications,
+          menus,
+          meal_skips,
+          menu_item_ratings,
+          subscriptions
+        CASCADE;
+      `);
+      await client.query(`DELETE FROM members WHERE role != 'admin'`);
+    });
+    
+    // Clear entire Redis cache to prevent stale data
+    const redisClient = (await import("../db/redis.js")).redisClient;
+    if (redisClient) {
+      await redisClient.flushdb();
+    }
+    
+    res.json({ ok: true, message: "Factory reset complete" });
   } catch (e) { next(e); }
 });
 

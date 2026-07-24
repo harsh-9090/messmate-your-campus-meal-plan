@@ -258,6 +258,8 @@ export const configApi = {
       method: "PUT",
       body: JSON.stringify({ startTime, endTime, guestPrice }),
     }),
+  factoryReset: () =>
+    request<{ ok: true; message: string }>("/config/factory-reset", { method: "POST" }),
 };
 
 // ---------- QR ----------
