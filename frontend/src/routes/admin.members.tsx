@@ -257,6 +257,7 @@ function MembersPage() {
               members.map((m) => {
                 const left = daysRemaining(m.subscription.endDate);
                 const expired = left < 0;
+                const canRenew = expired || left <= 2;
                 return (
                   <div
                     key={m.memberId}
