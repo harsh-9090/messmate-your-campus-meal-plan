@@ -55,6 +55,7 @@ const groups = [
     title: "Settings",
     items: [
       { to: "/admin/plan-config", label: "Plan Config", icon: Settings },
+      { to: "/admin/settings", label: "System Settings", icon: Settings },
     ],
   },
 ];
