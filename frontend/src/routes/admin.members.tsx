@@ -472,6 +472,7 @@ function MembersPage() {
                   members.map((m) => {
                     const left = daysRemaining(m.subscription.endDate);
                     const expired = left < 0;
+                    const canRenew = expired || left <= 2;
                     return (
                       <tr key={m.memberId} className="border-t hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3">
