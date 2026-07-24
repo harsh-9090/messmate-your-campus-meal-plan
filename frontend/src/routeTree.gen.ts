@@ -20,6 +20,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as StaffScannerRouteImport } from './routes/staff/scanner'
 import { Route as GuestPassTokenRouteImport } from './routes/guest-pass.$token'
 import { Route as AdminStaffRouteImport } from './routes/admin.staff'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminScanLogsRouteImport } from './routes/admin.scan-logs'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminPlanConfigRouteImport } from './routes/admin.plan-config'
@@ -85,6 +86,11 @@ const GuestPassTokenRoute = GuestPassTokenRouteImport.update({
 const AdminStaffRoute = AdminStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminScanLogsRoute = AdminScanLogsRouteImport.update({
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/admin/plan-config': typeof AdminPlanConfigRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scan-logs': typeof AdminScanLogsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/staff': typeof AdminStaffRoute
   '/guest-pass/$token': typeof GuestPassTokenRoute
   '/staff/scanner': typeof StaffScannerRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/admin/plan-config': typeof AdminPlanConfigRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scan-logs': typeof AdminScanLogsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/staff': typeof AdminStaffRoute
   '/guest-pass/$token': typeof GuestPassTokenRoute
   '/staff/scanner': typeof StaffScannerRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/admin/plan-config': typeof AdminPlanConfigRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/scan-logs': typeof AdminScanLogsRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/admin/staff': typeof AdminStaffRoute
   '/guest-pass/$token': typeof GuestPassTokenRoute
   '/staff/scanner': typeof StaffScannerRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/admin/plan-config'
     | '/admin/reports'
     | '/admin/scan-logs'
+    | '/admin/settings'
     | '/admin/staff'
     | '/guest-pass/$token'
     | '/staff/scanner'
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/admin/plan-config'
     | '/admin/reports'
     | '/admin/scan-logs'
+    | '/admin/settings'
     | '/admin/staff'
     | '/guest-pass/$token'
     | '/staff/scanner'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/admin/plan-config'
     | '/admin/reports'
     | '/admin/scan-logs'
+    | '/admin/settings'
     | '/admin/staff'
     | '/guest-pass/$token'
     | '/staff/scanner'
@@ -380,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStaffRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/scan-logs': {
       id: '/admin/scan-logs'
       path: '/scan-logs'
@@ -472,6 +491,7 @@ interface AdminRouteChildren {
   AdminPlanConfigRoute: typeof AdminPlanConfigRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminScanLogsRoute: typeof AdminScanLogsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStaffRoute: typeof AdminStaffRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -488,6 +508,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminPlanConfigRoute: AdminPlanConfigRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminScanLogsRoute: AdminScanLogsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   AdminStaffRoute: AdminStaffRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
