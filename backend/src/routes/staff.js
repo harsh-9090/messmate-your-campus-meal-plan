@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import { body, validationResult } from "express-validator";
 import { query, rowToMember, stripPassword } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
-import { delByPattern } from "../db/redis.js";
+import { delByPattern, getCache, delCache } from "../db/redis.js";
 
 const router = Router();
 router.use(verifyToken);
@@ -79,6 +79,28 @@ router.put("/:id",
 
       const sets = [];
       const params = [];
+
+      const existingMember = await query(`SELECT email FROM members WHERE member_id = $1`, [req.params.id]);
+      if (!existingMember.rows[0]) return res.status(404).json({ error: "Not found" });
+      const currentEmail = existingMember.rows[0].email;
+
+      if (email && email.trim().toLowerCase() !== (currentEmail || "").trim().toLowerCase()) {
+        const { otp } = req.body;
+        if (!otp) {
+          return res.status(400).json({ requiresOtp: true, error: "OTP is required to change email" });
+        }
+        
+        const targetEmail = email.trim().toLowerCase();
+        const cachedOtp = await getCache(`messmate:email-change-otp:${targetEmail}`);
+        if (!cachedOtp || cachedOtp !== otp.trim()) {
+          return res.status(400).json({ error: "Invalid or expired OTP for email change" });
+        }
+        
+        await delCache(`messmate:email-change-otp:${targetEmail}`);
+        
+        // Mark email verified
+        sets.push(`email_verified = TRUE`);
+      }
 
     if (memberId && memberId !== req.params.id) {
       const existing = await query(`SELECT 1 FROM members WHERE member_id = $1`, [memberId]);

@@ -137,6 +137,11 @@ export const authApi = {
       auth: false,
       body: JSON.stringify(data),
     }),
+  requestEmailOTP: (newEmail: string) =>
+    request<{ ok: true; message: string }>("/auth/request-email-change-otp", {
+      method: "POST",
+      body: JSON.stringify({ newEmail }),
+    }),
   forgotPassword: (memberId: string) =>
     request<{ ok: boolean; message: string }>("/auth/forgot-password", {
       method: "POST",
@@ -201,6 +206,7 @@ export const membersApi = {
       mobile: string;
       password: string;
       photoUrl: string;
+      otp: string;
     }>,
   ) => request<Member>(`/members/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   remove: (id: string) => request<{ ok: true }>(`/members/${id}`, { method: "DELETE" }),

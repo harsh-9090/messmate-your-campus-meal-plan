@@ -386,4 +386,33 @@ router.post("/resend-verification", verifyToken, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.post("/request-email-change-otp",
+  verifyToken,
+  body("newEmail").isEmail().normalizeEmail(),
+  async (req, res, next) => {
+    try {
+      // Must be an admin to request this
+      if (req.user.role !== "admin") {
+        return res.status(403).json({ error: "Forbidden" });
+      }
+
+      const errs = validationResult(req);
+      if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
+      
+      const { newEmail } = req.body;
+      
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      // Cache using the new email to ensure validation maps to this specific address
+      await setCache(`messmate:email-change-otp:${newEmail}`, otp, 300); // 5 mins
+      
+      queueEmailJob("otp", { 
+        member: { name: "Admin", email: newEmail }, 
+        otp 
+      });
+      
+      res.json({ ok: true, message: "OTP sent to new email" });
+    } catch (e) { next(e); }
+  }
+);
+
 export default router;

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { membersApi, configApi } from "@/lib/messmate/api";
+import { membersApi, configApi, authApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -915,9 +915,27 @@ function EditMemberDialog({
   const [planId, setPlanId] = useState(member.subscription.planId);
   const [meals, setMeals] = useState<Meal[]>(member.subscription.meals);
 
+  const [showOtpDialog, setShowOtpDialog] = useState(false);
+  const [otp, setOtp] = useState("");
+
+  const requestOtpM = useMutation({
+    mutationFn: (newEmail: string) => authApi.requestEmailOTP(newEmail),
+    onSuccess: () => {
+      setShowOtpDialog(true);
+      toast.success(`Verification code sent to ${email}`);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to request code"),
+  });
+
   const saveM = useMutation({
     mutationFn: async () => {
-      await membersApi.update(member.memberId, { name, email, mobile: mobile || undefined });
+      const emailChanged = email.trim().toLowerCase() !== member.email.trim().toLowerCase();
+      await membersApi.update(member.memberId, { 
+        name, 
+        email, 
+        mobile: mobile || undefined,
+        otp: emailChanged ? otp : undefined 
+      });
       await membersApi.changePlan(member.memberId, { planId, meals });
     },
     onSuccess: () => {
@@ -925,8 +943,23 @@ function EditMemberDialog({
       onSaved();
       onClose();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Failed"),
+    onError: (e: any) => {
+      if (e?.requiresOtp) {
+        requestOtpM.mutate(email);
+      } else {
+        toast.error(e?.message ?? "Failed");
+      }
+    },
   });
+
+  const handleSave = () => {
+    const emailChanged = email.trim().toLowerCase() !== member.email.trim().toLowerCase();
+    if (emailChanged && !otp) {
+      requestOtpM.mutate(email);
+    } else {
+      saveM.mutate();
+    }
+  };
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -998,11 +1031,47 @@ function EditMemberDialog({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={() => saveM.mutate()} disabled={saveM.isPending}>
-            {saveM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
+          <Button onClick={handleSave} disabled={saveM.isPending || requestOtpM.isPending}>
+            {(saveM.isPending || requestOtpM.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
           </Button>
         </DialogFooter>
       </DialogContent>
+      
+      {/* OTP Verification Modal */}
+      <Dialog open={showOtpDialog} onOpenChange={setShowOtpDialog}>
+        <DialogContent className="sm:max-w-sm rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Verify Email Change</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4 text-center">
+            <p className="text-sm text-muted-foreground">
+              A 6-digit verification code was sent to <span className="font-bold text-foreground">{email}</span>. Please enter it below to confirm this change.
+            </p>
+            <div className="flex justify-center">
+              <Input
+                type="text"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                placeholder="------"
+                className="w-32 text-center tracking-[0.5em] font-mono text-xl h-12"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowOtpDialog(false)} className="w-full">
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => saveM.mutate()} 
+              disabled={otp.length !== 6 || saveM.isPending} 
+              className="w-full"
+            >
+              {saveM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

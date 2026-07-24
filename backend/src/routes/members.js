@@ -282,6 +282,20 @@ router.put("/:id",
 
       if (req.body.email && req.body.email.trim().toLowerCase() !== (existing.email || "").trim().toLowerCase()) {
         emailChanged = true;
+        
+        const { otp } = req.body;
+        if (!otp) {
+          return res.status(400).json({ requiresOtp: true, error: "OTP is required to change email" });
+        }
+        
+        const targetEmail = req.body.email.trim().toLowerCase();
+        const cachedOtp = await getCache(`messmate:email-change-otp:${targetEmail}`);
+        if (!cachedOtp || cachedOtp !== otp.trim()) {
+          return res.status(400).json({ error: "Invalid or expired OTP for email change" });
+        }
+        
+        // Clear OTP since it's used
+        await delCache(`messmate:email-change-otp:${targetEmail}`);
       }
 
       for (const [k, col] of Object.entries(allowed)) {
@@ -296,7 +310,7 @@ router.put("/:id",
       }
 
       if (emailChanged) {
-        sets.push(`email_verified = FALSE`);
+        sets.push(`email_verified = TRUE`);
       }
 
       if (!sets.length) return res.status(400).json({ error: "No updatable fields" });
@@ -310,15 +324,6 @@ router.put("/:id",
 
       const updatedMember = rows[0];
 
-      if (emailChanged) {
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        await setCache(`messmate:member:${updatedMember.member_id}:email-otp`, otp, 300);
-        sendVerificationOTPEmail(
-          { memberId: updatedMember.member_id, name: updatedMember.name, email: updatedMember.email },
-          otp
-        ).catch(err => console.error("[NOTIFY-ERROR] Failed to send verification email background:", err.message));
-      }
-      
       await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
       await delByPattern("member:list");
       
