@@ -225,7 +225,14 @@ router.post(
   requireRole("admin"),
   [
     body("guestName").trim().notEmpty().withMessage("Guest name is required"),
-    body("guestEmail").trim().isEmail().withMessage("Valid guest email is required"),
+    body("guestEmail").optional({ checkFalsy: true }).isEmail().withMessage("Valid guest email is required"),
+    body("guestMobile").optional({ checkFalsy: true }).isString().withMessage("Valid mobile is required"),
+    body().custom((value) => {
+      if (!value.guestEmail && !value.guestMobile) {
+        throw new Error("Either Email or Mobile number is required");
+      }
+      return true;
+    }),
     body("date").isISO8601().withMessage("Valid date (YYYY-MM-DD) is required"),
     body("meal").isIn(["Breakfast", "Lunch", "Dinner"]).withMessage("Invalid meal type"),
   ],
@@ -236,7 +243,7 @@ router.post(
         return res.status(400).json({ error: "Invalid input", details: errs.array() });
       }
 
-      const { guestName, guestEmail, date, meal } = req.body;
+      const { guestName, guestEmail, guestMobile, date, meal } = req.body;
 
       // Generate a crypto random token prefixed with 'gp_'
       const rawToken = crypto.randomBytes(32).toString("hex");
@@ -249,25 +256,27 @@ router.post(
       const price = windowRows[0]?.guest_price ?? 120;
 
       const { rows } = await query(
-        `INSERT INTO guest_passes (member_id, guest_name, date, meal, qr_token, status, price)
-         VALUES (NULL, $1, $2, $3, $4, 'active', $5)
+        `INSERT INTO guest_passes (member_id, guest_name, guest_mobile, date, meal, qr_token, status, price)
+         VALUES (NULL, $1, $2, $3, $4, $5, 'active', $6)
          RETURNING *`,
-        [guestName, date, meal, qrToken, price]
+        [guestName, guestMobile || null, date, meal, qrToken, price]
       );
 
       const pass = rows[0];
 
-      // Dispatch guest pass email asynchronously via queue
-      queueEmailJob("guest_pass", {
-        email: guestEmail,
-        guestName,
-        passDetails: {
-          date: format(new Date(date), "yyyy-MM-dd"),
-          meal,
-          price,
-          qrToken,
-        }
-      });
+      // Dispatch guest pass email asynchronously via queue (if email provided)
+      if (guestEmail) {
+        queueEmailJob("guest_pass", {
+          email: guestEmail,
+          guestName,
+          passDetails: {
+            date: format(new Date(date), "yyyy-MM-dd"),
+            meal,
+            price,
+            qrToken,
+          }
+        });
+      }
 
       res.status(201).json({
         ...pass,

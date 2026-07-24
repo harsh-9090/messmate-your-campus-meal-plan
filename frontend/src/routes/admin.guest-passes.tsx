@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { guestPassesApi, configApi } from "@/lib/messmate/api";
 import { Meal, GuestPass } from "@/lib/messmate/types";
+import { MessageCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -475,9 +476,10 @@ function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
   const qc = useQueryClient();
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
+  const [guestMobile, setGuestMobile] = useState("");
   const [guestDate, setGuestDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [guestMeal, setGuestMeal] = useState<Meal>("Lunch");
-  const [createdPass, setCreatedPass] = useState<GuestPass | null>(null);
+  const [createdPass, setCreatedPass] = useState<(GuestPass & { guest_mobile?: string }) | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -493,7 +495,7 @@ function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
   };
 
   const walkInM = useMutation({
-    mutationFn: (data: { guestName: string; guestEmail: string; date: string; meal: Meal }) =>
+    mutationFn: (data: { guestName: string; guestEmail?: string; guestMobile?: string; date: string; meal: Meal }) =>
       guestPassesApi.issueWalkIn(data),
     onSuccess: (pass) => {
       toast.success("Walk-in pass issued & email dispatched!");
@@ -509,6 +511,7 @@ function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
     if (!open) {
       setGuestName("");
       setGuestEmail("");
+      setGuestMobile("");
       setGuestDate(new Date().toISOString().split("T")[0]);
       setGuestMeal("Lunch");
       setCreatedPass(null);
@@ -546,13 +549,14 @@ function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
                 toast.error("Please enter guest name");
                 return;
               }
-              if (!guestEmail.trim()) {
-                toast.error("Please enter guest email");
+              if (!guestEmail.trim() && !guestMobile.trim()) {
+                toast.error("Please enter either an email or mobile number");
                 return;
               }
               walkInM.mutate({
                 guestName: guestName.trim(),
-                guestEmail: guestEmail.trim(),
+                guestEmail: guestEmail.trim() || undefined,
+                guestMobile: guestMobile.trim() || undefined,
                 date: guestDate,
                 meal: guestMeal,
               });
@@ -573,19 +577,34 @@ function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="guestEmail" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Guest Email Address
-              </Label>
-              <Input
-                id="guestEmail"
-                type="email"
-                placeholder="Enter visitor email..."
-                required
-                className="h-10 rounded-xl"
-                value={guestEmail}
-                onChange={(e) => setGuestEmail(e.target.value)}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="guestEmail" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Guest Email Address
+                </Label>
+                <Input
+                  id="guestEmail"
+                  type="email"
+                  placeholder="visitor@email.com"
+                  className="h-10 rounded-xl"
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="guestMobile" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Guest Mobile Number
+                </Label>
+                <Input
+                  id="guestMobile"
+                  type="tel"
+                  placeholder="+91..."
+                  className="h-10 rounded-xl"
+                  value={guestMobile}
+                  onChange={(e) => setGuestMobile(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -643,9 +662,11 @@ function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
 
             <div className="space-y-1">
               <h3 className="font-bold text-slate-800 dark:text-slate-200">Active Walk-in Ticket</h3>
-              <p className="text-xs text-muted-foreground">
-                Email with instructions sent to <strong className="text-slate-700 dark:text-slate-300">{guestEmail}</strong>
-              </p>
+              {guestEmail && (
+                <p className="text-xs text-muted-foreground">
+                  Email with instructions sent to <strong className="text-slate-700 dark:text-slate-300">{guestEmail}</strong>
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col items-center">
@@ -672,7 +693,25 @@ function WalkInPassDialog({ open, onOpenChange }: WalkInPassDialogProps) {
               </div>
             </div>
 
-            <Button onClick={() => onOpenChange(false)} className="w-full h-10 rounded-xl font-bold shadow-sm">
+            {createdPass.guest_mobile && (
+              <Button 
+                className="w-full h-10 rounded-xl font-bold shadow-sm bg-[#25D366] hover:bg-[#128C7E] text-white"
+                onClick={() => {
+                  const message = `Here is your Mom's Kitchen walk-in ticket for ${createdPass.meal} on ${createdPass.date}.\n\nShow this QR code at the counter: https://momskitchenalandi.com/pass/${createdPass.qr_token}`;
+                  const encodedMsg = encodeURIComponent(message);
+                  const cleanNumber = createdPass.guest_mobile?.replace(/\D/g, '') || ''; 
+                  // Ensure country code is present (assuming +91 default for India if length is 10)
+                  const finalNumber = cleanNumber.length === 10 ? `91${cleanNumber}` : cleanNumber;
+                  // Opens WhatsApp app
+                  window.open(`whatsapp://send?text=${encodedMsg}&phone=${finalNumber}`, '_blank');
+                }}
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Send Pass via WhatsApp
+              </Button>
+            )}
+
+            <Button onClick={() => onOpenChange(false)} className="w-full h-10 rounded-xl font-bold shadow-sm" variant="outline">
               Done
             </Button>
           </div>

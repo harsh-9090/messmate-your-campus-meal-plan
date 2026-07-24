@@ -190,6 +190,7 @@ CREATE TABLE IF NOT EXISTS guest_passes (
 );
 
 CREATE INDEX IF NOT EXISTS guest_passes_token_idx ON guest_passes (qr_token);
+ALTER TABLE guest_passes ADD COLUMN IF NOT EXISTS guest_mobile TEXT;
 
 ALTER TABLE meal_windows ADD COLUMN IF NOT EXISTS guest_price INTEGER NOT NULL DEFAULT 120;
 UPDATE meal_windows SET guest_price = 80 WHERE meal = 'Breakfast' AND guest_price = 120;
