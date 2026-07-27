@@ -82,7 +82,13 @@ export function startWorker() {
         }
       }
     },
-    { connection, concurrency: 5 }
+    {
+      connection,
+      concurrency: 5,
+      drainDelay: 300000,
+      stalledInterval: 300000,
+      metrics: { maxDataPoints: 0 }
+    }
   );
 
   worker.on("completed", (job) => {
