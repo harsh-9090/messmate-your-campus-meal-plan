@@ -16,7 +16,7 @@ export const Route = createFileRoute("/login")({
       { title: "Sign in - Mom's Kitchen" },
       {
         name: "description",
-        content: "Mom's Kitchen hostel mess management - log in as admin, staff, or member.",
+        content: "Mom's Kitchen mess management - log in as admin, staff, or member.",
       },
     ],
   }),
@@ -204,12 +204,12 @@ function LoginPage() {
             </div>
 
             <div className="flex items-center space-x-2 px-1">
-              <input 
-                type="checkbox" 
-                id="remember" 
+              <input
+                type="checkbox"
+                id="remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 rounded border-muted-foreground/30 text-primary focus:ring-primary/20 accent-primary cursor-pointer" 
+                className="h-4 w-4 rounded border-muted-foreground/30 text-primary focus:ring-primary/20 accent-primary cursor-pointer"
               />
               <Label htmlFor="remember" className="text-[13px] font-semibold text-muted-foreground cursor-pointer">
                 Keep me logged in

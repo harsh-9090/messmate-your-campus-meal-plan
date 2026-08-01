@@ -104,7 +104,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "twitter:description",
         content:
-          "Healthy hostel meals, QR-based check-ins, and simple monthly subscriptions at Mom's Kitchen.",
+          "Healthy meals, QR-based check-ins, and simple monthly subscriptions at Mom's Kitchen.",
       },
       { name: "twitter:image", content: "/og-image.png" },
 

@@ -164,7 +164,7 @@ export async function sendRegistrationReceivedEmail(member) {
       
       <hr style="border: 0; border-top: 1px solid #f3f4f6; margin: 25px 0;" />
       <p style="font-size: 12px; color: #6b7280; text-align: center; margin: 0;">
-        Need help? Contact the hostel kitchen office or reply directly to this email.
+        Need help? Contact the Mom's kitchen office.
       </p>
     </div>
   `;
@@ -219,7 +219,7 @@ export async function sendPlanActivatedEmail(member, planDetails) {
       </div>
       
       <p>Hello <strong>${member.name}</strong>,</p>
-      <p>We are pleased to inform you that your hostel meal plan subscription has been <strong>approved and activated</strong>!</p>
+      <p>We are pleased to inform you that your meal plan subscription has been <strong>approved and activated</strong>!</p>
       
       <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; margin: 20px 0;">
         <h4 style="margin: 0 0 12px 0; color: #166534; font-size: 16px; border-bottom: 1px solid #dcfce7; padding-bottom: 5px;">Plan Details:</h4>

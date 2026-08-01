@@ -30,7 +30,7 @@ export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
       { title: "Register - Mom's Kitchen" },
-      { name: "description", content: "Create your student account for the hostel mess." },
+      { name: "description", content: "Create your student account for the mess." },
     ],
   }),
   component: RegisterPage,
@@ -405,11 +405,10 @@ function RegisterPage() {
                                 <span className="font-bold text-sm text-foreground">
                                   {plan.label} - ₹{plan.pricePerMonth}
                                 </span>
-                                <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${
-                                  plan.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
-                                  plan.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
-                                  "text-green-600 bg-green-500/10 border-green-600/20"
-                                }`}>
+                                <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${plan.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
+                                    plan.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
+                                      "text-green-600 bg-green-500/10 border-green-600/20"
+                                  }`}>
                                   {plan.dietType || "Veg"}
                                 </span>
                               </div>
