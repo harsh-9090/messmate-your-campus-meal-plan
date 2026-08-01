@@ -173,7 +173,11 @@ function MembersPage() {
             <div>
               <h3 className="font-semibold text-pink-800 dark:text-pink-300">Today's Birthdays 🎂</h3>
               <p className="text-sm text-pink-700/80 dark:text-pink-400/80 mt-1">
-                Wish a happy birthday to: <span className="font-medium text-pink-900 dark:text-pink-200">{birthdays.map(m => m.name).join(", ")}</span>
+                Wish a happy birthday to: <span className="font-medium text-pink-900 dark:text-pink-200 cursor-help" title={birthdays.map(m => m.name).join(", ")}>
+                  {birthdays.length > 3 
+                    ? `${birthdays.slice(0, 3).map(m => m.name).join(", ")} and ${birthdays.length - 3} others`
+                    : birthdays.map(m => m.name).join(", ")}
+                </span>
               </p>
             </div>
           </div>
