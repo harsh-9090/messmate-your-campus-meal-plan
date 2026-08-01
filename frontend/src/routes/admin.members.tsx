@@ -59,6 +59,7 @@ function MembersPage() {
   const [renewing, setRenewing] = useState<Member | null>(null);
   const [paying, setPaying] = useState<Member | null>(null);
   const [deletingMember, setDeletingMember] = useState<Member | null>(null);
+  const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
 
   const membersQ = useQuery({
@@ -262,7 +263,8 @@ function MembersPage() {
                 return (
                   <div
                     key={m.memberId}
-                    className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm"
+                    className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm cursor-pointer hover:border-primary/50 transition-colors"
+                    onClick={() => setViewingMember(m)}
                   >
                     <div className="flex items-start justify-between gap-2 border-b pb-3">
                       <div className="flex items-center gap-3">
@@ -375,7 +377,7 @@ function MembersPage() {
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 p-0 border-primary text-primary hover:bg-primary/10"
-                          onClick={() => setPaying(m)}
+                          onClick={(e) => { e.stopPropagation(); setPaying(m); }}
                         >
                           <CreditCard className="h-4 w-4" />
                         </Button>
@@ -384,7 +386,7 @@ function MembersPage() {
                         size="sm"
                         variant="outline"
                         className="h-8 w-8 p-0"
-                        onClick={() => setEditing(m)}
+                        onClick={(e) => { e.stopPropagation(); setEditing(m); }}
                       >
                         <Edit3 className="h-4 w-4" />
                       </Button>
@@ -393,7 +395,7 @@ function MembersPage() {
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 p-0"
-                          onClick={() => setRenewing(m)}
+                          onClick={(e) => { e.stopPropagation(); setRenewing(m); }}
                           disabled={!canRenew}
                         >
                           <RefreshCw className="h-4 w-4" />
@@ -403,7 +405,7 @@ function MembersPage() {
                         size="sm"
                         variant="outline"
                         className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeletingMember(m)}
+                        onClick={(e) => { e.stopPropagation(); setDeletingMember(m); }}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -478,7 +480,11 @@ function MembersPage() {
                     const canRenew = expired || left <= 2;
                     const planDietType = plans.find((p) => p.planId === m.subscription.planId)?.dietType;
                     return (
-                      <tr key={m.memberId} className="border-t hover:bg-muted/30 transition-colors">
+                      <tr 
+                        key={m.memberId} 
+                        className="border-t hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => setViewingMember(m)}
+                      >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">
@@ -575,24 +581,24 @@ function MembersPage() {
                                 size="sm"
                                 variant="ghost"
                                 className="text-primary hover:text-primary hover:bg-primary/10"
-                                onClick={() => setPaying(m)}
+                                onClick={(e) => { e.stopPropagation(); setPaying(m); }}
                                 title="Record Payment"
                               >
                                 <CreditCard className="h-3.5 w-3.5" />
                               </Button>
                             )}
-                            <Button size="sm" variant="ghost" onClick={() => setEditing(m)}>
+                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditing(m); }}>
                               <Edit3 className="h-3.5 w-3.5" />
                             </Button>
                             <div title={!canRenew ? "Can only renew when expired or within 2 days of expiration" : undefined}>
-                              <Button size="sm" variant="ghost" onClick={() => setRenewing(m)} disabled={!canRenew}>
+                              <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setRenewing(m); }} disabled={!canRenew}>
                                 <RefreshCw className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => setDeletingMember(m)}
+                              onClick={(e) => { e.stopPropagation(); setDeletingMember(m); }}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -710,6 +716,12 @@ function MembersPage() {
         description={`Are you sure you want to delete ${deletingMember?.name}? This action cannot be undone and will permanently remove their records.`}
         confirmText="Delete"
         isPending={deleteM.isPending}
+      />
+      
+      <ViewMemberDialog 
+        member={viewingMember} 
+        onClose={() => setViewingMember(null)} 
+        plans={plans} 
       />
     </div>
   );
@@ -1445,6 +1457,122 @@ function RecordPaymentDialog({
           <Button onClick={() => savePayment.mutate()} disabled={savePayment.isPending}>
             {savePayment.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Record Payment
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ViewMemberDialog({
+  member,
+  onClose,
+  plans,
+}: {
+  member: Member | null;
+  onClose: () => void;
+  plans: Plan[];
+}) {
+  if (!member) return null;
+  
+  const left = daysRemaining(member.subscription.endDate);
+  const expired = left < 0;
+  const planDietType = plans.find((p) => p.planId === member.subscription.planId)?.dietType;
+
+  return (
+    <Dialog open={!!member} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md w-[95vw] rounded-2xl overflow-hidden p-0 gap-0">
+        <div className="bg-muted/30 p-6 border-b flex flex-col items-center justify-center text-center">
+          <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/10 text-xl font-bold text-primary mb-3">
+            {(member.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")}
+          </div>
+          <DialogTitle className="text-xl mb-1">{member.name}</DialogTitle>
+          <div className="text-sm text-muted-foreground font-medium mb-3">{member.memberId}</div>
+          
+          <div className="flex gap-2">
+            {!member.isActive ? (
+              <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
+            ) : !member.subscription.isPaid ? (
+              <Badge variant="destructive">Unpaid</Badge>
+            ) : expired ? (
+              <Badge variant="destructive">Expired</Badge>
+            ) : (
+              <Badge className="bg-success text-success-foreground">Active</Badge>
+            )}
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+          {/* Contact */}
+          <div>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Contact Information</h4>
+            <div className="grid gap-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Email</span>
+                <span className="font-medium">{member.email}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Mobile</span>
+                <span className="font-medium">
+                  {member.mobile ? (
+                    <a href={`tel:${member.mobile}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>{member.mobile}</a>
+                  ) : "N/A"}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Registered</span>
+                <span className="font-medium">{formatDate(member.createdAt)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Subscription */}
+          <div>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Subscription Details</h4>
+            <div className="grid gap-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Plan</span>
+                <PlanBadge planId={member.subscription.planId} label={member.subscription.planLabel} dietType={planDietType} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Meals Included</span>
+                <PlanIcons plan={member.subscription} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Start Date</span>
+                <span className="font-medium">{formatDate(member.subscription.startDate || member.createdAt)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Expiry Date</span>
+                <div className="text-right">
+                  <div className={cn("font-medium", expired && "text-destructive")}>{formatDate(member.subscription.endDate || addDaysISO(member.createdAt, 30))}</div>
+                  {(member.subscription.endDate || member.createdAt) && (
+                    <div className="text-[10px] text-muted-foreground">{expired ? `${-left} days ago` : `${left} days remaining`}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Financials */}
+          <div>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Financials</h4>
+            <div className="grid gap-3 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Amount Paid</span>
+                <span className="font-medium">₹{member.subscription.amountPaid || 0}</span>
+              </div>
+              {member.subscription.dueAmount > 0 && (
+                <div className="flex justify-between items-center mt-2 bg-destructive/10 text-destructive p-2 rounded-md font-semibold">
+                  <span>Pending Balance</span>
+                  <span>₹{member.subscription.dueAmount}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter className="p-4 border-t sm:justify-end bg-card">
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
