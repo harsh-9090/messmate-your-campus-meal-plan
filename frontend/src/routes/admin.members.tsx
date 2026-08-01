@@ -1545,7 +1545,7 @@ function ViewMemberDialog({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Date of Birth</span>
-                <span className="font-medium">{member.dob}</span>
+                <span className="font-medium">{formatDate(member.dob)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Mobile</span>
