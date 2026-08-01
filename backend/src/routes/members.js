@@ -508,8 +508,9 @@ router.put("/:id/payment", requireRole("admin"),
                amount_paid = amount_paid + $1,
                is_paid = (amount_paid + $1) >= price_per_month AND price_per_month > 0,
                paid_at = CASE WHEN (amount_paid + $1) >= price_per_month AND price_per_month > 0 THEN NOW() ELSE paid_at END,
+               status = CASE WHEN status = 'pending' THEN 'active' ELSE status END,
                updated_at = NOW()
-             WHERE member_id = $2 AND status = 'active'`,
+             WHERE member_id = $2 AND status IN ('active', 'pending')`,
             [amountPaid, req.params.id]
           );
         }
@@ -574,7 +575,7 @@ router.put("/:id/plan", requireRole("admin"), async (req, res, next) => {
            plan_id = $1, plan_label = $2, meals = $3,
            price_per_month = $4, start_date = $5, end_date = $6,
            is_paid = $7, updated_at = NOW()
-         WHERE member_id = $8 AND status = 'active'`,
+         WHERE member_id = $8 AND status IN ('active', 'pending')`,
         [planId, plan?.label ?? "Custom", newMeals,
          newPrice,
          newStart instanceof Date ? fmtDate(newStart) : newStart,
