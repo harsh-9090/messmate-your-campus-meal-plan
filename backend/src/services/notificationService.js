@@ -1,34 +1,42 @@
-import { Resend } from "resend";
-
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "Mom's Kitchen <onboarding@resend.dev>";
-
-const getResend = () => {
-  if (!process.env.RESEND_API_KEY) {
-    return null;
-  }
-  return new Resend(process.env.RESEND_API_KEY);
-};
+const SENDER_NAME = process.env.BREVO_SENDER_NAME || "Mom's Kitchen";
+const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || "admin@yourdomain.com";
 
 async function sendEmail({ to, subject, html }) {
-  const resend = getResend();
-  if (!resend) {
-    console.warn("[NOTIFY] RESEND_API_KEY not found. Skipping email sending.");
+  if (!process.env.BREVO_API_KEY) {
+    console.warn("[NOTIFY] BREVO_API_KEY not found. Skipping email sending.");
     return;
   }
 
-  const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
-    to: [to],
-    subject,
-    html,
-  });
+  const payload = {
+    sender: { name: SENDER_NAME, email: SENDER_EMAIL },
+    to: [{ email: to }],
+    subject: subject,
+    htmlContent: html
+  };
 
-  if (error) {
-    throw new Error(error.message);
+  try {
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to send email via Brevo");
+    }
+
+    console.log(`[NOTIFY] Email sent to ${to} (MessageId: ${data.messageId})`);
+    return data;
+  } catch (error) {
+    console.error(`[NOTIFY-ERROR] Brevo API Error:`, error.message);
+    throw error;
   }
-
-  console.log(`[NOTIFY] Email sent to ${to} (id: ${data?.id})`);
-  return data;
 }
 
 export async function notifyExpiringSoon(member, daysLeft) {

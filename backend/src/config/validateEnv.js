@@ -11,7 +11,7 @@ const required = [
 
 const recommended = [
   "REDIS_URL",
-  "RESEND_API_KEY",
+  "BREVO_API_KEY",
   "VAPID_PUBLIC_KEY",
   "VAPID_PRIVATE_KEY",
   "VAPID_SUBJECT",
