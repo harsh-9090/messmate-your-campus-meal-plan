@@ -326,7 +326,7 @@ function MembersPage() {
                       </div>
                     </div>
 
-                    <div className="mt-2 flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center justify-between mt-1">
                       <div
                         className={cn(
                           "text-xs font-medium",
