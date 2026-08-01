@@ -335,51 +335,51 @@ function MembersPage() {
                           !expired && left > 3 && "text-muted-foreground"
                         )}
                       >
-                        {(m.subscription.endDate || m.createdAt) 
+                        {(m.subscription.endDate || m.createdAt)
                           ? (expired ? `Expired ${-left}d ago` : `${left}d remaining`)
                           : "No active plan"}
                       </div>
                       <div className="flex justify-end gap-2">
-                      {!m.subscription.isPaid && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 w-8 p-0 border-primary text-primary hover:bg-primary/10"
-                          onClick={(e) => { e.stopPropagation(); setPaying(m); }}
-                        >
-                          <CreditCard className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 w-8 p-0"
-                        onClick={(e) => { e.stopPropagation(); setEditing(m); }}
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </Button>
-                      <div title={!canRenew ? "Can only renew when expired or within 2 days of expiration" : undefined}>
+                        {!m.subscription.isPaid && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0 border-primary text-primary hover:bg-primary/10"
+                            onClick={(e) => { e.stopPropagation(); setPaying(m); }}
+                          >
+                            <CreditCard className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 p-0"
-                          onClick={(e) => { e.stopPropagation(); setRenewing(m); }}
-                          disabled={!canRenew}
+                          onClick={(e) => { e.stopPropagation(); setEditing(m); }}
                         >
-                          <RefreshCw className="h-4 w-4" />
+                          <Edit3 className="h-4 w-4" />
+                        </Button>
+                        <div title={!canRenew ? "Can only renew when expired or within 2 days of expiration" : undefined}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => { e.stopPropagation(); setRenewing(m); }}
+                            disabled={!canRenew}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
+                          onClick={(e) => { e.stopPropagation(); setDeletingMember(m); }}
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={(e) => { e.stopPropagation(); setDeletingMember(m); }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
-                </div>
                 );
               })}
           </div>
@@ -449,8 +449,8 @@ function MembersPage() {
                     const canRenew = expired || left <= 2;
                     const planDietType = plans.find((p) => p.planId === m.subscription.planId)?.dietType;
                     return (
-                      <tr 
-                        key={m.memberId} 
+                      <tr
+                        key={m.memberId}
                         className="border-t hover:bg-muted/30 transition-colors cursor-pointer"
                         onClick={() => setViewingMember(m)}
                       >
@@ -686,11 +686,11 @@ function MembersPage() {
         confirmText="Delete"
         isPending={deleteM.isPending}
       />
-      
-      <ViewMemberDialog 
-        member={viewingMember} 
-        onClose={() => setViewingMember(null)} 
-        plans={plans} 
+
+      <ViewMemberDialog
+        member={viewingMember}
+        onClose={() => setViewingMember(null)}
+        plans={plans}
       />
     </div>
   );
@@ -806,7 +806,7 @@ function AddMemberDialog({
             </div>
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-2">
           {step === 1 && (
             <div className="space-y-3 animate-in fade-in slide-in-from-left-4 duration-300">
@@ -860,8 +860,8 @@ function AddMemberDialog({
                         <div className="flex items-center gap-2">
                           <span>{p.label}</span>
                           <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
-                              p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
-                                "text-green-600 bg-green-500/10 border-green-600/20"
+                            p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
+                              "text-green-600 bg-green-500/10 border-green-600/20"
                             }`}>
                             {p.dietType || "Veg"}
                           </span>
@@ -904,7 +904,7 @@ function AddMemberDialog({
                 <span className="text-sm font-medium text-muted-foreground">Total Plan Price</span>
                 <span className="font-bold text-lg text-primary">₹{price}</span>
               </div>
-              
+
               <div className="grid gap-3 sm:grid-cols-2 mt-4">
                 <div>
                   <Label>Amount Paid Today</Label>
@@ -931,7 +931,7 @@ function AddMemberDialog({
                   </Select>
                 </div>
               </div>
-              
+
               {dueAmount > 0 && (
                 <div className="mt-2 text-sm font-semibold text-destructive flex justify-between bg-destructive/10 p-2 rounded-md">
                   <span>Pending Balance:</span>
@@ -1078,8 +1078,8 @@ function EditMemberDialog({
                     <div className="flex items-center gap-2">
                       <span>{p.label}</span>
                       <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
-                          p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
-                            "text-green-600 bg-green-500/10 border-green-600/20"
+                        p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
+                          "text-green-600 bg-green-500/10 border-green-600/20"
                         }`}>
                         {p.dietType || "Veg"}
                       </span>
@@ -1458,7 +1458,7 @@ function ViewMemberDialog({
   plans: Plan[];
 }) {
   if (!member) return null;
-  
+
   const left = daysRemaining(member.subscription.endDate);
   const expired = left < 0;
   const planDietType = plans.find((p) => p.planId === member.subscription.planId)?.dietType;
@@ -1472,7 +1472,7 @@ function ViewMemberDialog({
           </div>
           <DialogTitle className="text-xl mb-1">{member.name}</DialogTitle>
           <div className="text-sm text-muted-foreground font-medium mb-3">{member.memberId}</div>
-          
+
           <div className="flex gap-2">
             {!member.isActive ? (
               <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
@@ -1563,7 +1563,6 @@ function ViewMemberDialog({
             </div>
           </div>
         </div>
-        
         <DialogFooter className="p-4 border-t sm:justify-end bg-card">
           <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Close</Button>
         </DialogFooter>
