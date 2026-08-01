@@ -247,6 +247,13 @@ export const membersApi = {
     if (!res.ok) throw new ApiError("Export failed", res.status);
     return res.blob();
   },
+  getMyWrapped: (id: string) => 
+    request<{
+      totalMeals: number;
+      favoriteMeal: string;
+      savings: number;
+      uniqueDays: number;
+    }>(`/members/${id}/wrapped`),
 };
 
 // ---------- Payments ----------

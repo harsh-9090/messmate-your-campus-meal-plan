@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { QRCanvas } from "@/components/messmate/QRCanvas";
 import { SubscriptionBar } from "@/components/messmate/SubscriptionBar";
 import { MealChip } from "@/components/messmate/MealChip";
@@ -437,6 +438,12 @@ function MemberPortal() {
   }, [isBirthday]);
 
   const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
+
+  const wrappedQ = useQuery({
+    queryKey: ["my-wrapped", authUser?.id],
+    queryFn: () => membersApi.getMyWrapped(authUser!.id),
+    enabled: !!authUser,
+  });
 
   // Automatically focus the "pass" tab on initial login if any dining meal window is currently active
   const hasAutoRedirected = useRef(false);
@@ -1343,6 +1350,8 @@ function MemberPortal() {
               </div>
               <div className="p-5">
                 <SubscriptionBar sub={sub} />
+                
+                <WrappedStatsDialog wrappedData={wrappedQ.data} />
               </div>
             </Card>
 
@@ -1505,6 +1514,57 @@ function EmailVerificationPanel({ member, onVerified }: { member: any; onVerifie
 
       </div>
     </div>
+  );
+}
+
+function WrappedStatsDialog({ wrappedData }: { wrappedData: any }) {
+  if (!wrappedData) return null;
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="w-full mt-4 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 hover:text-amber-800">
+          <Star className="w-4 h-4 mr-2" /> My Food Journey 🏆
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 border-none shadow-2xl">
+        <div className="p-6 text-center text-white relative">
+          <div className="absolute top-0 right-0 p-4 opacity-20 rotate-12 text-6xl select-none pointer-events-none">✨</div>
+          <div className="absolute bottom-0 left-0 p-4 opacity-20 -rotate-12 text-6xl select-none pointer-events-none">🍔</div>
+          
+          <h2 className="text-3xl font-black tracking-tight mb-6 text-white drop-shadow-md">
+            Messmate Wrapped
+          </h2>
+          
+          <div className="space-y-4 relative z-10">
+            <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
+              <div className="text-4xl font-black">{wrappedData.totalMeals}</div>
+              <div className="text-sm font-semibold uppercase tracking-wider opacity-90 mt-1">Total Meals Eaten</div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
+                <div className="text-2xl font-black">{wrappedData.favoriteMeal}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider opacity-90 mt-1">Favorite Meal</div>
+              </div>
+              <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
+                <div className="text-2xl font-black">{wrappedData.uniqueDays}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider opacity-90 mt-1">Days Visited</div>
+              </div>
+            </div>
+            
+            <div className="bg-white/20 rounded-xl p-5 backdrop-blur-md border border-white/30 shadow-lg mt-2">
+              <div className="text-xs uppercase tracking-widest font-bold opacity-90 mb-1">Estimated Savings</div>
+              <div className="text-4xl font-black text-amber-100 drop-shadow-sm">
+                ₹{wrappedData.savings.toLocaleString('en-IN')}
+              </div>
+              <div className="text-xs opacity-80 mt-2 font-medium">Compared to eating out every meal!</div>
+            </div>
+          </div>
+          
+          <p className="text-xs text-white/70 mt-6 font-medium">Thanks for being a great messmate! 🎉</p>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

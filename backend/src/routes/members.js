@@ -195,6 +195,58 @@ router.get("/:id/history", requireRole("admin"), async (req, res, next) => {
   }
 });
 
+router.get("/:id/wrapped", async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin" && req.user.sub !== req.params.id) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const { rows: meals } = await query(
+      `SELECT count(*) as total, meal FROM scan_logs 
+       WHERE member_id = $1 AND status = 'allowed' 
+       GROUP BY meal`,
+      [req.params.id]
+    );
+
+    let totalMeals = 0;
+    let favoriteMeal = "None";
+    let maxCount = 0;
+
+    meals.forEach(m => {
+      const cnt = parseInt(m.total, 10);
+      totalMeals += cnt;
+      if (cnt > maxCount) {
+        maxCount = cnt;
+        favoriteMeal = m.meal;
+      }
+    });
+
+    const { rows: subs } = await query(
+      `SELECT sum(amount_paid) as total_paid FROM subscriptions WHERE member_id = $1`,
+      [req.params.id]
+    );
+    const totalPaid = parseInt(subs[0]?.total_paid || 0, 10);
+    
+    const outOfPocket = totalMeals * 120;
+    const savings = Math.max(0, outOfPocket - totalPaid);
+
+    const { rows: days } = await query(
+      `SELECT count(DISTINCT date) as days FROM scan_logs WHERE member_id = $1 AND status = 'allowed'`,
+      [req.params.id]
+    );
+    const uniqueDays = parseInt(days[0]?.days || 0, 10);
+
+    res.json({
+      totalMeals,
+      favoriteMeal,
+      savings,
+      uniqueDays
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.post("/",
   requireRole("admin"),
   body("name").isString().trim().notEmpty(),
