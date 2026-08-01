@@ -465,16 +465,34 @@ export async function sendDailySummaryEmailToAdmin(email, date, totalPlates, bre
 export async function sendBirthdayEmail(member) {
   console.log(`[NOTIFY] Preparing birthday email for ${member.memberId} (${member.email})`);
 
-  // Using a very plain-text style HTML structure to heavily increase the chance of landing in the Primary inbox.
   const html = `
-    <div style="font-family: Arial, sans-serif; font-size: 15px; color: #000000; line-height: 1.5; max-width: 600px;">
-      <p>Hi ${member.name},</p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fce7f3; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+      <div style="background-color: #fbcfe8; background-image: linear-gradient(135deg, #fbcfe8 0%, #f472b6 100%); padding: 40px 20px; text-align: center;">
+        <h1 style="color: #831843; margin: 0; font-size: 28px; text-shadow: 1px 1px 2px rgba(255,255,255,0.4);">🎉 Happy Birthday, ${member.name.split(' ')[0]}! 🎂</h1>
+      </div>
       
-      <p>Wishing you a very Happy Birthday from all of us at Mom's Kitchen! 🎂</p>
+      <div style="padding: 30px; background-color: #ffffff; color: #374151; font-size: 16px; line-height: 1.6;">
+        <p style="margin-top: 0;">Hi <strong>${member.name}</strong>,</p>
+        
+        <p>Everyone here at <strong>Mom's Kitchen</strong> is sending you our warmest wishes on your special day! 🌟</p>
+        
+        <div style="background-color: #fdf2f8; border-left: 4px solid #db2777; padding: 15px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0; color: #9d174d; font-weight: 500;">
+            <em>"May your day be as special as you are, filled with joy, laughter, and great food!"</em> ✨
+          </p>
+        </div>
+        
+        <p>Thank you for being such a wonderful part of our mess family. 🥳</p>
+        
+        <p style="margin-bottom: 0; margin-top: 30px;">
+          Warmest regards,<br/>
+          <strong style="color: #db2777;">Mom's Kitchen Administration 💝</strong>
+        </p>
+      </div>
       
-      <p>We hope you have a fantastic day ahead filled with joy and great food. We're truly glad to have you as part of our mess family.</p>
-      
-      <p>Best wishes,<br/>Mom's Kitchen Administration</p>
+      <div style="background-color: #f9fafb; padding: 15px; text-align: center; border-top: 1px solid #f3f4f6; font-size: 12px; color: #9ca3af;">
+        <p style="margin: 0;">This note was sent to celebrate you today! 🎈</p>
+      </div>
     </div>
   `;
 
