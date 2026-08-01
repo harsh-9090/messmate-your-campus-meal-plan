@@ -326,22 +326,20 @@ function MembersPage() {
                       </div>
                     </div>
 
-                    <div className="py-1">
+                    <div className="mt-2 flex items-center justify-between pt-2 border-t">
                       <div
                         className={cn(
-                          "text-sm font-medium",
+                          "text-xs font-medium",
                           expired && "text-destructive",
                           !expired && left <= 3 && "text-warning",
                           !expired && left > 3 && "text-muted-foreground"
                         )}
                       >
                         {(m.subscription.endDate || m.createdAt) 
-                          ? (expired ? `Expired ${-left} days ago` : `${left} days remaining`)
+                          ? (expired ? `Expired ${-left}d ago` : `${left}d remaining`)
                           : "No active plan"}
                       </div>
-                    </div>
-
-                    <div className="mt-2 flex justify-end gap-2 pt-2 border-t">
+                      <div className="flex justify-end gap-2">
                       {!m.subscription.isPaid && (
                         <Button
                           size="sm"
@@ -381,6 +379,7 @@ function MembersPage() {
                       </Button>
                     </div>
                   </div>
+                </div>
                 );
               })}
           </div>
