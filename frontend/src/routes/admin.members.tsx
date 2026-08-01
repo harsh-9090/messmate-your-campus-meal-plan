@@ -305,7 +305,7 @@ function MembersPage() {
                               variant="destructive"
                               className={cn(
                                 m.subscription.amountPaid > 0 &&
-                                  "bg-orange-500 hover:bg-orange-600 border-orange-500",
+                                "bg-orange-500 hover:bg-orange-600 border-orange-500",
                               )}
                             >
                               {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
@@ -354,9 +354,9 @@ function MembersPage() {
                             "font-medium",
                             expired && "text-destructive",
                             !expired &&
-                              left <= 3 &&
-                              (m.subscription.endDate || m.createdAt) &&
-                              "text-warning",
+                            left <= 3 &&
+                            (m.subscription.endDate || m.createdAt) &&
+                            "text-warning",
                           )}
                         >
                           {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
@@ -525,9 +525,9 @@ function MembersPage() {
                             "px-4 py-3 text-xs",
                             expired && "text-destructive font-semibold",
                             !expired &&
-                              left <= 3 &&
-                              (m.subscription.endDate || m.createdAt) &&
-                              "text-warning font-semibold",
+                            left <= 3 &&
+                            (m.subscription.endDate || m.createdAt) &&
+                            "text-warning font-semibold",
                           )}
                         >
                           {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
@@ -551,7 +551,7 @@ function MembersPage() {
                                 variant="destructive"
                                 className={cn(
                                   m.subscription.amountPaid > 0 &&
-                                    "bg-orange-500 hover:bg-orange-600 border-orange-500",
+                                  "bg-orange-500 hover:bg-orange-600 border-orange-500",
                                 )}
                               >
                                 {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
@@ -735,6 +735,20 @@ function AddMemberDialog({
   const [startDate, setStartDate] = useState(todayISO());
   const [amountPaid, setAmountPaid] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [step, setStep] = useState(1);
+
+  React.useEffect(() => {
+    if (open) {
+      setStep(1);
+      setName("");
+      setEmail("");
+      setMobile("");
+      setAmountPaid("");
+      setPaymentMethod("Cash");
+      setStartDate(todayISO());
+      setPassword("pass123");
+    }
+  }, [open]);
 
   const selectedPlan = plans.find((x) => x.planId === planId);
   const price = selectedPlan?.pricePerMonth ?? 0;
@@ -774,135 +788,190 @@ function AddMemberDialog({
       toast.success(`${m.name} added (${m.memberId})`);
       onCreated();
       onOpenChange(false);
-      setName("");
-      setEmail("");
-      setMobile("");
-      setAmountPaid("");
-      setPaymentMethod("Cash");
-      setStartDate(todayISO());
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed"),
   });
+
+  const handleNext = () => {
+    if (step === 1 && (!name.trim() || !email.trim())) {
+      toast.error("Please enter a name and email");
+      return;
+    }
+    if (step === 2 && !planId) {
+      toast.error("Please select a plan");
+      return;
+    }
+    setStep((s) => Math.min(3, s + 1));
+  };
+
+  const handleBack = () => {
+    setStep((s) => Math.max(1, s - 1));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md w-[95vw] rounded-2xl">
         <DialogHeader>
-          <DialogTitle>Add new member</DialogTitle>
+          <DialogTitle>
+            Add new member
+            <div className="text-xs font-normal text-muted-foreground mt-1">
+              Step {step} of 3: {step === 1 ? "Personal Details" : step === 2 ? "Subscription Plan" : "Payment & Checkout"}
+            </div>
+          </DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Full name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label>Email</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div>
-              <Label>Mobile</Label>
-              <Input
-                type="tel"
-                placeholder="e.g. 9876543210"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
-              />
-            </div>
-          </div>
-          <div>
-            <Label>Initial password</Label>
-            <Input value={password} onChange={(e) => setPassword(e.target.value)} />
-          </div>
-          <div>
-            <Label>Plan</Label>
-            <Select value={planId} onValueChange={onPlanChange}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {plans.map((p) => (
-                  <SelectItem key={p.planId} value={p.planId}>
-                    <div className="flex items-center gap-2">
-                      <span>{p.label}</span>
-                      <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${
-                        p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
-                        p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
-                        "text-green-600 bg-green-500/10 border-green-600/20"
-                      }`}>
-                        {p.dietType || "Veg"}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Meals included</Label>
-            <div className="mt-1 flex gap-3">
-              {MEALS.map((m) => (
-                <label key={m} className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    checked={meals.includes(m)}
-                    onCheckedChange={(v) =>
-                      setMeals(v ? [...meals, m] : meals.filter((x) => x !== m))
-                    }
+        
+        <div className="space-y-4 py-2">
+          {step === 1 && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-left-4 duration-300">
+              <div>
+                <Label>Full name <span className="text-destructive">*</span></Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. John Doe" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label>Email <span className="text-destructive">*</span></Label>
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@college.edu" />
+                </div>
+                <div>
+                  <Label>Mobile</Label>
+                  <Input
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
                   />
-                  {m}
-                </label>
-              ))}
-            </div>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <Label>Start date</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              <div className="text-[10px] text-muted-foreground mt-1">
-                Expiry: <span className="font-semibold text-foreground">{calculatedEndDate || "Not calculated"}</span>
+                </div>
+              </div>
+              <div>
+                <Label>Initial Password</Label>
+                <Input value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
             </div>
-            <div>
-              <Label>Amount Paid (Total: ₹{price})</Label>
-              <Input
-                type="number"
-                placeholder={`₹${price}`}
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value)}
-              />
-            </div>
-          </div>
-          <div>
-            <Label>Payment Method</Label>
-            <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAYMENT_METHODS.map((m) => (
-                  <SelectItem key={m} value={m}>
-                    {m}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {dueAmount > 0 && (
-              <div className="mt-1 text-xs font-semibold text-destructive text-right">
-                Due Amount: ₹{dueAmount}
+          )}
+
+          {step === 2 && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <Label>Plan <span className="text-destructive">*</span></Label>
+                <Select value={planId} onValueChange={onPlanChange}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.map((p) => (
+                      <SelectItem key={p.planId} value={p.planId}>
+                        <div className="flex items-center gap-2">
+                          <span>{p.label}</span>
+                          <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
+                              p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
+                                "text-green-600 bg-green-500/10 border-green-600/20"
+                            }`}>
+                            {p.dietType || "Veg"}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+              <div>
+                <Label>Meals included</Label>
+                <div className="mt-2 flex gap-4">
+                  {MEALS.map((m) => (
+                    <label key={m} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={meals.includes(m)}
+                        onCheckedChange={(v) =>
+                          setMeals(v ? [...meals, m] : meals.filter((x) => x !== m))
+                        }
+                      />
+                      {m}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label>Start date</Label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <div className="text-[11px] font-medium bg-muted/50 p-2 rounded-md mt-2 flex justify-between">
+                  <span className="text-muted-foreground">Calculated Expiry:</span>
+                  <span className="text-foreground">{calculatedEndDate || "Not calculated"}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-3 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 flex justify-between items-center">
+                <span className="text-sm font-medium text-muted-foreground">Total Plan Price</span>
+                <span className="font-bold text-lg text-primary">₹{price}</span>
+              </div>
+              
+              <div className="grid gap-3 sm:grid-cols-2 mt-4">
+                <div>
+                  <Label>Amount Paid Today</Label>
+                  <Input
+                    type="number"
+                    placeholder={`₹${price}`}
+                    value={amountPaid}
+                    onChange={(e) => setAmountPaid(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Payment Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          {m}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {dueAmount > 0 && (
+                <div className="mt-2 text-sm font-semibold text-destructive flex justify-between bg-destructive/10 p-2 rounded-md">
+                  <span>Pending Balance:</span>
+                  <span>₹{dueAmount}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="flex sm:justify-between items-center mt-2 pt-2 border-t">
+          <div className="flex gap-2 w-full">
+            {step > 1 ? (
+              <Button variant="outline" onClick={handleBack} className="w-24">
+                Back
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-24">
+                Cancel
+              </Button>
+            )}
+            <div className="flex-1"></div>
+            {step < 3 ? (
+              <Button onClick={handleNext} className="w-24">
+                Next
+              </Button>
+            ) : (
+              <Button
+                onClick={() => createM.mutate()}
+                disabled={createM.isPending || !name || !email || !planId}
+                className="w-32 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {createM.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Create Member
+              </Button>
             )}
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => createM.mutate()}
-            disabled={createM.isPending || !name || !email || !planId}
-          >
-            {createM.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Create
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -941,11 +1010,11 @@ function EditMemberDialog({
   const saveM = useMutation({
     mutationFn: async () => {
       const emailChanged = email.trim().toLowerCase() !== member.email.trim().toLowerCase();
-      await membersApi.update(member.memberId, { 
-        name, 
-        email, 
+      await membersApi.update(member.memberId, {
+        name,
+        email,
         mobile: mobile || undefined,
-        otp: emailChanged ? otp : undefined 
+        otp: emailChanged ? otp : undefined
       });
       await membersApi.changePlan(member.memberId, { planId, meals });
     },
@@ -1007,20 +1076,19 @@ function EditMemberDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                  {plans.map((p) => (
-                    <SelectItem key={p.planId} value={p.planId}>
-                      <div className="flex items-center gap-2">
-                        <span>{p.label}</span>
-                        <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${
-                          p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
+                {plans.map((p) => (
+                  <SelectItem key={p.planId} value={p.planId}>
+                    <div className="flex items-center gap-2">
+                      <span>{p.label}</span>
+                      <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
                           p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
-                          "text-green-600 bg-green-500/10 border-green-600/20"
+                            "text-green-600 bg-green-500/10 border-green-600/20"
                         }`}>
-                          {p.dietType || "Veg"}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
+                        {p.dietType || "Veg"}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -1047,7 +1115,7 @@ function EditMemberDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
-      
+
       {/* OTP Verification Modal */}
       <Dialog open={showOtpDialog} onOpenChange={setShowOtpDialog}>
         <DialogContent className="sm:max-w-sm rounded-2xl">
@@ -1073,9 +1141,9 @@ function EditMemberDialog({
             <Button variant="outline" onClick={() => setShowOtpDialog(false)} className="w-full">
               Cancel
             </Button>
-            <Button 
-              onClick={() => saveM.mutate()} 
-              disabled={otp.length !== 6 || saveM.isPending} 
+            <Button
+              onClick={() => saveM.mutate()}
+              disabled={otp.length !== 6 || saveM.isPending}
               className="w-full"
             >
               {saveM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Save"}
