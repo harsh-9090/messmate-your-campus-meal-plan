@@ -43,6 +43,7 @@ import { MEALS } from "@/lib/messmate/constants";
 import type { Meal, DashboardNotification, UnratedMeal, GuestPass } from "@/lib/messmate/types";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
+import confetti from "canvas-confetti";
 
 const formatHolidayDate = (n: DashboardNotification) => {
   try {
@@ -403,6 +404,38 @@ function MemberPortal() {
     queryFn: () => membersApi.get(authUser!.id),
     enabled: !!authUser,
   });
+  const isBirthday = useMemo(() => {
+    const me = meQ.data;
+    if (!me?.dob) return false;
+    try {
+      const today = new Date();
+      // Ensure we parse correctly depending on "YYYY-MM-DD"
+      const parts = me.dob.split("-");
+      if (parts.length === 3) {
+        const [, month, day] = parts;
+        return today.getMonth() + 1 === parseInt(month, 10) && today.getDate() === parseInt(day, 10);
+      }
+      // Fallback
+      const birthDate = new Date(me.dob);
+      return today.getMonth() === birthDate.getMonth() && today.getDate() === birthDate.getDate();
+    } catch {
+      return false;
+    }
+  }, [meQ.data?.dob]);
+
+  useEffect(() => {
+    if (isBirthday) {
+      setTimeout(() => {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#db2777', '#fbcfe8', '#fce7f3', '#f472b6'] // pinkish colors
+        });
+      }, 600);
+    }
+  }, [isBirthday]);
+
   const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
 
   // Automatically focus the "pass" tab on initial login if any dining meal window is currently active
@@ -683,6 +716,42 @@ function MemberPortal() {
               </div>
             </div>
           </Card>
+        )}
+
+        {/* Birthday Banner */}
+        {isBirthday && (
+          <div className="mb-4 animate-in fade-in slide-in-from-top-4 duration-700">
+            <Card className="p-5 sm:p-6 border-pink-200 dark:border-pink-900/40 bg-gradient-to-r from-pink-50 via-pink-100/50 to-pink-50 dark:from-pink-950/20 dark:via-pink-900/10 dark:to-pink-950/20 shadow-sm relative overflow-hidden text-center">
+              {/* Decorative elements */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pink-400 to-rose-400" />
+              <div className="absolute -top-4 -left-4 text-4xl opacity-20 rotate-12 select-none pointer-events-none">🎈</div>
+              <div className="absolute -bottom-2 -right-2 text-5xl opacity-20 -rotate-12 select-none pointer-events-none">🎁</div>
+              
+              <div className="relative z-10 flex flex-col items-center justify-center gap-2">
+                <div className="text-4xl animate-bounce">🎂</div>
+                <h2 className="font-display text-xl sm:text-2xl font-bold text-pink-700 dark:text-pink-300">
+                  Happy Birthday, {me?.name?.split(' ')[0]}!
+                </h2>
+                <p className="text-sm text-pink-600/80 dark:text-pink-400 max-w-md mx-auto">
+                  Wishing you a fantastic day filled with joy, laughter, and great food! Enjoy your special day.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2 border-pink-300 text-pink-700 hover:bg-pink-100 dark:border-pink-800 dark:text-pink-300 dark:hover:bg-pink-900/50 rounded-full px-6 font-bold shadow-sm cursor-pointer"
+                  onClick={() => {
+                    confetti({
+                      particleCount: 100,
+                      spread: 60,
+                      origin: { y: 0.6 }
+                    });
+                  }}
+                >
+                  Celebrate! 🎉
+                </Button>
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* Active Notifications Banner */}
