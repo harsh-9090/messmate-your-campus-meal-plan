@@ -466,9 +466,9 @@ export async function sendBirthdayEmail(member) {
   console.log(`[NOTIFY] Preparing birthday email for ${member.memberId} (${member.email})`);
 
   const html = `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fce7f3; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-      <div style="background-color: #fbcfe8; background-image: linear-gradient(135deg, #fbcfe8 0%, #f472b6 100%); padding: 40px 20px; text-align: center;">
-        <h1 style="color: #831843; margin: 0; font-size: 28px; text-shadow: 1px 1px 2px rgba(255,255,255,0.4);">🎉 Happy Birthday, ${member.name.split(' ')[0]}! 🎂</h1>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+      <div style="background-color: #f59e0b; padding: 40px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">🎉 Happy Birthday, ${member.name.split(' ')[0]}! 🎂</h1>
       </div>
       
       <div style="padding: 30px; background-color: #ffffff; color: #374151; font-size: 16px; line-height: 1.6;">
@@ -476,8 +476,8 @@ export async function sendBirthdayEmail(member) {
         
         <p>Everyone here at <strong>Mom's Kitchen</strong> is sending you our warmest wishes on your special day! 🌟</p>
         
-        <div style="background-color: #fdf2f8; border-left: 4px solid #db2777; padding: 15px; margin: 25px 0; border-radius: 0 8px 8px 0;">
-          <p style="margin: 0; color: #9d174d; font-weight: 500;">
+        <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 25px 0; border-radius: 0 8px 8px 0;">
+          <p style="margin: 0; color: #b45309; font-weight: 500;">
             <em>"May your day be as special as you are, filled with joy, laughter, and great food!"</em> ✨
           </p>
         </div>
@@ -486,7 +486,7 @@ export async function sendBirthdayEmail(member) {
         
         <p style="margin-bottom: 0; margin-top: 30px;">
           Warmest regards,<br/>
-          <strong style="color: #db2777;">Mom's Kitchen Administration 💝</strong>
+          <strong style="color: #ea580c;">Mom's Kitchen Administration 🍽️</strong>
         </p>
       </div>
       
