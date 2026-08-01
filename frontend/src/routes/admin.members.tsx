@@ -784,6 +784,10 @@ function AddMemberDialog({
       toast.error("Please fill in all mandatory fields");
       return;
     }
+    if (step === 1 && mobile && mobile.length !== 10) {
+      toast.error("Mobile number must be exactly 10 digits");
+      return;
+    }
     if (step === 2 && !planId) {
       toast.error("Please select a plan");
       return;
@@ -824,8 +828,13 @@ function AddMemberDialog({
                   <Input
                     type="tel"
                     placeholder="e.g. 9876543210"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
                     value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setMobile(cleaned);
+                    }}
                   />
                 </div>
               </div>

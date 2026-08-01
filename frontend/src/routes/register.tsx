@@ -72,6 +72,10 @@ function RegisterPage() {
         toast.error("Please fill in all personal details");
         return;
       }
+      if (formData.mobile.length !== 10) {
+        toast.error("Please enter a valid 10-digit mobile number");
+        return;
+      }
       setStep(2);
     } else if (step === 2) {
       if (!formData.planId) {
@@ -306,10 +310,15 @@ function RegisterPage() {
                       <Input
                         id="mobile"
                         required
+                        maxLength={10}
+                        pattern="[0-9]{10}"
                         placeholder="10-digit number"
                         className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
                         value={formData.mobile}
-                        onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                        onChange={(e) => {
+                          const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
+                          setFormData({ ...formData, mobile: cleaned });
+                        }}
                       />
                     </div>
                     <div className="space-y-1.5">
