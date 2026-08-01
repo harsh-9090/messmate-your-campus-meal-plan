@@ -124,7 +124,7 @@ function LoginPage() {
             <span className="text-primary text-6xl">Ready for you.</span>
           </h1>
           <p className="max-w-md text-sidebar-foreground/70 text-lg leading-relaxed">
-            Welcome back to your hostel's central kitchen. Access your digital QR, track your meals,
+            Welcome back to Mom's Kitchen. Access your digital QR, track your meals,
             and manage your subscription all in one place.
           </p>
           <div className="flex items-center gap-4 pt-4 text-primary font-bold">
