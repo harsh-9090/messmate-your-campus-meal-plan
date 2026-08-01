@@ -481,7 +481,7 @@ export async function sendBirthdayEmail(member) {
   try {
     await sendEmail({
       to: member.email,
-      subject: `Happy Birthday ${member.name}!`,
+      subject: `A special birthday note for ${member.name.split(' ')[0]} from Mom's Kitchen 🎈`,
       html,
     });
     console.log(`[NOTIFY] Birthday email sent to ${member.email}`);
