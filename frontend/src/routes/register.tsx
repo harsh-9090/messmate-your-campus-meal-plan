@@ -38,6 +38,7 @@ export const Route = createFileRoute("/register")({
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -64,6 +65,26 @@ function RegisterPage() {
     queryKey: ["plans"],
     queryFn: () => configApi.listPlans(),
   });
+
+  const handleNext = () => {
+    if (step === 1) {
+      if (!formData.name.trim() || !formData.email.trim() || !formData.mobile.trim() || !formData.college.trim() || !formData.dob.trim()) {
+        toast.error("Please fill in all personal details");
+        return;
+      }
+      setStep(2);
+    } else if (step === 2) {
+      if (!formData.planId) {
+        toast.error("Please select a meal plan");
+        return;
+      }
+      setStep(3);
+    }
+  };
+
+  const handleBack = () => {
+    setStep((s) => Math.max(1, s - 1));
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,225 +266,260 @@ function RegisterPage() {
             <h2 className="font-display text-4xl font-extrabold tracking-tight leading-none">
               New Member
             </h2>
-            <p className="text-sm text-muted-foreground font-medium">
-              Fill in your details and pick your plan.
+            <div className="text-xs font-bold uppercase tracking-widest text-primary mt-1">
+              Step {step} of 3: {step === 1 ? "Personal Details" : step === 2 ? "Subscription Plan" : "Account Security"}
+            </div>
+            <p className="text-sm text-muted-foreground font-medium pt-1">
+              {step === 1 ? "Fill in your details to get started." : step === 2 ? "Pick the best plan for you." : "Set a secure password."}
             </p>
           </div>
 
-          <form className="space-y-5" onSubmit={handleRegister}>
-            <div className="grid gap-4">
-              <div className="space-y-1.5">
-                <Label
-                  htmlFor="name"
-                  className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
-                >
-                  Full Name
-                </Label>
-                <Input
-                  id="name"
-                  required
-                  placeholder="Enter your full name"
-                  className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="mobile"
-                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
-                  >
-                    Mobile No
-                  </Label>
-                  <Input
-                    id="mobile"
-                    required
-                    placeholder="10-digit number"
-                    className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
-                    value={formData.mobile}
-                    onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="email"
-                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
-                  >
-                    Email Address
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    placeholder="Email Address"
-                    className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="college"
-                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
-                  >
-                    College
-                  </Label>
-                  <Input
-                    id="college"
-                    required
-                    placeholder="Enter College Name"
-                    className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
-                    value={formData.college}
-                    onChange={(e) => setFormData({ ...formData, college: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="dob"
-                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
-                  >
-                    Date of Birth
-                  </Label>
-                  <Input
-                    id="dob"
-                    type="date"
-                    required
-                    className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
-                    value={formData.dob}
-                    onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">
-                  Choose Your Plan
-                </Label>
-                <Select
-                  value={formData.planId}
-                  onValueChange={(val) => setFormData({ ...formData, planId: val })}
-                  disabled={loadingPlans}
-                >
-                  <SelectTrigger className="h-14 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all">
-                    <SelectValue
-                      placeholder={loadingPlans ? "Loading plans..." : "Select a meal plan"}
+          <form className="space-y-5" onSubmit={step === 3 ? handleRegister : (e) => { e.preventDefault(); handleNext(); }}>
+            <div className="grid gap-4 overflow-hidden relative min-h-[300px]">
+              {step === 1 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="name"
+                      className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                    >
+                      Full Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="name"
+                      required
+                      placeholder="Enter your full name"
+                      className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-border shadow-2xl overflow-hidden">
-                    {plans?.map((plan) => (
-                      <SelectItem
-                        key={plan.planId}
-                        value={plan.planId}
-                        className="py-4 focus:bg-primary/10 rounded-xl cursor-pointer m-1 transition-colors"
-                      >
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-foreground">
-                              {plan.label} - ₹{plan.pricePerMonth}
-                            </span>
-                            <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${
-                              plan.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
-                              plan.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
-                              "text-green-600 bg-green-500/10 border-green-600/20"
-                            }`}>
-                              {plan.dietType || "Veg"}
-                            </span>
-                          </div>
-                          <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold mt-0.5">
-                            {plan.meals.join(" • ")}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="pw"
-                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
-                  >
-                    Password
-                  </Label>
-                  <Input
-                    id="pw"
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label
-                    htmlFor="cpw"
-                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
-                  >
-                    Confirm
-                  </Label>
-                  <Input
-                    id="cpw"
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              {formData.password.length > 0 && (
-                <div className="text-[11px] space-y-1.5 p-3 rounded-2xl bg-muted/40 border border-border/40 transition-all">
-                  <div className="font-bold text-muted-foreground uppercase tracking-widest text-[9px] mb-1 ml-0.5">
-                    Password Requirements
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-medium">
-                    <div className={`flex items-center gap-1.5 transition-colors ${checks.length ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${checks.length ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
-                      <span>At least 8 characters</span>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="mobile"
+                        className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                      >
+                        Mobile No <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="mobile"
+                        required
+                        placeholder="10-digit number"
+                        className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
+                        value={formData.mobile}
+                        onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                      />
                     </div>
-                    <div className={`flex items-center gap-1.5 transition-colors ${checks.uppercase ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${checks.uppercase ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
-                      <span>One uppercase letter</span>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="email"
+                        className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                      >
+                        Email Address <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        required
+                        placeholder="student@college.edu"
+                        className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      />
                     </div>
-                    <div className={`flex items-center gap-1.5 transition-colors ${checks.lowercase ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${checks.lowercase ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
-                      <span>One lowercase letter</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="college"
+                        className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                      >
+                        College <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="college"
+                        required
+                        placeholder="Enter College Name"
+                        className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
+                        value={formData.college}
+                        onChange={(e) => setFormData({ ...formData, college: e.target.value })}
+                      />
                     </div>
-                    <div className={`flex items-center gap-1.5 transition-colors ${checks.number ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${checks.number ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
-                      <span>One number</span>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="dob"
+                        className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                      >
+                        Date of Birth <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="dob"
+                        type="date"
+                        required
+                        className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
+                        value={formData.dob}
+                        onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                      />
                     </div>
-                    <div className={`flex items-center gap-1.5 transition-colors ${checks.special ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${checks.special ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
-                      <span>One special char (@$!%*?&)</span>
+                  </div>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1">
+                      Choose Your Plan <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={formData.planId}
+                      onValueChange={(val) => setFormData({ ...formData, planId: val })}
+                      disabled={loadingPlans}
+                    >
+                      <SelectTrigger className="h-14 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all">
+                        <SelectValue
+                          placeholder={loadingPlans ? "Loading plans..." : "Select a meal plan"}
+                        />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl border-border shadow-2xl overflow-hidden">
+                        {plans?.map((plan) => (
+                          <SelectItem
+                            key={plan.planId}
+                            value={plan.planId}
+                            className="py-4 focus:bg-primary/10 rounded-xl cursor-pointer m-1 transition-colors"
+                          >
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-sm text-foreground">
+                                  {plan.label} - ₹{plan.pricePerMonth}
+                                </span>
+                                <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${
+                                  plan.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
+                                  plan.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
+                                  "text-green-600 bg-green-500/10 border-green-600/20"
+                                }`}>
+                                  {plan.dietType || "Veg"}
+                                </span>
+                              </div>
+                              <span className="text-[10px] opacity-70 uppercase tracking-widest font-bold mt-0.5">
+                                {plan.meals.join(" • ")}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {step === 3 && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="pw"
+                        className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                      >
+                        Password <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="pw"
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label
+                        htmlFor="cpw"
+                        className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                      >
+                        Confirm <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="cpw"
+                        type="password"
+                        required
+                        placeholder="••••••••"
+                        className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-[11px] space-y-1.5 p-3 rounded-2xl bg-muted/40 border border-border/40 transition-all">
+                    <div className="font-bold text-muted-foreground uppercase tracking-widest text-[9px] mb-1 ml-0.5">
+                      Password Requirements
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 font-medium">
+                      <div className={`flex items-center gap-1.5 transition-colors ${checks.length ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${checks.length ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                        <span>At least 8 characters</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 transition-colors ${checks.uppercase ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${checks.uppercase ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                        <span>One uppercase letter</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 transition-colors ${checks.lowercase ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${checks.lowercase ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                        <span>One lowercase letter</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 transition-colors ${checks.number ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${checks.number ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                        <span>One number</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 transition-colors ${checks.special ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/75"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${checks.special ? "bg-emerald-600 dark:bg-emerald-400" : "bg-muted-foreground/50"}`} />
+                        <span>One special char (@$!%*?&)</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
             </div>
 
-            <Button
-              type="submit"
-              className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 mt-2 transition-all active:scale-[0.98]"
-              disabled={submitting || (formData.password.length > 0 && !allPassed)}
-            >
-              {submitting ? (
-                <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-              ) : (
-                <UserPlus className="mr-2 h-6 w-6" />
+            <div className="flex gap-3 pt-2">
+              {step > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBack}
+                  className="h-14 px-6 rounded-2xl border-border/50 text-foreground transition-all active:scale-[0.98]"
+                >
+                  Back
+                </Button>
               )}
-              Apply for Membership
-            </Button>
+              {step < 3 ? (
+                <Button
+                  type="button"
+                  onClick={handleNext}
+                  className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98]"
+                >
+                  Continue
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-[0.98]"
+                  disabled={submitting || (formData.password.length > 0 && !allPassed)}
+                >
+                  {submitting ? (
+                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                  ) : (
+                    <UserPlus className="mr-2 h-6 w-6" />
+                  )}
+                  Apply for Membership
+                </Button>
+              )}
+            </div>
           </form>
 
           <div className="pt-6 border-t border-border/50 text-center">
@@ -482,3 +538,4 @@ function RegisterPage() {
     </div>
   );
 }
+
