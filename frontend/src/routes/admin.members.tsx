@@ -710,6 +710,8 @@ function AddMemberDialog({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [mobile, setMobile] = useState("");
+  const [college, setCollege] = useState("");
+  const [dob, setDob] = useState("");
   const [password, setPassword] = useState("pass123");
   const [planId, setPlanId] = useState(plans[0]?.planId ?? "");
   const [meals, setMeals] = useState<Meal[]>(plans[0]?.meals ?? ["Breakfast", "Lunch", "Dinner"]);
@@ -724,6 +726,8 @@ function AddMemberDialog({
       setName("");
       setEmail("");
       setMobile("");
+      setCollege("");
+      setDob("");
       setAmountPaid("");
       setPaymentMethod("Cash");
       setStartDate(todayISO());
@@ -759,6 +763,8 @@ function AddMemberDialog({
         email,
         password,
         mobile: mobile || undefined,
+        college,
+        dob,
         planId,
         meals,
         startDate: startDate || todayISO(),
@@ -774,8 +780,8 @@ function AddMemberDialog({
   });
 
   const handleNext = () => {
-    if (step === 1 && (!name.trim() || !email.trim())) {
-      toast.error("Please enter a name and email");
+    if (step === 1 && (!name.trim() || !email.trim() || !college.trim() || !dob.trim())) {
+      toast.error("Please fill in all mandatory fields");
       return;
     }
     if (step === 2 && !planId) {
@@ -821,6 +827,16 @@ function AddMemberDialog({
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
                   />
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label>College <span className="text-destructive">*</span></Label>
+                  <Input value={college} onChange={(e) => setCollege(e.target.value)} placeholder="College Name" />
+                </div>
+                <div>
+                  <Label>Date of Birth <span className="text-destructive">*</span></Label>
+                  <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
                 </div>
               </div>
               <div>
@@ -1478,6 +1494,14 @@ function ViewMemberDialog({
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Email</span>
                 <span className="font-medium">{member.email}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">College</span>
+                <span className="font-medium">{member.college}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Date of Birth</span>
+                <span className="font-medium">{member.dob}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Mobile</span>

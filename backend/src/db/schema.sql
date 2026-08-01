@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS members (
   name                TEXT NOT NULL,
   email               TEXT NOT NULL UNIQUE,
   mobile              TEXT,
+  college             TEXT NOT NULL DEFAULT 'Unknown',
+  dob                 TEXT NOT NULL DEFAULT '2000-01-01',
   password_hash       TEXT NOT NULL,
   photo_url           TEXT,
   role                TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin','staff','member')),
@@ -111,6 +113,10 @@ ALTER TABLE scan_logs ADD CONSTRAINT scan_logs_member_id_fkey FOREIGN KEY (membe
 -- Migrations for forgot/reset password
 ALTER TABLE members ADD COLUMN IF NOT EXISTS reset_password_token TEXT;
 ALTER TABLE members ADD COLUMN IF NOT EXISTS reset_password_expires TIMESTAMPTZ;
+
+-- Migrations for college and dob
+ALTER TABLE members ADD COLUMN IF NOT EXISTS college TEXT NOT NULL DEFAULT 'Unknown';
+ALTER TABLE members ADD COLUMN IF NOT EXISTS dob TEXT NOT NULL DEFAULT '2000-01-01';
 
 -- Menus table
 CREATE TABLE IF NOT EXISTS menus (

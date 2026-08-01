@@ -72,6 +72,8 @@ router.post("/register",
   body("name").isString().trim().notEmpty(),
   body("email").isEmail().normalizeEmail(),
   body("mobile").isString().trim().notEmpty(),
+  body("college").isString().trim().notEmpty(),
+  body("dob").isString().trim().notEmpty(),
   body("password")
     .isString()
     .isLength({ min: 8 })
@@ -83,7 +85,7 @@ router.post("/register",
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
       
-      const { name, email, mobile, password, planId } = req.body;
+      const { name, email, mobile, password, planId, college, dob } = req.body;
       
       const mid = await nextMemberId();
       
@@ -107,12 +109,12 @@ router.post("/register",
       await withTx(async (client) => {
         await client.query(
           `INSERT INTO members (
-            member_id, name, email, mobile, password_hash, role, is_active, 
+            member_id, name, email, mobile, college, dob, password_hash, role, is_active, 
             sub_plan_id, sub_plan_label, sub_meals, sub_price_per_month, sub_is_paid,
             sub_start_date, sub_end_date
           ) 
-           VALUES ($1, $2, $3, $4, $5, 'member', FALSE, $6, $7, $8, $9, FALSE, $10, $11)`,
-          [mid, name, email, mobile, hash, p.plan_id, p.label, p.meals, p.price_per_month, fmtDate(start), fmtDate(end)]
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'member', FALSE, $8, $9, $10, $11, FALSE, $12, $13)`,
+          [mid, name, email, mobile, college, dob, hash, p.plan_id, p.label, p.meals, p.price_per_month, fmtDate(start), fmtDate(end)]
         );
 
         await client.query(

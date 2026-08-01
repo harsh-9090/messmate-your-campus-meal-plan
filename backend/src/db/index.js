@@ -46,7 +46,7 @@ export async function withTx(fn) {
 export function rowToMember(r) {
   if (!r) return null;
   const {
-    member_id, name, email, mobile, photo_url, role, is_active,
+    member_id, name, email, mobile, college, dob, photo_url, role, is_active,
     sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
     sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewed_at, sub_renewal_count,
     sub_diet_type, password_hash, created_at, updated_at,
@@ -55,6 +55,8 @@ export function rowToMember(r) {
   return {
     memberId: member_id,
     name, email, mobile: mobile || null,
+    college: college || "Unknown",
+    dob: dob || "2000-01-01",
     photoUrl: photo_url,
     role,
     isActive: is_active,

@@ -168,6 +168,8 @@ router.post("/",
   requireRole("admin"),
   body("name").isString().trim().notEmpty(),
   body("email").isEmail(),
+  body("college").isString().trim().notEmpty(),
+  body("dob").isString().trim().notEmpty(),
   body("password")
     .isString()
     .isLength({ min: 8 })
@@ -181,7 +183,7 @@ router.post("/",
     try {
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
-      const { name, email, password, mobile = null, planId, meals, startDate, amountPaid = 0, paymentMethod = "Cash", role = "member" } = req.body;
+      const { name, email, password, mobile = null, college, dob, planId, meals, startDate, amountPaid = 0, paymentMethod = "Cash", role = "member" } = req.body;
 
       const plan = (await query(`SELECT * FROM plans WHERE plan_id = $1`, [planId])).rows[0];
       const start = startDate ? new Date(startDate) : getISTDate();
@@ -196,12 +198,12 @@ router.post("/",
       const m = await withTx(async (client) => {
         const { rows } = await client.query(
           `INSERT INTO members
-           (member_id, name, email, mobile, password_hash, role, is_active,
+           (member_id, name, email, mobile, college, dob, password_hash, role, is_active,
             sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
             sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewal_count)
-           VALUES ($1,$2,$3,$4,$5,$6,TRUE,$7,$8,$9,$10,$11,$12,$13,$14,$15,0)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE,$9,$10,$11,$12,$13,$14,$15,$16,$17,0)
            RETURNING *`,
-          [id, name, email, mobile, hash, role,
+          [id, name, email, mobile, college, dob, hash, role,
             planId, plan?.label ?? "Custom", meals, fmtDate(start), fmtDate(end),
             isPaid, isPaid ? new Date() : null, pricePerMonth, amountPaid]
         );
@@ -254,6 +256,8 @@ router.put("/:id",
   requireRole("admin"),
   body("name").optional().isString().trim().notEmpty(),
   body("email").optional().isEmail(),
+  body("college").optional().isString().trim().notEmpty(),
+  body("dob").optional().isString().trim().notEmpty(),
   body("password")
     .optional()
     .isString()
@@ -275,7 +279,7 @@ router.put("/:id",
         return res.status(403).json({ error: "Forbidden: Only administrators can modify roles" });
       }
 
-      const allowed = { name: "name", email: "email", mobile: "mobile", role: "role", photoUrl: "photo_url" };
+      const allowed = { name: "name", email: "email", mobile: "mobile", college: "college", dob: "dob", role: "role", photoUrl: "photo_url" };
       const sets = [];
       const params = [];
       let emailChanged = false;

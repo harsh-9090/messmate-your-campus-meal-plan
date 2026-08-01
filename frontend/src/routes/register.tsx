@@ -42,6 +42,8 @@ function RegisterPage() {
     name: "",
     email: "",
     mobile: "",
+    college: "",
+    dob: "",
     password: "",
     confirmPassword: "",
     planId: "",
@@ -67,6 +69,10 @@ function RegisterPage() {
     e.preventDefault();
     if (!formData.planId) {
       toast.error("Please select a meal plan");
+      return;
+    }
+    if (!formData.college.trim() || !formData.dob.trim()) {
+      toast.error("Please fill in all mandatory fields (College and Date of Birth)");
       return;
     }
     if (!allPassed) {
@@ -295,6 +301,41 @@ function RegisterPage() {
                     className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="college"
+                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                  >
+                    College
+                  </Label>
+                  <Input
+                    id="college"
+                    required
+                    placeholder="Enter College Name"
+                    className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
+                    value={formData.college}
+                    onChange={(e) => setFormData({ ...formData, college: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="dob"
+                    className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                  >
+                    Date of Birth
+                  </Label>
+                  <Input
+                    id="dob"
+                    type="date"
+                    required
+                    className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
+                    value={formData.dob}
+                    onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
                   />
                 </div>
               </div>

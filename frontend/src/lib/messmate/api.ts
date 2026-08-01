@@ -191,6 +191,8 @@ export const membersApi = {
     email: string;
     password: string;
     mobile?: string;
+    college: string;
+    dob: string;
     planId: string;
     meals: Meal[];
     startDate: string;

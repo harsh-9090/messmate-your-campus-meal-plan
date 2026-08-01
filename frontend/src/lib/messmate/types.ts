@@ -41,6 +41,8 @@ export interface Member {
   name: string;
   email: string;
   mobile: string | null;
+  college: string;
+  dob: string;
   password?: string;
   photoUrl?: string;
   role: Role;
