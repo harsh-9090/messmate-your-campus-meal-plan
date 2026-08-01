@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download, CreditCard } from "lucide-react";
+import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download, CreditCard, Gift } from "lucide-react";
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
 import {
   todayISO,
@@ -78,6 +78,7 @@ function MembersPage() {
       }),
   });
   const plansQ = useQuery({ queryKey: ["plans"], queryFn: () => configApi.listPlans() });
+  const birthdaysQ = useQuery({ queryKey: ["birthdaysToday"], queryFn: () => membersApi.getBirthdaysToday() });
 
   const members = membersQ.data?.items ?? [];
   const plans = plansQ.data ?? [];
@@ -137,6 +138,8 @@ function MembersPage() {
     },
   });
 
+  const birthdays = birthdaysQ.data ?? [];
+
   return (
     <div className="space-y-5 p-6 md:p-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -161,8 +164,24 @@ function MembersPage() {
         </div>
       </header>
 
-      <Card className="p-4">
-        <div className="flex flex-wrap gap-2">
+      {birthdays.length > 0 && (
+        <Card className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 border-pink-500/20 p-4 animate-in fade-in slide-in-from-top-4">
+          <div className="flex items-start gap-4">
+            <div className="h-10 w-10 rounded-full bg-pink-500/20 flex items-center justify-center shrink-0">
+              <Gift className="h-5 w-5 text-pink-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-pink-800 dark:text-pink-300">Today's Birthdays 🎂</h3>
+              <p className="text-sm text-pink-700/80 dark:text-pink-400/80 mt-1">
+                Wish a happy birthday to: <span className="font-medium text-pink-900 dark:text-pink-200">{birthdays.map(m => m.name).join(", ")}</span>
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      <Card className="p-4 md:p-5 flex flex-col md:flex-row gap-4 justify-between md:items-center">
+        <div className="flex flex-wrap gap-2 w-full">
           <div className="relative min-w-64 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input

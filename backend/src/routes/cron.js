@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { runDailyTasks, sendDailySummaryEmail } from "../cron/dailyJobs.js";
+import { runDailyTasks, sendDailySummaryEmail, sendBirthdayEmails } from "../cron/dailyJobs.js";
 
 const router = Router();
 
@@ -17,11 +17,13 @@ router.post("/daily", async (req, res, next) => {
 
     console.log("[CRON] External daily task execution triggered successfully.");
     const summary = await runDailyTasks();
+    const birthdays = await sendBirthdayEmails();
 
     res.json({
       ok: true,
       message: "Daily cron tasks successfully completed.",
       summary,
+      birthdays,
     });
   } catch (err) {
     console.error("[CRON-ERROR] Failed to run daily tasks over HTTP:", err.message);

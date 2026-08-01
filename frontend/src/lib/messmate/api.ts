@@ -185,6 +185,7 @@ export const membersApi = {
     q.set("limit", String(params.limit ?? 100));
     return request<MemberListResponse>(`/members?${q.toString()}`);
   },
+  getBirthdaysToday: () => request<Member[]>("/members/birthdays/today"),
   get: (id: string) => request<Member>(`/members/${id}`),
   create: (data: {
     name: string;

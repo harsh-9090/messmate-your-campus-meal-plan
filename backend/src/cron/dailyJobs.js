@@ -106,6 +106,30 @@ export async function sendDailySummaryEmail() {
   return { plates: totalPlates, adminsNotified: admins.length };
 }
 
+export async function sendBirthdayEmails() {
+  console.log("[CRON] Checking for today's birthdays…");
+  
+  const { rows: birthdays } = await query(
+    `SELECT * FROM members 
+     WHERE EXTRACT(MONTH FROM dob) = EXTRACT(MONTH FROM CURRENT_DATE) 
+       AND EXTRACT(DAY FROM dob) = EXTRACT(DAY FROM CURRENT_DATE)
+       AND is_active = TRUE`
+  );
+
+  if (birthdays.length === 0) {
+    console.log("[CRON] No birthdays today.");
+    return { count: 0 };
+  }
+
+  for (const r of birthdays) {
+    const member = rowToMember(r);
+    await queueEmailJob("birthday_wish", { member });
+  }
+
+  console.log(`[CRON] Queued ${birthdays.length} birthday emails.`);
+  return { count: birthdays.length };
+}
+
 export function startCron() {
   // Only auto-run node-cron scheduler in local development/non-production env
   // if not triggered externally.

@@ -462,4 +462,43 @@ export async function sendDailySummaryEmailToAdmin(email, date, totalPlates, bre
   }
 }
 
+export async function sendBirthdayEmail(member) {
+  console.log(`[NOTIFY] Preparing birthday email for ${member.memberId} (${member.email})`);
+
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #fbcfe8; border-radius: 12px; background-color: #fdf2f8; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+      <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #fce7f3; padding-bottom: 15px;">
+        <h2 style="color: #db2777; margin: 0; font-size: 28px;">Happy Birthday! 🎂🎉</h2>
+        <p style="color: #be185d; font-size: 14px; margin-top: 5px;">From all of us at Mom's Kitchen</p>
+      </div>
+      
+      <p style="font-size: 16px; color: #1f2937;">Hello <strong>${member.name}</strong>,</p>
+      <p style="font-size: 16px; color: #1f2937;">Wishing you a fantastic birthday filled with joy, laughter, and great food! We are so glad to have you as a member of our family.</p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <div style="font-size: 50px;">🎁🎈🍰</div>
+      </div>
+      
+      <p style="font-size: 16px; color: #1f2937; text-align: center; font-weight: bold;">
+        Have a wonderful day ahead!
+      </p>
+      
+      <hr style="border: 0; border-top: 1px solid #fce7f3; margin: 25px 0;" />
+      <p style="font-size: 12px; color: #9ca3af; text-align: center; margin: 0;">
+        Mom's Kitchen Administration
+      </p>
+    </div>
+  `;
+
+  try {
+    await sendEmail({
+      to: member.email,
+      subject: `Happy Birthday ${member.name}! 🎂 - From Mom's Kitchen`,
+      html,
+    });
+    console.log(`[NOTIFY] Birthday email sent to ${member.email}`);
+  } catch (err) {
+    console.error(`[NOTIFY-ERROR] Failed to send birthday email to ${member.email}:`, err.message);
+  }
+}
 

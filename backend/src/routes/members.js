@@ -21,6 +21,21 @@ const getISTDate = () => {
   return new Date(utc + (3600000 * 5.5)); // Force UTC+5.30 (Indian Standard Time)
 };
 
+// Get birthdays today (admin)
+router.get("/birthdays/today", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { rows } = await query(
+      `SELECT * FROM members 
+       WHERE EXTRACT(MONTH FROM dob) = EXTRACT(MONTH FROM CURRENT_DATE) 
+         AND EXTRACT(DAY FROM dob) = EXTRACT(DAY FROM CURRENT_DATE)
+         AND is_active = TRUE`
+    );
+    res.json(rows.map(rowToMember).map(stripPassword));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // list (admin)
 router.get("/", requireRole("admin"), async (req, res, next) => {
   try {
