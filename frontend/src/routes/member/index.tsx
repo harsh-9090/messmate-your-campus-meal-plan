@@ -1526,7 +1526,7 @@ function WrappedStatsDialog({ wrappedData }: { wrappedData: any }) {
           <Star className="w-4 h-4 mr-2" /> My Food Journey 🏆
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[92vw] sm:max-w-md mx-auto rounded-[2rem] sm:rounded-[2rem] p-0 overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-400 via-primary to-emerald-950 dark:from-emerald-700 dark:via-emerald-900 dark:to-teal-950 border-none shadow-[0_20px_50px_rgba(4,47,46,0.6)]">
+      <DialogContent className="w-[92vw] sm:max-w-md mx-auto rounded-[2rem] sm:rounded-[2rem] p-0 overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-900 dark:from-emerald-800 dark:via-emerald-900 dark:to-teal-950 border-none shadow-[0_20px_50px_rgba(4,47,46,0.6)]">
         <div className="p-6 text-center text-white relative">
           <div className="absolute top-0 right-0 p-4 opacity-20 rotate-12 text-6xl select-none pointer-events-none">✨</div>
           <div className="absolute bottom-0 left-0 p-4 opacity-20 -rotate-12 text-6xl select-none pointer-events-none">🍔</div>
