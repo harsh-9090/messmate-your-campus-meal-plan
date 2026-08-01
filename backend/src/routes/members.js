@@ -180,6 +180,21 @@ router.get("/:id/absence-credits", requireRole("admin"), async (req, res, next) 
   } catch (e) { next(e); }
 });
 
+router.get("/:id/history", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { rows } = await query(
+      `SELECT id, plan_id, plan_label, meals, start_date, end_date, price_per_month, amount_paid, is_paid, paid_at, renewed_at, status, created_at, diet_type
+       FROM subscriptions 
+       WHERE member_id = $1 
+       ORDER BY start_date DESC, created_at DESC`,
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.post("/",
   requireRole("admin"),
   body("name").isString().trim().notEmpty(),

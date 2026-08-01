@@ -21,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download, CreditCard, Gift } from "lucide-react";
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
@@ -1028,6 +1030,11 @@ function EditMemberDialog({
   const [planId, setPlanId] = useState(member.subscription.planId);
   const [meals, setMeals] = useState<Meal[]>(member.subscription.meals);
 
+  const historyQ = useQuery({
+    queryKey: ["member-history", member.memberId],
+    queryFn: () => membersApi.getHistory(member.memberId),
+  });
+
   const [showOtpDialog, setShowOtpDialog] = useState(false);
   const [otp, setOtp] = useState("");
 
@@ -1082,75 +1089,160 @@ function EditMemberDialog({
         <DialogHeader>
           <DialogTitle>Edit {member.name}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
-          <div>
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
+
+        <Tabs defaultValue="profile" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="history">History & Analytics</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="profile" className="space-y-3 mt-0">
             <div>
-              <Label>Email</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Label>Name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Email</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div>
+                <Label>Mobile</Label>
+                <Input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Label>College / Roll No</Label>
+                <Input value={college} onChange={(e) => setCollege(e.target.value)} />
+              </div>
+              <div>
+                <Label>Date of Birth</Label>
+                <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+              </div>
             </div>
             <div>
-              <Label>Mobile</Label>
-              <Input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} />
+              <Label>Plan</Label>
+              <Select
+                value={planId}
+                onValueChange={(v) => {
+                  setPlanId(v);
+                  const p = plans.find((x) => x.planId === v);
+                  if (p) setMeals(p.meals);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((p) => (
+                    <SelectItem key={p.planId} value={p.planId}>
+                      <div className="flex items-center gap-2">
+                        <span>{p.label}</span>
+                        <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
+                          p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
+                            "text-green-600 bg-green-500/10 border-green-600/20"
+                          }`}>
+                          {p.dietType || "Veg"}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div>
-              <Label>College / Roll No</Label>
-              <Input value={college} onChange={(e) => setCollege(e.target.value)} />
+            <div className="flex gap-3">
+              {MEALS.map((m) => (
+                <label key={m} className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={meals.includes(m)}
+                    onCheckedChange={(v) =>
+                      setMeals(v ? [...meals, m] : meals.filter((x) => x !== m))
+                    }
+                  />
+                  {m}
+                </label>
+              ))}
             </div>
-            <div>
-              <Label>Date of Birth</Label>
-              <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
-            </div>
-          </div>
-          <div>
-            <Label>Plan</Label>
-            <Select
-              value={planId}
-              onValueChange={(v) => {
-                setPlanId(v);
-                const p = plans.find((x) => x.planId === v);
-                if (p) setMeals(p.meals);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {plans.map((p) => (
-                  <SelectItem key={p.planId} value={p.planId}>
-                    <div className="flex items-center gap-2">
-                      <span>{p.label}</span>
-                      <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
-                        p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
-                          "text-green-600 bg-green-500/10 border-green-600/20"
-                        }`}>
-                        {p.dietType || "Veg"}
-                      </span>
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-0">
+            {historyQ.isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : historyQ.isError ? (
+              <div className="text-center py-8 text-destructive text-sm">Failed to load history.</div>
+            ) : (
+              <div className="space-y-4">
+                {/* Analytics Summary */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-muted/30 rounded-lg p-3 text-center border border-border/50">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Total Days</div>
+                    <div className="text-lg font-display font-bold text-primary">
+                      {historyQ.data?.reduce((acc, row) => {
+                        const start = new Date(row.start_date);
+                        const end = new Date(row.end_date);
+                        const days = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                        return acc + Math.max(0, days);
+                      }, 0)}
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex gap-3">
-            {MEALS.map((m) => (
-              <label key={m} className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={meals.includes(m)}
-                  onCheckedChange={(v) =>
-                    setMeals(v ? [...meals, m] : meals.filter((x) => x !== m))
-                  }
-                />
-                {m}
-              </label>
-            ))}
-          </div>
-        </div>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3 text-center border border-border/50">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">Renewals</div>
+                    <div className="text-lg font-display font-bold text-primary">{historyQ.data?.length || 0}</div>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3 text-center border border-border/50">
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-1">LTV</div>
+                    <div className="text-lg font-display font-bold text-emerald-600 dark:text-emerald-400">
+                      ₹{historyQ.data?.reduce((acc, row) => acc + (row.amount_paid || 0), 0)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Timeline */}
+                <ScrollArea className="h-[280px] pr-3 rounded-md">
+                  <div className="space-y-3">
+                    {historyQ.data?.length === 0 ? (
+                      <div className="text-center text-sm text-muted-foreground py-4">No subscription history found.</div>
+                    ) : (
+                      historyQ.data?.map((sub, i) => (
+                        <div key={sub.id} className="relative pl-6 pb-4 border-l border-border/40 last:border-l-0 last:pb-0">
+                          {/* Timeline dot */}
+                          <div className="absolute left-[-5px] top-[2px] w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-background" />
+                          
+                          <div className="bg-muted/10 border border-border/40 rounded-xl p-3 hover:bg-muted/20 transition-colors">
+                            <div className="flex justify-between items-start mb-1">
+                              <div className="font-bold text-sm text-foreground">
+                                {sub.plan_label || "Custom Plan"}
+                              </div>
+                              <Badge variant={sub.status === "active" ? "default" : sub.status === "expired" ? "destructive" : "secondary"} className="text-[9px] uppercase">
+                                {sub.status}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1.5">
+                              <span>{formatDate(sub.start_date)}</span>
+                              <span>→</span>
+                              <span>{formatDate(sub.end_date)}</span>
+                            </div>
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/40">
+                              <div className="flex gap-1 text-[10px] text-muted-foreground font-semibold">
+                                {sub.meals?.join(", ")}
+                              </div>
+                              <div className="text-xs font-bold text-foreground">
+                                ₹{sub.amount_paid}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
             Cancel

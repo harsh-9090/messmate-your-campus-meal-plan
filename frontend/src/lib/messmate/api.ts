@@ -186,6 +186,7 @@ export const membersApi = {
     return request<MemberListResponse>(`/members?${q.toString()}`);
   },
   getBirthdaysToday: () => request<Member[]>("/members/birthdays/today"),
+  getHistory: (id: string) => request<any[]>(`/members/${id}/history`),
   get: (id: string) => request<Member>(`/members/${id}`),
   create: (data: {
     name: string;
