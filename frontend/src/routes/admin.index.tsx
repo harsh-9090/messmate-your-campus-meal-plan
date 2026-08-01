@@ -75,9 +75,13 @@ function AdminDashboard() {
 
   const [viewingList, setViewingList] = useState<{ title: string; members: Member[] } | null>(null);
 
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
-    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "default"
-  );
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>("default");
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
   const [showPushBanner, setShowPushBanner] = useState(false);
   const authUser = useAuth((s) => s.user);
 
@@ -282,7 +286,7 @@ function AdminDashboard() {
       <Card className="p-5">
         <h3 className="mb-4 font-display text-lg font-bold">7-Day Meal Trend</h3>
         <div className="h-72">
-          <ResponsiveContainer>
+          <ResponsiveContainer width="99%" height="100%">
             <BarChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
               <XAxis 
@@ -313,7 +317,7 @@ function AdminDashboard() {
         <Card className="p-5 lg:col-span-2">
           <h3 className="mb-4 font-display text-lg font-bold">Members by Plan</h3>
           <div className="h-64">
-            <ResponsiveContainer>
+            <ResponsiveContainer width="99%" height="100%">
               <BarChart data={planChart}>
                 <XAxis dataKey="name" stroke="currentColor" fontSize={11} />
                 <YAxis stroke="currentColor" fontSize={11} allowDecimals={false} />
