@@ -111,8 +111,8 @@ export async function sendBirthdayEmails() {
   
   const { rows: birthdays } = await query(
     `SELECT * FROM members 
-     WHERE EXTRACT(MONTH FROM dob) = EXTRACT(MONTH FROM CURRENT_DATE) 
-       AND EXTRACT(DAY FROM dob) = EXTRACT(DAY FROM CURRENT_DATE)
+     WHERE EXTRACT(MONTH FROM dob::date) = EXTRACT(MONTH FROM CURRENT_DATE) 
+       AND EXTRACT(DAY FROM dob::date) = EXTRACT(DAY FROM CURRENT_DATE)
        AND is_active = TRUE`
   );
 
