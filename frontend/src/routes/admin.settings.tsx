@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { configApi } from "@/lib/messmate/api";
 import { useAuth } from "@/lib/messmate/auth";
 import { Card } from "@/components/ui/card";
@@ -21,12 +21,14 @@ export const Route = createFileRoute("/admin/settings")({
 });
 
 function AdminSettingsPage() {
+  const qc = useQueryClient();
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
   
   const resetM = useMutation({
     mutationFn: () => configApi.factoryReset(),
     onSuccess: () => {
+      qc.clear();
       toast.success("Factory reset complete. Logging out...");
       useAuth.getState().logout();
       window.location.href = "/login";
