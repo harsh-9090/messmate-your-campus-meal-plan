@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ConfirmDialog } from "@/components/messmate/ConfirmDialog";
+import { useSSE } from "@/lib/messmate/useSSE";
 
 const PAYMENT_METHODS = ["Cash", "Online", "UPI", "Card"];
 
@@ -47,6 +48,7 @@ export const Route = createFileRoute("/admin/members")({
 });
 
 function MembersPage() {
+  useSSE();
   const isMobile = useIsMobile();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");

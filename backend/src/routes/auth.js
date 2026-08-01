@@ -10,6 +10,7 @@ import { delByPattern, blacklistToken, isTokenBlacklisted, getCache, setCache, d
 import { addDays, format } from "date-fns";
 import crypto from "node:crypto";
 import { queueEmailJob, queuePushJob } from "../queues/notificationQueue.js";
+import { sseService } from "../services/sseService.js";
 
 const fmtDate = (d) => format(d, "yyyy-MM-dd");
 
@@ -128,6 +129,7 @@ router.post("/register",
       });
       
       await delByPattern("member:list");
+      sseService.broadcast("member_created", { memberId: mid });
       
       // Dispatch welcome email asynchronously via queue
       queueEmailJob("registration_received", { member: { memberId: mid, name, email } });

@@ -8,6 +8,7 @@ import { getCache, setCache, delCache, delByPattern } from "../db/redis.js";
 import { nextMemberId } from "../services/memberIdService.js";
 import { queueEmailJob } from "../queues/notificationQueue.js";
 import { calculateAbsenceCredits } from "../services/absenceService.js";
+import { sseService } from "../services/sseService.js";
 
 const router = Router();
 router.use(verifyToken);
@@ -221,6 +222,8 @@ router.post("/",
       });
       
       await delByPattern("member:list");
+      sseService.broadcast("member_created", { memberId: id });
+      
       if (amountPaid > 0) {
         await query(
           `INSERT INTO payments (member_id, member_name, member_mobile, amount, method, type, plan_id) VALUES ($1,$2,$3,$4,$5,'initial',$6)`,
