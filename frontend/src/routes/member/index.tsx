@@ -1526,7 +1526,7 @@ function WrappedStatsDialog({ wrappedData }: { wrappedData: any }) {
           <Star className="w-4 h-4 mr-2" /> My Food Journey 🏆
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-gradient-to-br from-primary to-emerald-600 dark:from-emerald-800 dark:to-teal-900 border-none shadow-2xl">
+      <DialogContent className="w-[92vw] sm:max-w-md mx-auto rounded-[2rem] sm:rounded-[2rem] p-0 overflow-hidden bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-400 via-primary to-emerald-950 dark:from-emerald-700 dark:via-emerald-900 dark:to-teal-950 border-none shadow-[0_20px_50px_rgba(4,47,46,0.6)]">
         <div className="p-6 text-center text-white relative">
           <div className="absolute top-0 right-0 p-4 opacity-20 rotate-12 text-6xl select-none pointer-events-none">✨</div>
           <div className="absolute bottom-0 left-0 p-4 opacity-20 -rotate-12 text-6xl select-none pointer-events-none">🍔</div>
@@ -1536,25 +1536,25 @@ function WrappedStatsDialog({ wrappedData }: { wrappedData: any }) {
           </h2>
           
           <div className="space-y-4 relative z-10">
-            <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
-              <div className="text-4xl font-black">{wrappedData.totalMeals}</div>
+            <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-xl border border-white/10 border-t-white/40 shadow-xl drop-shadow-sm">
+              <div className="text-4xl font-black drop-shadow-md">{wrappedData.totalMeals}</div>
               <div className="text-sm font-semibold uppercase tracking-wider opacity-90 mt-1">Total Meals Eaten</div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
-                <div className="text-2xl font-black">{wrappedData.favoriteMeal}</div>
+              <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-xl border border-white/10 border-t-white/40 shadow-xl drop-shadow-sm">
+                <div className="text-2xl font-black drop-shadow-md">{wrappedData.favoriteMeal}</div>
                 <div className="text-[10px] font-semibold uppercase tracking-wider opacity-90 mt-1">Favorite Meal</div>
               </div>
-              <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/20">
-                <div className="text-2xl font-black">{wrappedData.uniqueDays}</div>
+              <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-xl border border-white/10 border-t-white/40 shadow-xl drop-shadow-sm">
+                <div className="text-2xl font-black drop-shadow-md">{wrappedData.uniqueDays}</div>
                 <div className="text-[10px] font-semibold uppercase tracking-wider opacity-90 mt-1">Days Visited</div>
               </div>
             </div>
             
-            <div className="bg-white/20 rounded-xl p-5 backdrop-blur-md border border-white/30 shadow-lg mt-2">
+            <div className="bg-white/20 rounded-2xl p-5 backdrop-blur-xl border border-white/20 border-t-white/50 shadow-2xl mt-2 drop-shadow-md">
               <div className="text-xs uppercase tracking-widest font-bold opacity-90 mb-1">Estimated Savings</div>
-              <div className="text-4xl font-black text-emerald-50 drop-shadow-sm">
+              <div className="text-4xl font-black text-emerald-50 drop-shadow-lg">
                 ₹{wrappedData.savings.toLocaleString('en-IN')}
               </div>
               <div className="text-xs opacity-80 mt-2 font-medium">Compared to eating out every meal!</div>
