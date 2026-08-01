@@ -208,6 +208,8 @@ export const membersApi = {
       email: string;
       mobile: string;
       password: string;
+      college: string;
+      dob: string;
       photoUrl: string;
       otp: string;
     }>,

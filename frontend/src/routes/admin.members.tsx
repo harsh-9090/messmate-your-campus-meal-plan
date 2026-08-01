@@ -1019,6 +1019,8 @@ function EditMemberDialog({
   const [name, setName] = useState(member.name);
   const [email, setEmail] = useState(member.email);
   const [mobile, setMobile] = useState(member.mobile ?? "");
+  const [college, setCollege] = useState(member.college ?? "Unknown");
+  const [dob, setDob] = useState(member.dob ?? "2000-01-01");
   const [planId, setPlanId] = useState(member.subscription.planId);
   const [meals, setMeals] = useState<Meal[]>(member.subscription.meals);
 
@@ -1041,6 +1043,8 @@ function EditMemberDialog({
         name,
         email,
         mobile: mobile || undefined,
+        college,
+        dob,
         otp: emailChanged ? otp : undefined
       });
       await membersApi.changePlan(member.memberId, { planId, meals });
@@ -1087,6 +1091,16 @@ function EditMemberDialog({
             <div>
               <Label>Mobile</Label>
               <Input type="tel" value={mobile} onChange={(e) => setMobile(e.target.value)} />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <Label>College / Roll No</Label>
+              <Input value={college} onChange={(e) => setCollege(e.target.value)} />
+            </div>
+            <div>
+              <Label>Date of Birth</Label>
+              <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
             </div>
           </div>
           <div>
