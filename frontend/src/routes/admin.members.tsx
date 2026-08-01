@@ -326,48 +326,18 @@ function MembersPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <div className="text-xs text-muted-foreground">Plan</div>
-                        <div className="mt-1">
-                          <PlanBadge
-                            planId={m.subscription.planId}
-                            label={m.subscription.planLabel}
-                            dietType={planDietType}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">Meals</div>
-                        <div className="mt-1">
-                          <PlanIcons plan={m.subscription} />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">Start Date</div>
-                        <div className="font-medium">
-                          {formatDate(m.subscription.startDate || m.createdAt)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">Expiry Date</div>
-                        <div
-                          className={cn(
-                            "font-medium",
-                            expired && "text-destructive",
-                            !expired &&
-                            left <= 3 &&
-                            (m.subscription.endDate || m.createdAt) &&
-                            "text-warning",
-                          )}
-                        >
-                          {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
-                          {(m.subscription.endDate || m.createdAt) && (
-                            <div className="text-[10px] text-muted-foreground">
-                              {expired ? `${-left}d ago` : `${left}d left`}
-                            </div>
-                          )}
-                        </div>
+                    <div className="py-1">
+                      <div
+                        className={cn(
+                          "text-sm font-medium",
+                          expired && "text-destructive",
+                          !expired && left <= 3 && "text-warning",
+                          !expired && left > 3 && "text-muted-foreground"
+                        )}
+                      >
+                        {(m.subscription.endDate || m.createdAt) 
+                          ? (expired ? `Expired ${-left} days ago` : `${left} days remaining`)
+                          : "No active plan"}
                       </div>
                     </div>
 
