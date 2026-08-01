@@ -1522,11 +1522,11 @@ function WrappedStatsDialog({ wrappedData }: { wrappedData: any }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="w-full mt-4 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-900/50 hover:bg-amber-100 hover:text-amber-800">
+        <Button variant="outline" className="w-full mt-4 bg-primary/5 dark:bg-primary/10 text-primary border-primary/20 hover:bg-primary/10 hover:text-primary">
           <Star className="w-4 h-4 mr-2" /> My Food Journey 🏆
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-gradient-to-br from-amber-500 to-orange-600 border-none shadow-2xl">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-gradient-to-br from-primary to-emerald-600 dark:from-emerald-800 dark:to-teal-900 border-none shadow-2xl">
         <div className="p-6 text-center text-white relative">
           <div className="absolute top-0 right-0 p-4 opacity-20 rotate-12 text-6xl select-none pointer-events-none">✨</div>
           <div className="absolute bottom-0 left-0 p-4 opacity-20 -rotate-12 text-6xl select-none pointer-events-none">🍔</div>
@@ -1554,7 +1554,7 @@ function WrappedStatsDialog({ wrappedData }: { wrappedData: any }) {
             
             <div className="bg-white/20 rounded-xl p-5 backdrop-blur-md border border-white/30 shadow-lg mt-2">
               <div className="text-xs uppercase tracking-widest font-bold opacity-90 mb-1">Estimated Savings</div>
-              <div className="text-4xl font-black text-amber-100 drop-shadow-sm">
+              <div className="text-4xl font-black text-emerald-50 drop-shadow-sm">
                 ₹{wrappedData.savings.toLocaleString('en-IN')}
               </div>
               <div className="text-xs opacity-80 mt-2 font-medium">Compared to eating out every meal!</div>
