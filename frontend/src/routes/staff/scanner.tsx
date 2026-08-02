@@ -300,9 +300,9 @@ function ScannerPage() {
             <ThemeToggle />
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               asChild
-              className="text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer hidden sm:inline-flex"
+              className="text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer"
             >
               <Link to="/login" onClick={() => logout()}>
                 <LogOut className="h-4 w-4" />
