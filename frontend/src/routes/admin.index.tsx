@@ -228,8 +228,66 @@ function AdminDashboard() {
           />
         </div>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="p-5">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="p-5 lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-display text-lg font-bold">Expiring Soon</h3>
+            <Badge variant="secondary">{expiringSoon.length} members</Badge>
+          </div>
+          {expiringSoon.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No plans expiring in the next 3 days.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {expiringSoon.map((m) => {
+                const left = daysRemaining(m.subscription.endDate);
+                return (
+                  <div
+                    key={m.memberId}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
+                        {m.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </div>
+                      <div>
+                        <div className="font-medium">
+                          {m.name}{" "}
+                          <span className="text-xs text-muted-foreground">· {m.memberId}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          <PlanBadge
+                            planId={m.subscription.planId}
+                            label={m.subscription.planLabel}
+                          />
+                          <span className="ml-2">
+                            expires in{" "}
+                            <span className="font-semibold text-warning">
+                              {left} day{left === 1 ? "" : "s"}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      disabled={renewM.isPending}
+                      onClick={() => renewM.mutate(m.memberId)}
+                    >
+                      <RefreshCw className="mr-1 h-3 w-3" /> Renew
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        <Card className="p-5 lg:col-span-1">
           <h3 className="mb-4 font-display text-lg font-bold">Meal Windows</h3>
           <div className="space-y-2">
             {windows.map((w) => {
@@ -264,64 +322,6 @@ function AdminDashboard() {
           </div>
         </Card>
       </div>
-
-      <Card className="p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="font-display text-lg font-bold">Expiring Soon</h3>
-          <Badge variant="secondary">{expiringSoon.length} members</Badge>
-        </div>
-        {expiringSoon.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            No plans expiring in the next 3 days.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {expiringSoon.map((m) => {
-              const left = daysRemaining(m.subscription.endDate);
-              return (
-                <div
-                  key={m.memberId}
-                  className="flex items-center justify-between rounded-lg border p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
-                      {m.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
-                    <div>
-                      <div className="font-medium">
-                        {m.name}{" "}
-                        <span className="text-xs text-muted-foreground">· {m.memberId}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        <PlanBadge
-                          planId={m.subscription.planId}
-                          label={m.subscription.planLabel}
-                        />
-                        <span className="ml-2">
-                          expires in{" "}
-                          <span className="font-semibold text-warning">
-                            {left} day{left === 1 ? "" : "s"}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    disabled={renewM.isPending}
-                    onClick={() => renewM.mutate(m.memberId)}
-                  >
-                    <RefreshCw className="mr-1 h-3 w-3" /> Renew
-                  </Button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
 
       {viewingList && (
         <StatsDetailDialog
