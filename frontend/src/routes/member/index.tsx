@@ -1532,7 +1532,7 @@ function WrappedStatsDialog({ wrappedData }: { wrappedData: any }) {
           <div className="absolute bottom-0 left-0 p-4 opacity-20 -rotate-12 text-6xl select-none pointer-events-none">🍔</div>
           
           <h2 className="text-3xl font-black tracking-tight mb-6 text-white drop-shadow-md">
-            Messmate Wrapped
+            Mom's Kitchen Wrapped
           </h2>
           
           <div className="space-y-4 relative z-10">
