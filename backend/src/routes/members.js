@@ -460,7 +460,16 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
       credits = calc.totalCreditDays;
     }
 
-    const cycleStart = startDate ? new Date(startDate) : today;
+    let cycleStart = today;
+    if (currentMember.sub_end_date) {
+      const currentEnd = new Date(currentMember.sub_end_date);
+      if (currentEnd >= today) {
+        cycleStart = addDays(currentEnd, 1);
+      }
+    }
+    if (startDate) {
+      cycleStart = new Date(startDate);
+    }
     const end = addDays(cycleStart, (duration * 30 - 1) + credits);
     const isPaid = amountPaid >= price && price > 0;
 

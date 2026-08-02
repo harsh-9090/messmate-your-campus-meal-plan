@@ -274,11 +274,13 @@ function AdminDashboard() {
                       </div>
                     </div>
                     <Button
-                      size="sm"
+                      size="icon"
+                      variant="outline"
+                      className="h-8 w-8 text-primary shrink-0"
                       disabled={renewM.isPending}
                       onClick={() => renewM.mutate(m.memberId)}
                     >
-                      <RefreshCw className="mr-1 h-3 w-3" /> Renew
+                      <RefreshCw className="h-4 w-4" />
                     </Button>
                   </div>
                 );
