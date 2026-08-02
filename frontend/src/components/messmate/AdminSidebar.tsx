@@ -15,6 +15,7 @@ import {
   ChefHat,
   Star,
   Ticket,
+  PieChart,
 } from "lucide-react";
 import { useAuth } from "@/lib/messmate/auth";
 import { cn } from "@/lib/utils";
@@ -45,6 +46,7 @@ const groups = [
   {
     title: "Analytics & Finance",
     items: [
+      { to: "/admin/analytics", label: "Member Analytics", icon: PieChart },
       { to: "/admin/payments", label: "Payments", icon: IndianRupee },
       { to: "/admin/finance", label: "Finance", icon: TrendingUp },
       { to: "/admin/reports", label: "Reports", icon: BarChart3 },

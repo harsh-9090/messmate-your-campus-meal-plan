@@ -32,6 +32,7 @@ import { Route as AdminHeadcountRouteImport } from './routes/admin.headcount'
 import { Route as AdminGuestPassesRouteImport } from './routes/admin.guest-passes'
 import { Route as AdminFinanceRouteImport } from './routes/admin.finance'
 import { Route as AdminFeedbackRouteImport } from './routes/admin.feedback'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -148,6 +149,11 @@ const AdminFeedbackRoute = AdminFeedbackRouteImport.update({
   path: '/feedback',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/guest-passes': typeof AdminGuestPassesRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/guest-passes': typeof AdminGuestPassesRoute
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/feedback': typeof AdminFeedbackRoute
   '/admin/finance': typeof AdminFinanceRoute
   '/admin/guest-passes': typeof AdminGuestPassesRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/admin/analytics'
     | '/admin/feedback'
     | '/admin/finance'
     | '/admin/guest-passes'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/admin/analytics'
     | '/admin/feedback'
     | '/admin/finance'
     | '/admin/guest-passes'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/admin/analytics'
     | '/admin/feedback'
     | '/admin/finance'
     | '/admin/guest-passes'
@@ -476,10 +488,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFeedbackRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminFeedbackRoute: typeof AdminFeedbackRoute
   AdminFinanceRoute: typeof AdminFinanceRoute
   AdminGuestPassesRoute: typeof AdminGuestPassesRoute
@@ -497,6 +517,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminFeedbackRoute: AdminFeedbackRoute,
   AdminFinanceRoute: AdminFinanceRoute,
   AdminGuestPassesRoute: AdminGuestPassesRoute,
