@@ -239,7 +239,7 @@ function AdminDashboard() {
               No plans expiring in the next 3 days.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 styled-scrollbar">
               {expiringSoon.map((m) => {
                 const left = daysRemaining(m.subscription.endDate);
                 return (
