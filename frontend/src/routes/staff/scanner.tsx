@@ -479,7 +479,7 @@ function ScannerPage() {
                 value={searchVal}
                 onChange={(e) => setSearchVal(e.target.value)}
                 disabled={isSearching || manualScanM.isPending}
-                className="flex-1 text-xs"
+                className="flex-1 text-base md:text-xs"
               />
               <Button type="submit" disabled={isSearching || manualScanM.isPending || !searchVal.trim()} size="sm" className="cursor-pointer">
                 {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Lookup"}
