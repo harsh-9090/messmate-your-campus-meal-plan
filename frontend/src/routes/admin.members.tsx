@@ -186,63 +186,67 @@ function MembersPage() {
         </Card>
       )}
 
-      <Card className="p-4 md:p-5 flex flex-col md:flex-row gap-4 justify-between md:items-center">
-        <div className="flex flex-wrap gap-2 w-full">
-          <div className="relative min-w-64 flex-1">
+      <Card className="p-4 md:p-5">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative w-full sm:w-auto sm:min-w-64 sm:flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              className="pl-9"
+              className="pl-9 w-full"
               placeholder="Search name or ID…"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
-          <Select value={status} onValueChange={(v: any) => handleStatus(v)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
-              <SelectItem value="unpaid">Unpaid</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
+            <Select value={status} onValueChange={(v: any) => handleStatus(v)}>
+              <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Select value={planFilter} onValueChange={handlePlanFilter}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Filter by Plan" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Plans</SelectItem>
-              {plansQ.data?.map((p) => (
-                <SelectItem key={p.planId} value={p.planId}>
-                  {p.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={planFilter} onValueChange={handlePlanFilter}>
+              <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectValue placeholder="Filter by Plan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Plans</SelectItem>
+                {plansQ.data?.map((p) => (
+                  <SelectItem key={p.planId} value={p.planId}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select
-            value={`${sortBy}-${sortOrder}`}
-            onValueChange={(val) => {
-              const [by, order] = val.split("-") as [any, any];
-              setSortBy(by);
-              setSortOrder(order);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[185px]">
-              <SelectValue placeholder="Sort By" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="created_at-desc">Newly Joined</SelectItem>
-              <SelectItem value="created_at-asc">Oldest Joined</SelectItem>
-              <SelectItem value="member_id-asc">Member ID: Low to High</SelectItem>
-              <SelectItem value="member_id-desc">Member ID: High to Low</SelectItem>
-            </SelectContent>
-          </Select>
+            <div className="col-span-2 sm:col-span-1">
+              <Select
+                value={`${sortBy}-${sortOrder}`}
+                onValueChange={(val) => {
+                  const [by, order] = val.split("-") as [any, any];
+                  setSortBy(by);
+                  setSortOrder(order);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-[185px]">
+                  <SelectValue placeholder="Sort By" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_at-desc">Newly Joined</SelectItem>
+                  <SelectItem value="created_at-asc">Oldest Joined</SelectItem>
+                  <SelectItem value="member_id-asc">Member ID: Low to High</SelectItem>
+                  <SelectItem value="member_id-desc">Member ID: High to Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       </Card>
 
