@@ -29,7 +29,7 @@ function AdminSettingsPage() {
   const qc = useQueryClient();
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetConfirmText, setResetConfirmText] = useState("");
-  
+
   const resetM = useMutation({
     mutationFn: () => configApi.factoryReset(),
     onSuccess: () => {
@@ -63,74 +63,74 @@ function AdminSettingsPage() {
         <TabsContent value="system">
           <div className="pt-4">
             <Card className="p-6 border-destructive/20 bg-destructive/5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-8 opacity-5">
-            <ShieldAlert className="w-32 h-32 text-destructive" />
+              <div className="absolute top-0 right-0 p-8 opacity-5">
+                <ShieldAlert className="w-32 h-32 text-destructive" />
+              </div>
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <h3 className="font-display text-xl font-bold text-destructive flex items-center gap-2">
+                    <ShieldAlert className="w-5 h-5" /> Danger Zone
+                  </h3>
+                  <p className="text-sm text-destructive/80 mt-1 max-w-xl font-medium">
+                    Performing a Factory Reset will permanently wipe all operational data (members, scan logs, payments, etc.) but retain admin accounts and configurations.
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  className="shrink-0 shadow-lg shadow-destructive/20"
+                  onClick={() => {
+                    setResetConfirmText("");
+                    setResetDialogOpen(true);
+                  }}
+                >
+                  Factory Reset System
+                </Button>
+              </div>
+            </Card>
           </div>
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h3 className="font-display text-xl font-bold text-destructive flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5" /> Danger Zone
-              </h3>
-              <p className="text-sm text-destructive/80 mt-1 max-w-xl font-medium">
-                Performing a Factory Reset will permanently wipe all operational data (members, scan logs, payments, etc.) but retain admin accounts and configurations.
-              </p>
-            </div>
-            <Button
-              variant="destructive"
-              size="lg"
-              className="shrink-0 shadow-lg shadow-destructive/20"
-              onClick={() => {
-                setResetConfirmText("");
-                setResetDialogOpen(true);
-              }}
-            >
-              Factory Reset System
-            </Button>
-          </div>
-        </Card>
-      </div>
 
-      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl border-destructive/20">
-          <DialogHeader>
-            <div className="mx-auto bg-destructive/10 p-3 rounded-full mb-2 w-12 h-12 flex items-center justify-center">
-              <ShieldAlert className="text-destructive w-6 h-6" />
-            </div>
-            <DialogTitle className="text-center text-xl">Are you absolutely sure?</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground text-center">
-              This action <span className="font-bold text-foreground">cannot be undone</span>. This will permanently delete all students, scan logs, subscriptions, and payments.
-            </p>
-            
-            <div className="bg-muted p-4 rounded-xl border space-y-2">
-              <p className="text-sm font-medium">Please type <span className="font-bold font-mono bg-background px-1.5 py-0.5 rounded text-destructive select-all">FACTORY RESET</span> to confirm.</p>
-              <input 
-                type="text" 
-                className="w-full h-10 px-3 rounded-lg border bg-background font-mono text-sm focus:outline-none focus:ring-2 focus:ring-destructive/20"
-                value={resetConfirmText}
-                onChange={(e) => setResetConfirmText(e.target.value)}
-                placeholder="FACTORY RESET"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="w-full" onClick={() => setResetDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              className="w-full"
-              disabled={resetConfirmText !== "FACTORY RESET" || resetM.isPending}
-              onClick={() => resetM.mutate()}
-            >
-              {resetM.isPending ? "Resetting..." : "Yes, Wipe All Data"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+            <DialogContent className="sm:max-w-md rounded-2xl border-destructive/20">
+              <DialogHeader>
+                <div className="mx-auto bg-destructive/10 p-3 rounded-full mb-2 w-12 h-12 flex items-center justify-center">
+                  <ShieldAlert className="text-destructive w-6 h-6" />
+                </div>
+                <DialogTitle className="text-center text-xl">Are you absolutely sure?</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4 py-2">
+                <p className="text-sm text-muted-foreground text-center">
+                  This action <span className="font-bold text-foreground">cannot be undone</span>. This will permanently delete all students, scan logs, subscriptions, and payments.
+                </p>
+
+                <div className="bg-muted p-4 rounded-xl border space-y-2">
+                  <p className="text-sm font-medium">Please type <span className="font-bold font-mono bg-background px-1.5 py-0.5 rounded text-destructive select-all">FACTORY RESET</span> to confirm.</p>
+                  <input
+                    type="text"
+                    className="w-full h-10 px-3 rounded-lg border bg-background font-mono text-sm focus:outline-none focus:ring-2 focus:ring-destructive/20"
+                    value={resetConfirmText}
+                    onChange={(e) => setResetConfirmText(e.target.value)}
+                    placeholder="FACTORY RESET"
+                  />
+                </div>
+              </div>
+
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" className="w-full" onClick={() => setResetDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  disabled={resetConfirmText !== "FACTORY RESET" || resetM.isPending}
+                  onClick={() => resetM.mutate()}
+                >
+                  {resetM.isPending ? "Resetting..." : "Yes, Wipe All Data"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
       </Tabs>
     </div>
@@ -144,7 +144,10 @@ function BrandSettingsForm() {
     address: "",
     openingHours: "",
     facebookUrl: "",
-    instagramUrl: ""
+    instagramUrl: "",
+    privacyPolicyUrl: "",
+    termsOfServiceUrl: "",
+    refundPolicyUrl: ""
   });
 
   const { data, isLoading } = useQuery({
@@ -182,59 +185,92 @@ function BrandSettingsForm() {
         <div className="grid gap-4">
           <div className="space-y-2">
             <Label htmlFor="contactNumber">Contact Number</Label>
-            <Input 
-              id="contactNumber" 
-              value={formData.contactNumber} 
-              onChange={e => setFormData({ ...formData, contactNumber: e.target.value })} 
-              placeholder="+91 98765 43210" 
+            <Input
+              id="contactNumber"
+              value={formData.contactNumber}
+              onChange={e => setFormData({ ...formData, contactNumber: e.target.value })}
+              placeholder="+91 98765 43210"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="openingHours">Opening Hours</Label>
-            <Input 
-              id="openingHours" 
-              value={formData.openingHours} 
-              onChange={e => setFormData({ ...formData, openingHours: e.target.value })} 
-              placeholder="Mon-Sun: 8:00 AM - 11:30 PM" 
+            <Input
+              id="openingHours"
+              value={formData.openingHours}
+              onChange={e => setFormData({ ...formData, openingHours: e.target.value })}
+              placeholder="Mon-Sun: 8:00 AM - 11:30 PM"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="address">Physical Address</Label>
-            <Textarea 
-              id="address" 
-              value={formData.address} 
-              onChange={e => setFormData({ ...formData, address: e.target.value })} 
-              placeholder="123 Campus Road..." 
-              rows={3} 
+            <Textarea
+              id="address"
+              value={formData.address}
+              onChange={e => setFormData({ ...formData, address: e.target.value })}
+              placeholder="123 Campus Road..."
+              rows={3}
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="facebookUrl">Facebook URL</Label>
-              <Input 
-                id="facebookUrl" 
-                value={formData.facebookUrl} 
-                onChange={e => setFormData({ ...formData, facebookUrl: e.target.value })} 
-                placeholder="https://facebook.com/..." 
+              <Input
+                id="facebookUrl"
+                value={formData.facebookUrl}
+                onChange={e => setFormData({ ...formData, facebookUrl: e.target.value })}
+                placeholder="https://facebook.com/..."
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="instagramUrl">Instagram URL</Label>
-              <Input 
-                id="instagramUrl" 
-                value={formData.instagramUrl} 
-                onChange={e => setFormData({ ...formData, instagramUrl: e.target.value })} 
-                placeholder="https://instagram.com/..." 
+              <Input
+                id="instagramUrl"
+                value={formData.instagramUrl}
+                onChange={e => setFormData({ ...formData, instagramUrl: e.target.value })}
+                placeholder="https://www.instagram.com/momskitchenalandi?igsh=bmJ3YTlldTQ4NXpn"
               />
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-4 border-t">
+            <h4 className="text-sm font-medium">Legal & Policy Links</h4>
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="privacyPolicyUrl">Privacy Policy URL</Label>
+                <Input
+                  id="privacyPolicyUrl"
+                  value={formData.privacyPolicyUrl}
+                  onChange={e => setFormData({ ...formData, privacyPolicyUrl: e.target.value })}
+                  placeholder="https://momskitchenalandi.com/privacy"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="termsOfServiceUrl">Terms of Service URL</Label>
+                <Input
+                  id="termsOfServiceUrl"
+                  value={formData.termsOfServiceUrl}
+                  onChange={e => setFormData({ ...formData, termsOfServiceUrl: e.target.value })}
+                  placeholder="https://momskitchenalandi.com/terms"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="refundPolicyUrl">Refund Policy URL</Label>
+                <Input
+                  id="refundPolicyUrl"
+                  value={formData.refundPolicyUrl}
+                  onChange={e => setFormData({ ...formData, refundPolicyUrl: e.target.value })}
+                  placeholder="https://momskitchenalandi.com/refunds"
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        <Button 
-          onClick={() => updateM.mutate(formData)} 
+        <Button
+          onClick={() => updateM.mutate(formData)}
           disabled={updateM.isPending}
         >
           {updateM.isPending ? "Saving..." : "Save Configuration"}
