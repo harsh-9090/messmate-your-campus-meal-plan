@@ -147,10 +147,45 @@ router.get("/windows", async (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// --- Brand Config (Public) ---
+router.get("/brand", async (_req, res, next) => {
+  try {
+    const cached = await getCache("messmate:brand:config");
+    if (cached) return res.json(cached);
+
+    const { rows } = await query(`SELECT value FROM system_settings WHERE key = 'brand_config'`);
+    const result = rows[0]?.value || {
+      contactNumber: "",
+      address: "",
+      openingHours: "",
+      facebookUrl: "",
+      instagramUrl: ""
+    };
+    await setCache("messmate:brand:config", result, 3600); // 1 hour
+    res.json(result);
+  } catch (e) { next(e); }
+});
+
 // All following routes require authentication
 router.use(verifyToken);
 
 // --- Admin Plan Actions ---
+
+router.put("/brand", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { contactNumber, address, openingHours, facebookUrl, instagramUrl } = req.body;
+    const config = { contactNumber, address, openingHours, facebookUrl, instagramUrl };
+    
+    await query(
+      `INSERT INTO system_settings (key, value) VALUES ('brand_config', $1)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+      [JSON.stringify(config)]
+    );
+    
+    await delCache("messmate:brand:config");
+    res.json(config);
+  } catch (e) { next(e); }
+});
 
 router.post("/plans", requireRole("admin"), planCreateSchema, async (req, res, next) => {
   try {

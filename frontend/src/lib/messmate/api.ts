@@ -18,6 +18,7 @@ import type {
   UnratedMeal,
   RatingsAnalytics,
   GuestPass,
+  BrandConfig,
 } from "./types";
 
 const BASE_URL =
@@ -280,6 +281,8 @@ export const configApi = {
     }),
   factoryReset: () =>
     request<{ ok: true; message: string }>("/config/factory-reset", { method: "POST" }),
+  getBrandConfig: () => request<BrandConfig>("/config/brand", { auth: false }),
+  updateBrandConfig: (data: BrandConfig) => request<BrandConfig>("/config/brand", { method: "PUT", body: JSON.stringify(data) }),
 };
 
 // ---------- QR ----------

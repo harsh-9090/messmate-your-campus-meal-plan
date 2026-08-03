@@ -319,3 +319,10 @@ ALTER TABLE menus DROP CONSTRAINT IF EXISTS menus_date_meal_diet_type_key;
 ALTER TABLE menus ADD CONSTRAINT menus_date_meal_diet_type_key UNIQUE (date, meal, diet_type);
 
 ALTER TABLE scan_logs ADD COLUMN IF NOT EXISTS diet_served TEXT CHECK (diet_served IN ('Veg', 'Non-Veg'));
+
+-- System Settings (Dynamic Configuration)
+CREATE TABLE IF NOT EXISTS system_settings (
+  key         TEXT PRIMARY KEY,
+  value       JSONB NOT NULL,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

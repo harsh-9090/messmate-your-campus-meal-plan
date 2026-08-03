@@ -194,3 +194,12 @@ export interface GuestPass {
   created_at: string;
   updated_at: string;
 }
+
+export interface BrandConfig {
+  contactNumber: string;
+  address: string;
+  openingHours: string;
+  facebookUrl: string;
+  instagramUrl: string;
+}
+
