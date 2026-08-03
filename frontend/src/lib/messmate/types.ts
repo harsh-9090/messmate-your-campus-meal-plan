@@ -201,8 +201,5 @@ export interface BrandConfig {
   openingHours: string;
   facebookUrl: string;
   instagramUrl: string;
-  privacyPolicyUrl: string;
-  termsOfServiceUrl: string;
-  refundPolicyUrl: string;
 }
 

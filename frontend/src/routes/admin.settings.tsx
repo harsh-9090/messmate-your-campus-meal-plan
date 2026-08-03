@@ -144,10 +144,7 @@ function BrandSettingsForm() {
     address: "",
     openingHours: "",
     facebookUrl: "",
-    instagramUrl: "",
-    privacyPolicyUrl: "",
-    termsOfServiceUrl: "",
-    refundPolicyUrl: ""
+    instagramUrl: ""
   });
 
   const { data, isLoading } = useQuery({
@@ -232,39 +229,6 @@ function BrandSettingsForm() {
                 onChange={e => setFormData({ ...formData, instagramUrl: e.target.value })}
                 placeholder="https://www.instagram.com/momskitchenalandi?igsh=bmJ3YTlldTQ4NXpn"
               />
-            </div>
-          </div>
-
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="text-sm font-medium">Legal & Policy Links</h4>
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="privacyPolicyUrl">Privacy Policy URL</Label>
-                <Input
-                  id="privacyPolicyUrl"
-                  value={formData.privacyPolicyUrl}
-                  onChange={e => setFormData({ ...formData, privacyPolicyUrl: e.target.value })}
-                  placeholder="https://momskitchenalandi.com/privacy"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="termsOfServiceUrl">Terms of Service URL</Label>
-                <Input
-                  id="termsOfServiceUrl"
-                  value={formData.termsOfServiceUrl}
-                  onChange={e => setFormData({ ...formData, termsOfServiceUrl: e.target.value })}
-                  placeholder="https://momskitchenalandi.com/terms"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="refundPolicyUrl">Refund Policy URL</Label>
-                <Input
-                  id="refundPolicyUrl"
-                  value={formData.refundPolicyUrl}
-                  onChange={e => setFormData({ ...formData, refundPolicyUrl: e.target.value })}
-                  placeholder="https://momskitchenalandi.com/refunds"
-                />
-              </div>
             </div>
           </div>
         </div>

@@ -159,10 +159,7 @@ router.get("/brand", async (_req, res, next) => {
       address: "",
       openingHours: "",
       facebookUrl: "",
-      instagramUrl: "",
-      privacyPolicyUrl: "",
-      termsOfServiceUrl: "",
-      refundPolicyUrl: ""
+      instagramUrl: ""
     };
     await setCache("messmate:brand:config", result, 3600); // 1 hour
     res.json(result);
@@ -176,8 +173,8 @@ router.use(verifyToken);
 
 router.put("/brand", requireRole("admin"), async (req, res, next) => {
   try {
-    const { contactNumber, address, openingHours, facebookUrl, instagramUrl, privacyPolicyUrl, termsOfServiceUrl, refundPolicyUrl } = req.body;
-    const config = { contactNumber, address, openingHours, facebookUrl, instagramUrl, privacyPolicyUrl, termsOfServiceUrl, refundPolicyUrl };
+    const { contactNumber, address, openingHours, facebookUrl, instagramUrl } = req.body;
+    const config = { contactNumber, address, openingHours, facebookUrl, instagramUrl };
     
     await query(
       `INSERT INTO system_settings (key, value) VALUES ('brand_config', $1)

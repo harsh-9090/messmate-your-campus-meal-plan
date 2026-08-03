@@ -55,10 +55,7 @@ function LandingPage() {
     address: "123 Campus Road, Near Engineering Block,\nPune, Maharashtra 411001",
     openingHours: "Mon-Sun: 8:00 AM - 11:30 PM",
     facebookUrl: "#",
-    instagramUrl: "#",
-    privacyPolicyUrl: "#",
-    termsOfServiceUrl: "#",
-    refundPolicyUrl: "#"
+    instagramUrl: "#"
   };
 
   const container = {
@@ -581,9 +578,9 @@ function LandingPage() {
               © {new Date().getFullYear()} Official Mom's Kitchen. Served with care.
             </p>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              {brand.privacyPolicyUrl && <a href={brand.privacyPolicyUrl} className="hover:text-primary transition-colors">Privacy Policy</a>}
-              {brand.termsOfServiceUrl && <a href={brand.termsOfServiceUrl} className="hover:text-primary transition-colors">Terms of Service</a>}
-              {brand.refundPolicyUrl && <a href={brand.refundPolicyUrl} className="hover:text-primary transition-colors">Refund Policy</a>}
+              <Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+              <Link to="/refunds" className="hover:text-primary transition-colors">Refund Policy</Link>
             </div>
           </div>
         </div>
