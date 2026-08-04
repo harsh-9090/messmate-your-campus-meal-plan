@@ -518,7 +518,7 @@ function MemberPortal() {
 
   const plansQ = useQuery({
     queryKey: ["plans"],
-    queryFn: () => configApi.getPlans(),
+    queryFn: () => configApi.listPlans(),
     enabled: !!authUser,
   });
 
