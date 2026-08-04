@@ -4,7 +4,7 @@ import { renewalsApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, User, Calendar, IndianRupee } from "lucide-react";
@@ -136,10 +136,10 @@ function AdminRenewals() {
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="w-[90vw] max-w-md rounded-xl sm:max-w-[400px]">
-                                <div className="mb-2 text-lg font-bold">Approve Renewal</div>
-                                <div className="text-sm text-muted-foreground mb-4">
+                                <DialogTitle className="mb-2 text-lg font-bold">Approve Renewal</DialogTitle>
+                                <DialogDescription className="text-sm text-muted-foreground mb-4">
                                   Approving will instantly assign the {req.plan_label} starting on {formatDate(req.start_date)}.
-                                </div>
+                                </DialogDescription>
                                 <div className="space-y-4">
                                   <div className="space-y-1.5">
                                     <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Amount Paid (Cash)</label>
@@ -230,10 +230,10 @@ function AdminRenewals() {
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="w-[90vw] max-w-md rounded-xl p-5">
-                        <div className="mb-2 text-lg font-bold">Approve Renewal</div>
-                        <div className="text-sm text-muted-foreground mb-4">
+                        <DialogTitle className="mb-2 text-lg font-bold">Approve Renewal</DialogTitle>
+                        <DialogDescription className="text-sm text-muted-foreground mb-4">
                           Approving will instantly assign the {req.plan_label} starting on {formatDate(req.start_date)}.
-                        </div>
+                        </DialogDescription>
                         <div className="space-y-4">
                           <div className="space-y-1.5">
                             <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Amount Paid (Cash)</label>

@@ -174,7 +174,7 @@ function FinancePage() {
               <Activity className="h-4 w-4 text-primary" />
             </div>
             <div className="h-72">
-              <ResponsiveContainer>
+              <ResponsiveContainer minWidth={0} minHeight={0}>
                 <AreaChart data={data.renewals_trend}>
                   <defs>
                     <linearGradient id="colorRenewals" x1="0" y1="0" x2="0" y2="1">
@@ -216,7 +216,7 @@ function FinancePage() {
             <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="h-72">
-            <ResponsiveContainer>
+            <ResponsiveContainer minWidth={0} minHeight={0}>
               <BarChart data={data.monthly}>
                 <XAxis dataKey="month" stroke="currentColor" fontSize={11} />
                 <YAxis stroke="currentColor" fontSize={11} tickFormatter={(v) => `₹${v / 1000}k`} />
@@ -241,7 +241,7 @@ function FinancePage() {
             <PieChartIcon className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="h-72">
-            <ResponsiveContainer>
+            <ResponsiveContainer minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={data.methods}
@@ -273,7 +273,7 @@ function FinancePage() {
             <h3 className="font-display text-lg font-bold">Revenue by Subscription Plan</h3>
           </div>
           <div className="h-64">
-            <ResponsiveContainer>
+            <ResponsiveContainer minWidth={0} minHeight={0}>
               <BarChart data={data.plans} layout="vertical" margin={{ left: 40 }}>
                 <XAxis type="number" hide />
                 <YAxis
