@@ -516,6 +516,12 @@ function MemberPortal() {
     enabled: !!authUser,
   });
 
+  const plansQ = useQuery({
+    queryKey: ["plans"],
+    queryFn: () => configApi.getPlans(),
+    enabled: !!authUser,
+  });
+
   const createRenewalM = useMutation({
     mutationFn: (data: { planId: string; startDate: string }) => renewalsApi.create(data),
     onSuccess: () => {
@@ -1419,7 +1425,11 @@ function MemberPortal() {
                                   value={renewalPlanId || sub.planId}
                                   onChange={(e) => setRenewalPlanId(e.target.value)}
                                 >
-                                  <option value={sub.planId}>{sub.planLabel} (Current)</option>
+                                  {plansQ.data?.map(plan => (
+                                    <option key={plan.planId} value={plan.planId}>
+                                      {plan.label} {plan.planId === sub.planId ? "(Current)" : ""} - {formatINR(plan.pricePerMonth)}/mo
+                                    </option>
+                                  ))}
                                 </select>
                               </div>
                               <div className="space-y-1.5">
