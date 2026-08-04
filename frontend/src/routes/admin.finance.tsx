@@ -14,6 +14,8 @@ import {
   PieChart,
   Pie,
   Legend,
+  AreaChart,
+  Area,
 } from "recharts";
 import {
   IndianRupee,
@@ -22,6 +24,8 @@ import {
   ArrowUpRight,
   Loader2,
   PieChart as PieChartIcon,
+  Repeat,
+  Activity,
 } from "lucide-react";
 import { formatINR } from "@/lib/messmate/dateHelpers";
 import React, { useState } from "react";
@@ -135,7 +139,7 @@ function FinancePage() {
         </div>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={IndianRupee}
           label="Total Revenue"
@@ -149,14 +153,63 @@ function FinancePage() {
           accent="destructive"
         />
         <StatCard
+          icon={Repeat}
+          label="Total Renewals"
+          value={data.summary.total_renewals || 0}
+          accent="primary"
+        />
+        <StatCard
           icon={TrendingUp}
           label="Transactions"
           value={data.summary.tx_count}
-          accent="primary"
+          accent="muted"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {data.renewals_trend && data.renewals_trend.length > 0 && (
+          <Card className="p-5 lg:col-span-2 border-primary/20 bg-primary/5 shadow-sm">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="font-display text-lg font-bold text-primary">Renewal Trend</h3>
+              <Activity className="h-4 w-4 text-primary" />
+            </div>
+            <div className="h-72">
+              <ResponsiveContainer>
+                <AreaChart data={data.renewals_trend}>
+                  <defs>
+                    <linearGradient id="colorRenewals" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={PRIMARY_COLOR} stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor={PRIMARY_COLOR} stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="period_label" stroke="currentColor" fontSize={11} />
+                  <YAxis stroke="currentColor" fontSize={11} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--popover)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                    }}
+                    labelStyle={{ color: "var(--foreground)", fontWeight: "bold", marginBottom: 4 }}
+                    formatter={(v: any, name: string) => [
+                      name === 'renewals_revenue' ? formatINR(Number(v)) : v, 
+                      name === 'renewals_count' ? 'Renewals' : 'Revenue'
+                    ]}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="renewals_count" 
+                    stroke={PRIMARY_COLOR} 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorRenewals)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        )}
+
         <Card className="p-5">
           <div className="mb-6 flex items-center justify-between">
             <h3 className="font-display text-lg font-bold">Monthly Revenue Trend</h3>

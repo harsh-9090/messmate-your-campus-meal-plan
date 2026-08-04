@@ -315,15 +315,16 @@ router.get("/finance", requireRole("admin"), async (req, res, next) => {
 
     const { rows: summary } = await query(`
       WITH unified_payments AS (
-        SELECT amount, created_at FROM payments
+        SELECT amount, type, created_at FROM payments
         UNION ALL
-        SELECT price as amount, updated_at as created_at FROM guest_passes WHERE status IN ('active', 'used', 'expired')
+        SELECT price as amount, 'guest_pass' as type, updated_at as created_at FROM guest_passes WHERE status IN ('active', 'used', 'expired')
       )
       SELECT 
         COALESCE(SUM(amount)::int, 0) as total_revenue,
         (SELECT COALESCE(SUM(sub_price_per_month - sub_amount_paid)::int, 0) FROM members WHERE role = 'member' AND sub_price_per_month > sub_amount_paid) +
         (SELECT COALESCE(SUM(price), 0)::int FROM guest_passes WHERE status = 'pending_approval') as total_dues,
-        COUNT(*)::int as tx_count
+        COUNT(*)::int as tx_count,
+        SUM(CASE WHEN type = 'renewal' THEN 1 ELSE 0 END)::int as total_renewals
       FROM unified_payments
       ${where}
     `, params);
@@ -342,6 +343,26 @@ router.get("/finance", requireRole("admin"), async (req, res, next) => {
       GROUP BY 1
       ORDER BY MIN(created_at) DESC
       LIMIT 12
+    `, params);
+
+    // Grouping dimension for the trend chart depending on period
+    let trendGroupBy = "TO_CHAR(date_trunc('day', created_at), 'YYYY-MM-DD')";
+    let trendLabel = "day";
+    if (period === "all" || period === "year") {
+      trendGroupBy = "TO_CHAR(date_trunc('month', created_at), 'Mon YYYY')";
+      trendLabel = "month";
+    }
+
+    const { rows: renewalsTrend } = await query(`
+      SELECT 
+        ${trendGroupBy} as period_label,
+        COUNT(*)::int as renewals_count,
+        SUM(amount)::int as renewals_revenue
+      FROM payments
+      WHERE type = 'renewal' ${where ? 'AND ' + where.substring(6) : ''}
+      GROUP BY 1
+      ORDER BY MIN(created_at) DESC
+      LIMIT 30
     `, params);
 
     const { rows: methods } = await query(`
@@ -386,7 +407,8 @@ router.get("/finance", requireRole("admin"), async (req, res, next) => {
       summary: summary[0],
       monthly: monthly.reverse(),
       methods,
-      plans
+      plans,
+      renewals_trend: renewalsTrend.reverse(),
     });
   } catch (e) { next(e); }
 });
