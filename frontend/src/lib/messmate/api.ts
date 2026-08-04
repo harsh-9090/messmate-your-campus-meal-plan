@@ -356,10 +356,11 @@ export const reportsApi = {
     }>("/reports/stats"),
   getFinance: (params: { period?: "day" | "month" | "year" | "all"; date?: string } = {}) =>
     request<{
-      summary: { total_revenue: number; total_dues: number; tx_count: number };
+      summary: { total_revenue: number; total_dues: number; tx_count: number; total_renewals: number };
       monthly: { month: string; revenue: number }[];
       methods: { name: string; value: number }[];
       plans: { name: string; value: number }[];
+      renewals_trend: { period_label: string; renewals_count: number; renewals_revenue: number }[];
     }>("/reports/finance", { query: params }),
   daily: (date?: string) =>
     request<{

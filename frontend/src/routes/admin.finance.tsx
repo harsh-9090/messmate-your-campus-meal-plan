@@ -162,7 +162,7 @@ function FinancePage() {
           icon={TrendingUp}
           label="Transactions"
           value={data.summary.tx_count}
-          accent="muted"
+          accent={undefined}
         />
       </div>
 
@@ -191,7 +191,7 @@ function FinancePage() {
                       borderRadius: 8,
                     }}
                     labelStyle={{ color: "var(--foreground)", fontWeight: "bold", marginBottom: 4 }}
-                    formatter={(v: any, name: string) => [
+                    formatter={(v: any, name: any) => [
                       name === 'renewals_revenue' ? formatINR(Number(v)) : v, 
                       name === 'renewals_count' ? 'Renewals' : 'Revenue'
                     ]}
