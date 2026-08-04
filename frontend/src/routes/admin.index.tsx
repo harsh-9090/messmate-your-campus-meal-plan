@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { membersApi, configApi, reportsApi, usageApi } from "@/lib/messmate/api";
+import { membersApi, configApi, reportsApi, usageApi, renewalsApi } from "@/lib/messmate/api";
 import { useAuth } from "@/lib/messmate/auth";
 import { StatCard } from "@/components/messmate/StatCard";
 import { Card } from "@/components/ui/card";
@@ -46,6 +46,7 @@ export const Route = createFileRoute("/admin/")({
 });
 
 function AdminDashboard() {
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const qc = useQueryClient();
   const membersQ = useQuery({
@@ -65,6 +66,11 @@ function AdminDashboard() {
   const statsQ = useQuery({
     queryKey: ["reports", "daily-stats"],
     queryFn: () => reportsApi.getDailyStats(),
+    refetchInterval: 60_000,
+  });
+  const pendingCountQ = useQuery({
+    queryKey: ["admin-pending-renewals-count"],
+    queryFn: () => renewalsApi.getPendingCount(),
     refetchInterval: 60_000,
   });
 
@@ -113,6 +119,7 @@ function AdminDashboard() {
   const expiringSoon = (expiringQ.data ?? []).sort(
     (a, b) => daysRemaining(a.subscription.endDate) - daysRemaining(b.subscription.endDate),
   );
+  const pendingCount = pendingCountQ.data?.count || 0;
   const today = todayISO();
 
   if (membersQ.isLoading) {
@@ -186,7 +193,7 @@ function AdminDashboard() {
         <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground/80 pl-1">
           Today's Summary (IST)
         </h3>
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">
           <div
             className="cursor-pointer transition-transform hover:scale-[1.02]"
             onClick={() => setViewingList({ title: "New Joins Today", members: stats.new_list })}
@@ -218,6 +225,17 @@ function AdminDashboard() {
               label="Expired Today"
               value={stats.expired_members}
               accent="destructive"
+            />
+          </div>
+          <div
+            className="cursor-pointer transition-transform hover:scale-[1.02]"
+            onClick={() => navigate({ to: "/admin/renewals" })}
+          >
+            <StatCard
+              icon={RefreshCw}
+              label="Pending Requests"
+              value={pendingCount}
+              accent={pendingCount > 0 ? "destructive" : "muted"}
             />
           </div>
           <StatCard

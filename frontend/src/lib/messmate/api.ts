@@ -513,6 +513,7 @@ export const pushApi = {
 import type { RenewalRequest } from "./types";
 export const renewalsApi = {
   list: () => request<RenewalRequest[]>("/renewals"),
+  getPendingCount: () => request<{ count: number }>("/renewals/pending-count"),
   getMyRequest: () => request<RenewalRequest | null>("/renewals/my"),
   create: (data: { planId: string; startDate: string }) =>
     request<RenewalRequest>("/renewals/my", { method: "POST", body: JSON.stringify(data) }),

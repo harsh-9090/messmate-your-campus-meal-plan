@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { renewalsApi } from "@/lib/messmate/api";
 import { ThemeToggle } from "./ThemeToggle";
 
 const groups = [
@@ -70,6 +72,13 @@ function SidebarContent({ onNavItemClick }: { onNavItemClick?: () => void }) {
   const user = useAuth((s) => s.user);
   const logout = useAuth((s) => s.logout);
 
+  const pendingCountQ = useQuery({
+    queryKey: ["admin-pending-renewals-count"],
+    queryFn: () => renewalsApi.getPendingCount(),
+    refetchInterval: 60000, // refresh every minute
+  });
+  const pendingCount = pendingCountQ.data?.count || 0;
+
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex items-center gap-3 px-6 py-5">
@@ -107,7 +116,12 @@ function SidebarContent({ onNavItemClick }: { onNavItemClick?: () => void }) {
                     )}
                   >
                     <it.icon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{it.label}</span>
+                    <span className="truncate flex-1">{it.label}</span>
+                    {it.label === "Renewals" && pendingCount > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                        {pendingCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

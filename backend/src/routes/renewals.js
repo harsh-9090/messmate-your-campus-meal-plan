@@ -85,6 +85,16 @@ router.post("/my",
 // ADMIN ROUTES
 // ==========================================
 
+// GET /api/v1/renewals/pending-count - Get count of pending requests
+router.get("/pending-count", verifyToken, requireRole("admin"), async (req, res, next) => {
+  try {
+    const { rows } = await query(`SELECT COUNT(*) as count FROM renewal_requests WHERE status = 'pending'`);
+    res.json({ count: parseInt(rows[0].count, 10) });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // GET /api/v1/renewals - List all pending requests
 router.get("/", verifyToken, requireRole("admin"), async (req, res, next) => {
   try {
