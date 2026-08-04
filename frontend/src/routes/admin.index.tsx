@@ -235,7 +235,7 @@ function AdminDashboard() {
               icon={RefreshCw}
               label="Pending Requests"
               value={pendingCount}
-              accent={pendingCount > 0 ? "destructive" : "muted"}
+              accent={pendingCount > 0 ? "destructive" : undefined}
             />
           </div>
           <StatCard
