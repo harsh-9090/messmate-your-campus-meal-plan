@@ -86,7 +86,7 @@ router.post("/my",
 // ==========================================
 
 // GET /api/v1/renewals - List all pending requests
-router.get("/", requireRole("admin"), async (req, res, next) => {
+router.get("/", verifyToken, requireRole("admin"), async (req, res, next) => {
   try {
     const { rows } = await query(
       `SELECT r.id, r.member_id, r.plan_id, r.start_date, r.status, r.created_at,
@@ -107,6 +107,7 @@ router.get("/", requireRole("admin"), async (req, res, next) => {
 
 // POST /api/v1/renewals/:id/approve - Approve request
 router.post("/:id/approve",
+  verifyToken,
   requireRole("admin"),
   body("amountPaid").isNumeric(),
   async (req, res, next) => {
@@ -204,7 +205,7 @@ router.post("/:id/approve",
 );
 
 // POST /api/v1/renewals/:id/reject - Reject request
-router.post("/:id/reject", requireRole("admin"), async (req, res, next) => {
+router.post("/:id/reject", verifyToken, requireRole("admin"), async (req, res, next) => {
   try {
     const { id } = req.params;
 
