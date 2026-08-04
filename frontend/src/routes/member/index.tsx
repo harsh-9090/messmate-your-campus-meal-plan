@@ -570,8 +570,12 @@ function MemberPortal() {
 
   const sub = me.subscription;
 
+  // Calculate if plan is in the future
+  const startsIn = daysRemaining(sub.startDate);
+  const isFuturePlan = startsIn > 0;
+
   // Calculate grace period: 3 days from start
-  const daysSinceStart = Math.max(0, daysRemaining(sub.startDate) * -1);
+  const daysSinceStart = Math.max(0, startsIn * -1);
   const gracePeriod = 3;
   const inGracePeriod = !sub.isPaid && daysSinceStart <= gracePeriod;
 
@@ -852,7 +856,17 @@ function MemberPortal() {
                   <UtensilsCrossed className="h-5 w-5 text-primary" />
                 </div>
                 <div className="grid place-items-center py-4">
-                  {locked ? (
+                  {isFuturePlan ? (
+                    <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-muted/60 bg-muted/20 p-8 text-center w-full max-w-sm">
+                      <Calendar className="h-10 w-10 text-muted-foreground" />
+                      <div className="font-display text-xl font-bold text-muted-foreground">
+                        Starts in {startsIn} day{startsIn === 1 ? "" : "s"}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Your plan is scheduled to start on {formatDate(sub.startDate)}. Your QR code will appear here then.
+                      </p>
+                    </div>
+                  ) : locked ? (
                     <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-destructive/40 bg-destructive/5 p-8 text-center w-full max-w-sm">
                       <Lock className="h-10 w-10 text-destructive" />
                       <div className="font-display text-xl font-bold text-destructive">
@@ -1249,6 +1263,11 @@ function MemberPortal() {
                             const isSkippedVal = (skipsQ.data ?? []).some(
                               (s) => s.date === dateStr && s.meal === meal
                             );
+                            
+                            const planStartStr = sub.startDate ? new Date(sub.startDate).toISOString().substring(0, 10) : null;
+                            const planEndStr = sub.endDate ? new Date(sub.endDate).toISOString().substring(0, 10) : null;
+                            const isOutsidePlan = (planStartStr && dateStr < planStartStr) || (planEndStr && dateStr > planEndStr);
+                            
                             const isLockedVal = getIsLocked(dateStr, meal);
                             const isPendingToggle =
                               toggleSkipM.isPending &&
@@ -1266,14 +1285,18 @@ function MemberPortal() {
                                 </span>
 
                                 <div className="flex items-center gap-2">
-                                  {isLockedVal ? (
+                                  {isOutsidePlan ? (
+                                    <span className="text-[10px] text-muted-foreground/60 font-medium flex items-center gap-1 select-none">
+                                      <Lock className="h-3 w-3" /> Not in plan
+                                    </span>
+                                  ) : isLockedVal ? (
                                     <span className="text-[10px] text-muted-foreground/60 font-medium flex items-center gap-1 select-none">
                                       <Lock className="h-3 w-3" /> Locked
                                     </span>
                                   ) : null}
 
                                   <button
-                                    disabled={isLockedVal || isPendingToggle}
+                                    disabled={isOutsidePlan || isLockedVal || isPendingToggle}
                                     onClick={() =>
                                       toggleSkipM.mutate({
                                         date: dateStr,
@@ -1286,7 +1309,7 @@ function MemberPortal() {
                                       isSkippedVal
                                         ? "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 hover:bg-amber-200"
                                         : "bg-primary/10 dark:bg-primary/20 text-primary border-primary/25 hover:bg-primary/20",
-                                      (isLockedVal || isPendingToggle) && "opacity-50 cursor-not-allowed"
+                                      (isOutsidePlan || isLockedVal || isPendingToggle) && "opacity-50 cursor-not-allowed"
                                     )}
                                   >
                                     {isPendingToggle ? (
