@@ -1415,7 +1415,7 @@ function MemberPortal() {
                           <DialogTrigger asChild>
                             <Button className="w-full font-bold">Request Renewal</Button>
                           </DialogTrigger>
-                          <DialogContent className="sm:max-w-[400px]">
+                          <DialogContent className="w-[90vw] max-w-md rounded-xl sm:max-w-[400px] p-5">
                             <div className="mb-4 text-lg font-bold">Request Plan Renewal</div>
                             <div className="space-y-4">
                               <div className="space-y-1.5">
@@ -1425,11 +1425,15 @@ function MemberPortal() {
                                   value={renewalPlanId || sub.planId}
                                   onChange={(e) => setRenewalPlanId(e.target.value)}
                                 >
-                                  {plansQ.data?.map(plan => (
-                                    <option key={plan.planId} value={plan.planId}>
-                                      {plan.label} {plan.planId === sub.planId ? "(Current)" : ""} - {formatINR(plan.pricePerMonth)}/mo
-                                    </option>
-                                  ))}
+                                  {plansQ.isLoading ? (
+                                    <option value={sub.planId}>{sub.planLabel} (Loading...)</option>
+                                  ) : (
+                                    plansQ.data?.map(plan => (
+                                      <option key={plan.planId} value={plan.planId}>
+                                        {plan.label} {plan.planId === sub.planId ? "(Current)" : ""} - {formatINR(plan.pricePerMonth)}/mo
+                                      </option>
+                                    ))
+                                  )}
                                 </select>
                               </div>
                               <div className="space-y-1.5">
