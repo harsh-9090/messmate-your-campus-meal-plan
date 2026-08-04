@@ -75,6 +75,7 @@ router.post("/register",
   body("mobile").isString().trim().notEmpty(),
   body("college").isString().trim().notEmpty(),
   body("dob").isString().trim().notEmpty(),
+  body("startDate").optional().isString().trim(),
   body("password")
     .isString()
     .isLength({ min: 8 })
@@ -86,7 +87,7 @@ router.post("/register",
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
       
-      const { name, email, mobile, password, planId, college, dob } = req.body;
+      const { name, email, mobile, password, planId, college, dob, startDate } = req.body;
       
       const mid = await nextMemberId();
       
@@ -103,7 +104,7 @@ router.post("/register",
       if (planRows.length === 0) return res.status(400).json({ error: "Invalid plan selected" });
       const p = planRows[0];
 
-      const start = new Date();
+      const start = startDate ? new Date(startDate) : new Date();
       const end = addDays(start, (p.duration_months || 1) * 30 - 1);
       const hash = await bcrypt.hash(password, 10);
       

@@ -48,6 +48,7 @@ function RegisterPage() {
     password: "",
     confirmPassword: "",
     planId: "",
+    startDate: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -82,6 +83,10 @@ function RegisterPage() {
         toast.error("Please select a meal plan");
         return;
       }
+      if (!formData.startDate) {
+        toast.error("Please select a plan start date");
+        return;
+      }
       setStep(3);
     }
   };
@@ -92,8 +97,8 @@ function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.planId) {
-      toast.error("Please select a meal plan");
+    if (!formData.planId || !formData.startDate) {
+      toast.error("Please select a meal plan and start date");
       return;
     }
     if (!formData.college.trim() || !formData.dob.trim()) {
@@ -420,6 +425,26 @@ function RegisterPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-1.5 pt-2">
+                    <Label
+                      htmlFor="startDate"
+                      className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80 ml-1"
+                    >
+                      Plan Start Date <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      required
+                      min={new Date().toISOString().split("T")[0]}
+                      className="h-14 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base cursor-pointer"
+                      value={formData.startDate}
+                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    />
+                    <p className="text-[10px] text-muted-foreground px-1 pt-0.5">
+                      Your 30-day billing cycle will begin on this date.
+                    </p>
                   </div>
                 </div>
               )}
