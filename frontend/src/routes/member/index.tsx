@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QRCanvas } from "@/components/messmate/QRCanvas";
 import { SubscriptionBar } from "@/components/messmate/SubscriptionBar";
 import { MealChip } from "@/components/messmate/MealChip";
@@ -1420,21 +1421,25 @@ function MemberPortal() {
                             <div className="space-y-4">
                               <div className="space-y-1.5">
                                 <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Select Plan</label>
-                                <select 
-                                  className="w-full rounded-md border p-2 text-sm"
-                                  value={renewalPlanId || sub.planId}
-                                  onChange={(e) => setRenewalPlanId(e.target.value)}
+                                <Select 
+                                  value={renewalPlanId || sub.planId} 
+                                  onValueChange={(val) => setRenewalPlanId(val)}
                                 >
-                                  {plansQ.isLoading ? (
-                                    <option value={sub.planId}>{sub.planLabel} (Loading...)</option>
-                                  ) : (
-                                    plansQ.data?.map(plan => (
-                                      <option key={plan.planId} value={plan.planId}>
-                                        {plan.label} {plan.planId === sub.planId ? "(Current)" : ""} - {formatINR(plan.pricePerMonth)}/mo
-                                      </option>
-                                    ))
-                                  )}
-                                </select>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select a plan" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {plansQ.isLoading ? (
+                                      <SelectItem value={sub.planId}>{sub.planLabel} (Loading...)</SelectItem>
+                                    ) : (
+                                      plansQ.data?.map(plan => (
+                                        <SelectItem key={plan.planId} value={plan.planId}>
+                                          {plan.label} {plan.planId === sub.planId ? "(Current)" : ""} - {formatINR(plan.pricePerMonth)}/mo
+                                        </SelectItem>
+                                      ))
+                                    )}
+                                  </SelectContent>
+                                </Select>
                               </div>
                               <div className="space-y-1.5">
                                 <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Start Date</label>
