@@ -240,6 +240,18 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 
 CREATE INDEX IF NOT EXISTS subscriptions_member_idx ON subscriptions(member_id);
 
+CREATE TABLE IF NOT EXISTS renewal_requests (
+  id              BIGSERIAL PRIMARY KEY,
+  member_id       TEXT NOT NULL REFERENCES members(member_id) ON DELETE CASCADE,
+  plan_id         TEXT NOT NULL REFERENCES plans(plan_id) ON DELETE CASCADE,
+  start_date      DATE NOT NULL,
+  status          TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending',
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  resolved_at     TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS renewal_requests_member_idx ON renewal_requests(member_id);
+
+
 -- Safely backfill subscriptions table if it is currently empty
 INSERT INTO subscriptions (
   member_id, plan_id, plan_label, meals, start_date, end_date, 

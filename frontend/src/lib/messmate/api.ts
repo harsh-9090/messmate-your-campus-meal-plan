@@ -509,3 +509,19 @@ export const pushApi = {
     }),
 };
 
+// ---------- Renewal Requests ----------
+import type { RenewalRequest } from "./types";
+export const renewalsApi = {
+  list: () => request<RenewalRequest[]>("/renewals"),
+  getMyRequest: () => request<RenewalRequest | null>("/renewals/my"),
+  create: (data: { planId: string; startDate: string }) =>
+    request<RenewalRequest>("/renewals/my", { method: "POST", body: JSON.stringify(data) }),
+  approve: (id: string, amountPaid: number) =>
+    request<{ ok: boolean; message: string }>(`/renewals/${id}/approve`, {
+      method: "POST",
+      body: JSON.stringify({ amountPaid }),
+    }),
+  reject: (id: string) =>
+    request<{ ok: boolean; message: string }>(`/renewals/${id}/reject`, { method: "POST" }),
+};
+

@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/messmate/auth";
-import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi, skipsApi, ratingsApi, guestPassesApi } from "@/lib/messmate/api";
+import { membersApi, scanApi, configApi, menusApi, authApi, notificationsApi, skipsApi, ratingsApi, guestPassesApi, renewalsApi } from "@/lib/messmate/api";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -377,6 +377,10 @@ function MemberPortal() {
   const todayStr = todayISO();
 
   const [showRequestForm, setShowRequestForm] = useState(false);
+  const [showRenewalDialog, setShowRenewalDialog] = useState(false);
+  const [renewalPlanId, setRenewalPlanId] = useState("");
+  const [renewalStartDate, setRenewalStartDate] = useState(todayStr);
+
   const [showPassesList, setShowPassesList] = useState(false);
   const [guestName, setGuestName] = useState("");
   const [guestDate, setGuestDate] = useState(todayStr);
@@ -504,6 +508,23 @@ function MemberPortal() {
     queryKey: ["unrated-meals"],
     queryFn: () => ratingsApi.getUnrated(),
     enabled: !!authUser,
+  });
+
+  const renewalReqQ = useQuery({
+    queryKey: ["renewal-request"],
+    queryFn: () => renewalsApi.getMyRequest(),
+    enabled: !!authUser,
+  });
+
+  const createRenewalM = useMutation({
+    mutationFn: (data: { planId: string; startDate: string }) => renewalsApi.create(data),
+    onSuccess: () => {
+      toast.success("Renewal request sent to admin!");
+      qc.invalidateQueries({ queryKey: ["renewal-request"] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to submit request");
+    },
   });
 
   const submitRatingM = useMutation({
@@ -1373,6 +1394,65 @@ function MemberPortal() {
               </div>
               <div className="p-5">
                 <SubscriptionBar sub={sub} />
+
+                {(expired || left <= 3) && (
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex flex-col gap-2">
+                      <div className="text-sm font-semibold">Ready to renew?</div>
+                      {renewalReqQ.data ? (
+                        <Button disabled variant="outline" className="w-full text-muted-foreground border-dashed">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Renewal Requested
+                        </Button>
+                      ) : (
+                        <Dialog open={showRenewalDialog} onOpenChange={setShowRenewalDialog}>
+                          <DialogTrigger asChild>
+                            <Button className="w-full font-bold">Request Renewal</Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[400px]">
+                            <div className="mb-4 text-lg font-bold">Request Plan Renewal</div>
+                            <div className="space-y-4">
+                              <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Select Plan</label>
+                                <select 
+                                  className="w-full rounded-md border p-2 text-sm"
+                                  value={renewalPlanId || sub.planId}
+                                  onChange={(e) => setRenewalPlanId(e.target.value)}
+                                >
+                                  <option value={sub.planId}>{sub.planLabel} (Current)</option>
+                                </select>
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Start Date</label>
+                                <Input 
+                                  type="date" 
+                                  min={todayStr} 
+                                  value={renewalStartDate}
+                                  onChange={(e) => setRenewalStartDate(e.target.value)}
+                                />
+                              </div>
+                              <Button 
+                                className="w-full" 
+                                disabled={createRenewalM.isPending}
+                                onClick={() => {
+                                  createRenewalM.mutate({
+                                    planId: renewalPlanId || sub.planId,
+                                    startDate: renewalStartDate
+                                  }, {
+                                    onSuccess: () => setShowRenewalDialog(false)
+                                  });
+                                }}
+                              >
+                                {createRenewalM.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Submit Request
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
                 <WrappedStatsDialog wrappedData={wrappedQ.data} />
               </div>

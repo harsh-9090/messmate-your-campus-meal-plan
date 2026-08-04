@@ -22,6 +22,7 @@ import ratingsRoutes from "./routes/ratings.js";
 import guestPassRoutes from "./routes/guestPasses.js";
 import pushRoutes from "./routes/push.js";
 import sseRoutes from "./routes/sse.js";
+import renewalRoutes from "./routes/renewals.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 export const app = express();
@@ -53,6 +54,7 @@ v1.use("/ratings", ratingsRoutes);
 v1.use("/guest-passes", guestPassRoutes);
 v1.use("/push", pushRoutes);
 v1.use("/stream", sseRoutes);
+v1.use("/renewals", renewalRoutes);
 app.use("/api/v1", v1);
 
 app.use(errorHandler);

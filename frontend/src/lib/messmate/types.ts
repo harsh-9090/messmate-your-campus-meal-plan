@@ -203,3 +203,20 @@ export interface BrandConfig {
   instagramUrl: string;
 }
 
+export interface RenewalRequest {
+  id: string;
+  member_id: string;
+  plan_id: string;
+  start_date: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  resolved_at?: string;
+  // Joined fields for admin
+  member_name?: string;
+  member_email?: string;
+  member_mobile?: string;
+  current_due?: number;
+  plan_label?: string;
+  plan_price?: number;
+  plan_meals?: Meal[];
+}
