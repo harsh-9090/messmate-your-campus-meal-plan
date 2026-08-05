@@ -283,22 +283,22 @@ router.post("/",
           `INSERT INTO members
            (member_id, name, email, mobile, college, dob, password_hash, role, is_active,
             sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
-            sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewal_count)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE,$9,$10,$11,$12,$13,$14,$15,$16,$17,0)
+            sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewal_count, sub_diet_type)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,TRUE,$9,$10,$11,$12,$13,$14,$15,$16,$17,0,$18)
            RETURNING *`,
           [id, name, email, mobile, college, dob, hash, role,
             planId, plan?.label ?? "Custom", meals, fmtDate(start), fmtDate(end),
-            isPaid, isPaid ? new Date() : null, pricePerMonth, amountPaid]
+            isPaid, isPaid ? new Date() : null, pricePerMonth, amountPaid, plan?.diet_type || 'Veg']
         );
 
         await client.query(
           `INSERT INTO subscriptions (
             member_id, plan_id, plan_label, meals, start_date, end_date,
-            price_per_month, amount_paid, is_paid, paid_at, status
+            price_per_month, amount_paid, is_paid, paid_at, status, diet_type
           )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active')`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active', $11)`,
           [id, planId, plan?.label ?? "Custom", meals, fmtDate(start), fmtDate(end),
-            pricePerMonth, amountPaid, isPaid, isPaid ? new Date() : null]
+            pricePerMonth, amountPaid, isPaid, isPaid ? new Date() : null, plan?.diet_type || 'Veg']
         );
         return rows[0];
       });
@@ -486,10 +486,10 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
       await client.query(
         `INSERT INTO subscriptions (
           member_id, plan_id, plan_label, meals, start_date, end_date,
-          price_per_month, amount_paid, is_paid, paid_at, status, renewed_at
+          price_per_month, amount_paid, is_paid, paid_at, status, renewed_at, diet_type
         )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $9 THEN NOW() ELSE NULL END, 'active', NOW())`,
-        [req.params.id, plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(cycleStart), fmtDate(end), price, amountPaid, isPaid]
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CASE WHEN $9 THEN NOW() ELSE NULL END, 'active', NOW(), $10)`,
+        [req.params.id, plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(cycleStart), fmtDate(end), price, amountPaid, isPaid, plan?.diet_type || 'Veg']
       );
 
       // 3. Update the member profile
@@ -500,10 +500,11 @@ router.put("/:id/renew", requireRole("admin"), async (req, res, next) => {
            sub_is_paid = $6, sub_price_per_month = $7, sub_amount_paid = $8,
            sub_renewed_at = NOW(), sub_renewal_count = sub_renewal_count + 1,
            sub_paid_at = CASE WHEN $6 THEN NOW() ELSE sub_paid_at END, 
+           sub_diet_type = $9,
            is_active = TRUE,
            updated_at = NOW()
-         WHERE member_id = $9 RETURNING *`,
-        [plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(cycleStart), fmtDate(end), isPaid, price, amountPaid, req.params.id]
+         WHERE member_id = $10 RETURNING *`,
+        [plan?.plan_id, plan?.label, plan?.meals || "{}", fmtDate(cycleStart), fmtDate(end), isPaid, price, amountPaid, plan?.diet_type || 'Veg', req.params.id]
       );
       return rows[0];
     });

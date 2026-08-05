@@ -113,19 +113,19 @@ router.post("/register",
           `INSERT INTO members (
             member_id, name, email, mobile, college, dob, password_hash, role, is_active, 
             sub_plan_id, sub_plan_label, sub_meals, sub_price_per_month, sub_is_paid,
-            sub_start_date, sub_end_date
+            sub_start_date, sub_end_date, sub_diet_type
           ) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'member', FALSE, $8, $9, $10, $11, FALSE, $12, $13)`,
-          [mid, name, email, mobile, college, dob, hash, p.plan_id, p.label, p.meals, p.price_per_month, fmtDate(start), fmtDate(end)]
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'member', FALSE, $8, $9, $10, $11, FALSE, $12, $13, $14)`,
+          [mid, name, email, mobile, college, dob, hash, p.plan_id, p.label, p.meals, p.price_per_month, fmtDate(start), fmtDate(end), p.diet_type || 'Veg']
         );
 
         await client.query(
           `INSERT INTO subscriptions (
             member_id, plan_id, plan_label, meals, start_date, end_date,
-            price_per_month, amount_paid, is_paid, status
+            price_per_month, amount_paid, is_paid, status, diet_type
           )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 0, FALSE, 'pending')`,
-          [mid, p.plan_id, p.label, p.meals, fmtDate(start), fmtDate(end), p.price_per_month]
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 0, FALSE, 'pending', $8)`,
+          [mid, p.plan_id, p.label, p.meals, fmtDate(start), fmtDate(end), p.price_per_month, p.diet_type || 'Veg']
         );
       });
       
