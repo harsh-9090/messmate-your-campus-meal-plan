@@ -14,6 +14,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ViewMemberDialog, RenewMemberDialog } from "@/components/messmate/MemberAdminDialogs";
+import type { Member } from "@/lib/messmate/types";
 import {
   Users,
   CreditCard,
@@ -95,14 +97,10 @@ function AdminDashboard() {
     }
   }, [authUser]);
 
-  const renewM = useMutation({
-    mutationFn: (id: string) => membersApi.renew(id, {}),
-    onSuccess: () => {
-      toast.success("Plan renewed");
-      qc.invalidateQueries({ queryKey: ["members"] });
-      qc.invalidateQueries({ queryKey: ["reports", "expiring", 3] });
-    },
-  });
+  const plansQ = useQuery({ queryKey: ["plans"], queryFn: () => configApi.listPlans() });
+
+  const [viewingMember, setViewingMember] = useState<Member | null>(null);
+  const [renewingMember, setRenewingMember] = useState<Member | null>(null);
 
   const members = membersQ.data?.items ?? [];
   const windows = windowsQ.data ?? [];
@@ -263,13 +261,14 @@ function AdminDashboard() {
                 return (
                   <div
                     key={m.memberId}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => setViewingMember(m as Member)}
                   >
                     <div className="flex items-center gap-3">
                       <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
                         {m.name
                           .split(" ")
-                          .map((n) => n[0])
+                          .map((n: string) => n[0])
                           .join("")}
                       </div>
                       <div>
@@ -292,13 +291,16 @@ function AdminDashboard() {
                       </div>
                     </div>
                     <Button
-                      size="icon"
+                      size="sm"
                       variant="outline"
-                      className="h-8 w-8 text-primary shrink-0"
-                      disabled={renewM.isPending}
-                      onClick={() => renewM.mutate(m.memberId)}
+                      className="h-8 text-primary shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRenewingMember(m as Member);
+                      }}
                     >
-                      <RefreshCw className="h-4 w-4" />
+                      <Repeat className="mr-1.5 h-3.5 w-3.5" />
+                      Renew
                     </Button>
                   </div>
                 );
@@ -348,6 +350,25 @@ function AdminDashboard() {
           title={viewingList.title}
           members={viewingList.members}
           onClose={() => setViewingList(null)}
+        />
+      )}
+      {viewingMember && (
+        <ViewMemberDialog
+          member={viewingMember}
+          onClose={() => setViewingMember(null)}
+          plans={plansQ.data ?? []}
+        />
+      )}
+
+      {renewingMember && (
+        <RenewMemberDialog
+          member={renewingMember}
+          plans={plansQ.data ?? []}
+          onClose={() => setRenewingMember(null)}
+          onSaved={() => {
+            qc.invalidateQueries({ queryKey: ["members"] });
+            qc.invalidateQueries({ queryKey: ["reports", "expiring"] });
+          }}
         />
       )}
     </div>

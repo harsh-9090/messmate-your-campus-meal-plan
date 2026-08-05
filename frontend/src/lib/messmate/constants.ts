@@ -1,5 +1,7 @@
 import type { Plan, MealWindow, Meal } from "./types";
 
+export const PAYMENT_METHODS = ["Cash", "Online", "UPI", "Card"];
+
 export const MEALS: Meal[] = ["Breakfast", "Lunch", "Dinner"];
 
 export const MEAL_ICONS: Record<Meal, string> = {
