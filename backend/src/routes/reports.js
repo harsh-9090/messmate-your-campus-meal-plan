@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { format, addDays } from "date-fns";
+import { format, addDays, differenceInDays } from "date-fns";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { query } from "../db/index.js";
 import { toCsv } from "../services/reportService.js";
 import { getCache, setCache } from "../db/redis.js";
+import { notifyExpiringSoon } from "../services/notificationService.js";
 
 const getISTDate = () => {
   const now = new Date();
@@ -241,6 +242,39 @@ router.get("/expiring", async (req, res, next) => {
     await setCache(cacheKey, result, 600, "report:expiring"); // 10 min, tracked in group
     res.json(result);
   } catch (e) { next(e); }
+});
+
+router.post("/expiring/remind-bulk", async (req, res, next) => {
+  try {
+    const { memberIds } = req.body;
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+      return res.status(400).json({ error: "Invalid or empty memberIds array" });
+    }
+
+    // Fetch members that exist in the provided IDs
+    const { rows } = await query(
+      `SELECT * FROM members WHERE member_id = ANY($1::text[])`,
+      [memberIds]
+    );
+
+    let notifiedCount = 0;
+    const today = getISTDate();
+
+    for (const row of rows) {
+      if (row.sub_end_date && row.email) {
+        const daysLeft = differenceInDays(new Date(row.sub_end_date), today);
+        await notifyExpiringSoon(
+          { memberId: row.member_id, name: row.name, email: row.email },
+          daysLeft
+        );
+        notifiedCount++;
+      }
+    }
+
+    res.json({ ok: true, notifiedCount });
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.get("/denials", async (req, res, next) => {

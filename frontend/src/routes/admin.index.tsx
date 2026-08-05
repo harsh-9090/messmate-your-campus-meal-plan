@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { membersApi, configApi, reportsApi, usageApi, renewalsApi } from "@/lib/messmate/api";
 import { useAuth } from "@/lib/messmate/auth";
@@ -254,56 +254,83 @@ function AdminDashboard() {
               No plans expiring in the next 3 days.
             </p>
           ) : (
-            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 styled-scrollbar">
-              {expiringSoon.map((m) => {
-                const left = daysRemaining(m.subscription.endDate);
-                return (
-                  <div
-                    key={m.memberId}
-                    className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => setViewingMember(m as Member)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
-                        {m.name
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")}
-                      </div>
-                      <div>
-                        <div className="font-medium">
-                          {m.name}{" "}
-                          <span className="text-xs text-muted-foreground">· {m.memberId}</span>
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          <PlanBadge
-                            planId={m.subscription.planId}
-                            label={m.subscription.planLabel}
-                          />
-                          <span className="ml-2">
-                            expires in{" "}
-                            <span className="font-semibold text-warning">
-                              {left} day{left === 1 ? "" : "s"}
-                            </span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-primary shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setRenewingMember(m as Member);
-                      }}
-                    >
-                      <Repeat className="mr-1.5 h-3.5 w-3.5" />
-                      Renew
-                    </Button>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-lg border bg-destructive/10 p-2 text-center">
+                  <div className="text-xs font-semibold text-destructive uppercase">🔴 Today</div>
+                  <div className="text-lg font-bold text-destructive">
+                    {expiringSoon.filter(m => daysRemaining(m.subscription.endDate) === 0).length}
                   </div>
-                );
-              })}
+                </div>
+                <div className="rounded-lg border bg-orange-500/10 p-2 text-center">
+                  <div className="text-xs font-semibold text-orange-600 uppercase">🟠 Tomorrow</div>
+                  <div className="text-lg font-bold text-orange-600">
+                    {expiringSoon.filter(m => daysRemaining(m.subscription.endDate) === 1).length}
+                  </div>
+                </div>
+                <div className="rounded-lg border bg-yellow-500/10 p-2 text-center">
+                  <div className="text-xs font-semibold text-yellow-600 uppercase">🟡 2+ Days</div>
+                  <div className="text-lg font-bold text-yellow-600">
+                    {expiringSoon.filter(m => daysRemaining(m.subscription.endDate) >= 2).length}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 styled-scrollbar">
+                {expiringSoon.slice(0, 5).map((m) => {
+                  const left = daysRemaining(m.subscription.endDate);
+                  return (
+                    <div
+                      key={m.memberId}
+                      className="flex items-center justify-between rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => setViewingMember(m as Member)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
+                          {m.name
+                            .split(" ")
+                            .map((n: string) => n[0])
+                            .join("")}
+                        </div>
+                        <div>
+                          <div className="font-medium">
+                            {m.name}{" "}
+                            <span className="text-xs text-muted-foreground">· {m.memberId}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            <PlanBadge
+                              planId={m.subscription.planId}
+                              label={m.subscription.planLabel}
+                            />
+                            <span className="ml-2">
+                              expires in{" "}
+                              <span className="font-semibold text-warning">
+                                {left} day{left === 1 ? "" : "s"}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-primary shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRenewingMember(m as Member);
+                        }}
+                      >
+                        <Repeat className="mr-1.5 h-3.5 w-3.5" />
+                        Renew
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Button asChild variant="outline" className="w-full mt-2">
+                <Link to="/admin/expiring">View All ({expiringSoon.length})</Link>
+              </Button>
             </div>
           )}
         </Card>

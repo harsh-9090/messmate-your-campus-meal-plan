@@ -17,6 +17,7 @@ import {
   Ticket,
   PieChart,
   RefreshCw,
+  Clock,
 } from "lucide-react";
 import { useAuth } from "@/lib/messmate/auth";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ const groups = [
     title: "People & Comms",
     items: [
       { to: "/admin/members", label: "Members", icon: Users },
+      { to: "/admin/expiring", label: "Expiring Soon", icon: Clock },
       { to: "/admin/renewals", label: "Renewals", icon: RefreshCw },
       { to: "/admin/guest-passes", label: "Guest Passes", icon: Ticket },
       { to: "/admin/staff", label: "Staff", icon: UserCog },

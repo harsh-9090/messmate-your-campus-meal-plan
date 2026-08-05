@@ -402,6 +402,11 @@ export const reportsApi = {
   },
   getDailyTrend: (days: number = 7) =>
     request<{ date: string; Breakfast: number; Lunch: number; Dinner: number }[]>(`/reports/daily-trend?days=${days}`),
+  remindBulk: (memberIds: string[]) =>
+    request<{ ok: boolean; notifiedCount: number }>("/reports/expiring/remind-bulk", {
+      method: "POST",
+      body: JSON.stringify({ memberIds }),
+    }),
 };
 
 export const staffApi = {
