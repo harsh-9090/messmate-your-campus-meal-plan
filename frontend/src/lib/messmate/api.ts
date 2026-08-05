@@ -448,6 +448,11 @@ export const skipsApi = {
       method: "POST",
       body: JSON.stringify({ date, meal, skip }),
     }),
+  setVacation: (startDate: string, endDate: string, cancel: boolean) =>
+    request<{ ok: boolean; message: string }>("/skips/vacation", {
+      method: "POST",
+      body: JSON.stringify({ startDate, endDate, cancel }),
+    }),
   getHeadcount: (startDate?: string, endDate?: string) => {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;

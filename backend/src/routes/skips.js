@@ -125,6 +125,93 @@ router.post("/toggle", requireRole("member"), async (req, res, next) => {
   }
 });
 
+// POST /skips/vacation -> Create or cancel a vacation (absence) block
+router.post("/vacation", requireRole("member"), async (req, res, next) => {
+  try {
+    const memberId = req.user.sub;
+    const { startDate, endDate, cancel } = req.body;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ error: "startDate and endDate are required" });
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Check minimum 2 days
+    if (end <= start) {
+      return res.status(400).json({ error: "Vacation must be at least 2 days long" });
+    }
+
+    // Vacations can only start tomorrow or later to avoid complex cut-off rules
+    const todayStr = formatDate(new Date());
+    const startStr = formatDate(start);
+    if (startStr <= todayStr) {
+      return res.status(400).json({ error: "Vacations can only be planned starting from tomorrow" });
+    }
+
+    // Verify member has active subscription
+    const memRes = await query(
+      `SELECT sub_meals FROM members WHERE member_id = $1 AND is_active = TRUE`,
+      [memberId]
+    );
+    if (memRes.rows.length === 0) {
+      return res.status(404).json({ error: "Active member subscription not found" });
+    }
+    const subMeals = memRes.rows[0].sub_meals || [];
+    if (subMeals.length === 0) {
+      return res.status(400).json({ error: "No subscribed meals found for your account" });
+    }
+
+    // Generate date range
+    let curDate = new Date(start);
+    const stopDate = new Date(end);
+    const datesToProcess = [];
+    while (curDate <= stopDate) {
+      datesToProcess.push(formatDate(curDate));
+      curDate.setDate(curDate.getDate() + 1);
+    }
+
+    if (cancel) {
+      for (const d of datesToProcess) {
+        for (const m of subMeals) {
+          await query(
+            `DELETE FROM meal_skips
+             WHERE member_id = $1 AND skip_date = $2 AND meal = $3`,
+            [memberId, d, m]
+          );
+        }
+      }
+    } else {
+      for (const d of datesToProcess) {
+        for (const m of subMeals) {
+          await query(
+            `INSERT INTO meal_skips (member_id, skip_date, meal)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (member_id, skip_date, meal) DO NOTHING`,
+            [memberId, d, m]
+          );
+        }
+      }
+    }
+
+    // Invalidate cache
+    const cacheKeys = [];
+    for (const d of datesToProcess) {
+      cacheKeys.push(
+        `messmate:usage:${memberId}:${d}`,
+        `messmate:usage:summary:${d}`,
+        `messmate:report:daily:${d}`
+      );
+    }
+    await delCache(cacheKeys);
+
+    res.json({ ok: true, message: cancel ? "Vacation canceled" : "Vacation confirmed" });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // GET /skips/headcount -> Forecast headcount for the kitchen
 router.get("/headcount", requireRole("staff", "admin"), async (req, res, next) => {
   try {

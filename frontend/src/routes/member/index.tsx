@@ -349,6 +349,8 @@ function MemberPortal() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<"today" | "pass" | "skips" | "account">("today");
+  const [vacationStart, setVacationStart] = useState("");
+  const [vacationEnd, setVacationEnd] = useState("");
   const [isOnline, setIsOnline] = useState(() => typeof navigator !== "undefined" ? navigator.onLine : true);
 
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
@@ -481,7 +483,7 @@ function MemberPortal() {
 
   const skipsQ = useQuery({
     queryKey: ["my-skips"],
-    queryFn: () => skipsApi.listMySkips(),
+    queryFn: () => skipsApi.listMySkips(todayStr, addDaysISO(todayISO(), 30)),
     enabled: !!authUser,
   });
 
@@ -502,6 +504,23 @@ function MemberPortal() {
     },
     onError: (err: any) => {
       toast.error(err?.message || "Failed to toggle meal skip");
+    },
+  });
+
+  const setVacationM = useMutation({
+    mutationFn: (args: { startDate: string; endDate: string; cancel: boolean }) =>
+      skipsApi.setVacation(args.startDate, args.endDate, args.cancel),
+    onSuccess: (data) => {
+      toast.success(data.message);
+      qc.invalidateQueries({ queryKey: ["my-skips"] });
+      qc.invalidateQueries({ queryKey: ["my-logs"] });
+      qc.invalidateQueries({ queryKey: ["qr-token-daily"] });
+      qc.invalidateQueries({ queryKey: ["member"] });
+      setVacationStart("");
+      setVacationEnd("");
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || "Failed to set vacation");
     },
   });
 
@@ -682,7 +701,7 @@ function MemberPortal() {
           {([
             { key: "today" as const, icon: <UtensilsCrossed className="h-4 w-4" />, label: "Today's Meals", shortLabel: "Today" },
             { key: "pass" as const, icon: <QrCode className="h-4 w-4" />, label: "Dining Pass", shortLabel: "Pass" },
-            { key: "skips" as const, icon: <TrendingDown className="h-4 w-4" />, label: "Skip Planner", shortLabel: "Skips" },
+            { key: "skips" as const, icon: <TrendingDown className="h-4 w-4" />, label: "Vacation Mode", shortLabel: "Vacation" },
             { key: "account" as const, icon: <CreditCard className="h-4 w-4" />, label: "My Plan", shortLabel: "Account" },
           ]).map((tab) => (
             <button
@@ -1237,125 +1256,94 @@ function MemberPortal() {
           </div>
         )}
 
-        {/* ═══════════════ TAB: SKIP PLANNER ═══════════════ */}
+        {/* ═══════════════ TAB: SKIP PLANNER / VACATION MODE ═══════════════ */}
         {activeTab === "skips" && (
           <div className="max-w-2xl mx-auto w-full animate-in fade-in slide-in-from-bottom-2 duration-300">
             <Card className="p-4 sm:p-5 shadow-sm space-y-4 border-border bg-card transition-all duration-300 hover:shadow-md hover:translate-y-[-2px]">
               <div className="flex items-center justify-between border-b pb-2">
                 <div className="font-display text-base sm:text-lg font-bold flex items-center gap-1.5">
-                  <span>🗓️</span> Skip Meals
+                  <span>🏖️</span> Vacation Mode
                 </div>
-                <Badge variant="secondary" className="text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                  12h Cut-off
+                <Badge variant="secondary" className="text-[10px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
+                  Min 2 Days
                 </Badge>
               </div>
 
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Plan your absences in advance to help reduce kitchen food waste. Toggles lock 12h before meal windows start.
+                Going out of town? Plan your absence to pause your meals and save your credits. Vacations must be at least 2 days long and can only be planned starting from tomorrow.
               </p>
+              
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Start Date</Label>
+                  <Input 
+                    type="date"
+                    min={tomorrowStr}
+                    value={vacationStart}
+                    onChange={(e) => setVacationStart(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">End Date</Label>
+                  <Input 
+                    type="date"
+                    min={vacationStart || tomorrowStr}
+                    value={vacationEnd}
+                    onChange={(e) => setVacationEnd(e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button 
+                className="w-full" 
+                disabled={!vacationStart || !vacationEnd || setVacationM.isPending}
+                onClick={() => {
+                  const start = new Date(vacationStart);
+                  const end = new Date(vacationEnd);
+                  if (end <= start) {
+                    toast.error("Vacation must be at least 2 days long");
+                    return;
+                  }
+                  if (vacationStart <= todayStr) {
+                    toast.error("Vacations can only be planned starting from tomorrow");
+                    return;
+                  }
+                  setVacationM.mutate({ startDate: vacationStart, endDate: vacationEnd, cancel: false });
+                }}
+              >
+                {setVacationM.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Confirm Vacation
+              </Button>
 
-              <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
-                {skipsQ.isLoading || windowsQ.isLoading ? (
-                  <div className="py-6 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    Loading skip calendar…
+              <div className="mt-6 pt-4 border-t">
+                <h4 className="text-sm font-semibold mb-3">Upcoming Skipped Days</h4>
+                {skipsQ.isLoading ? (
+                  <div className="text-center py-4"><Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" /></div>
+                ) : skipsQ.data && skipsQ.data.length > 0 ? (
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                    {Array.from(new Set(skipsQ.data.map(s => s.date))).sort().filter(d => d > todayStr).length > 0 ? (
+                      Array.from(new Set(skipsQ.data.map(s => s.date))).sort().filter(d => d > todayStr).map(dateStr => (
+                        <div key={dateStr} className="flex items-center justify-between p-3 rounded-lg border bg-muted/10 hover:bg-muted/30 transition-colors">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{formatDate(dateStr)}</span>
+                            <Badge variant="outline" className="text-[10px] text-muted-foreground">All Meals</Badge>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8 text-xs px-2"
+                            onClick={() => setVacationM.mutate({ startDate: dateStr, endDate: dateStr, cancel: true })}
+                            disabled={setVacationM.isPending}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-sm text-muted-foreground py-4">No upcoming vacations planned.</div>
+                    )}
                   </div>
                 ) : (
-                  upcomingDays.map((dateStr) => {
-                    const d = new Date(dateStr);
-                    const isToday = dateStr === todayStr;
-                    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                    
-                    return (
-                      <div
-                        key={dateStr}
-                        className={cn(
-                          "rounded-xl border p-3 space-y-2 bg-muted/5 transition-all",
-                          isToday && "border-primary/30 bg-primary/[0.02]"
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-foreground">
-                            {dayNames[d.getDay()]}, {d.getDate()} {monthNames[d.getMonth()]}
-                            {isToday && (
-                              <span className="ml-1.5 text-[9px] uppercase tracking-wider font-extrabold text-primary bg-primary/10 rounded-full px-1.5 py-0.5">
-                                Today
-                              </span>
-                            )}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-col gap-1.5">
-                          {sub.meals.map((meal) => {
-                            const isSkippedVal = (skipsQ.data ?? []).some(
-                              (s) => s.date === dateStr && s.meal === meal
-                            );
-                            
-                            const planStartStr = sub.startDate ? new Date(sub.startDate).toISOString().substring(0, 10) : null;
-                            const planEndStr = sub.endDate ? new Date(sub.endDate).toISOString().substring(0, 10) : null;
-                            const isOutsidePlan = (planStartStr && dateStr < planStartStr) || (planEndStr && dateStr > planEndStr);
-                            
-                            const isLockedVal = getIsLocked(dateStr, meal);
-                            const isPendingToggle =
-                              toggleSkipM.isPending &&
-                              toggleSkipM.variables?.date === dateStr &&
-                              toggleSkipM.variables?.meal === meal;
-
-                            return (
-                              <div
-                                key={meal}
-                                className="flex items-center justify-between text-xs bg-background/50 dark:bg-background/25 rounded-lg border border-border/40 px-2 py-1.5"
-                              >
-                                <span className="font-semibold text-muted-foreground/90 flex items-center gap-1">
-                                  {meal === "Breakfast" ? "🌅" : meal === "Lunch" ? "🍱" : "🌙"}
-                                  {meal}
-                                </span>
-
-                                <div className="flex items-center gap-2">
-                                  {isOutsidePlan ? (
-                                    <span className="text-[10px] text-muted-foreground/60 font-medium flex items-center gap-1 select-none">
-                                      <Lock className="h-3 w-3" /> Not in plan
-                                    </span>
-                                  ) : isLockedVal ? (
-                                    <span className="text-[10px] text-muted-foreground/60 font-medium flex items-center gap-1 select-none">
-                                      <Lock className="h-3 w-3" /> Locked
-                                    </span>
-                                  ) : null}
-
-                                  <button
-                                    disabled={isOutsidePlan || isLockedVal || isPendingToggle}
-                                    onClick={() =>
-                                      toggleSkipM.mutate({
-                                        date: dateStr,
-                                        meal,
-                                        skip: !isSkippedVal,
-                                      })
-                                    }
-                                    className={cn(
-                                      "px-2 py-1 rounded-md text-[10px] font-bold uppercase transition-all duration-150 cursor-pointer border",
-                                      isSkippedVal
-                                        ? "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900/50 hover:bg-amber-200"
-                                        : "bg-primary/10 dark:bg-primary/20 text-primary border-primary/25 hover:bg-primary/20",
-                                      (isOutsidePlan || isLockedVal || isPendingToggle) && "opacity-50 cursor-not-allowed"
-                                    )}
-                                  >
-                                    {isPendingToggle ? (
-                                      <Loader2 className="h-3 w-3 animate-spin mx-auto" />
-                                    ) : isSkippedVal ? (
-                                      "Skipped"
-                                    ) : (
-                                      "Eating"
-                                    )}
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })
+                  <div className="text-center text-sm text-muted-foreground py-4">No upcoming vacations planned.</div>
                 )}
               </div>
             </Card>
