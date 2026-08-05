@@ -72,22 +72,17 @@ function ExpiringPage() {
   };
 
   return (
-    <div className="flex h-[calc(100vh-64px)] lg:h-screen flex-col overflow-hidden bg-background">
-      <div className="flex shrink-0 items-center justify-between border-b bg-card px-6 py-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-orange-100 p-2 text-orange-600">
-            <Clock className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="font-display text-2xl font-bold tracking-tight">Expiring Soon</h1>
-            <p className="text-sm text-muted-foreground hidden sm:block">
-              Members expiring within the next 7 days
-            </p>
-          </div>
+    <div className="space-y-5 p-6 md:p-8">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-bold">Expiring Soon</h1>
+          <p className="text-sm text-muted-foreground">
+            Members expiring within the next 7 days
+          </p>
         </div>
-      </div>
+      </header>
 
-      <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 styled-scrollbar">
+      <div>
         {selectedIds.size > 0 && (
           <div className="sticky top-0 z-10 mb-4 flex items-center justify-between rounded-lg border bg-card p-4 shadow-sm">
             <div className="font-medium text-sm">
