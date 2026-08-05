@@ -379,6 +379,7 @@ function MemberPortal() {
   }, []);
 
   const todayStr = todayISO();
+  const tomorrowStr = addDaysISO(todayStr, 1);
 
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [showRenewalDialog, setShowRenewalDialog] = useState(false);
