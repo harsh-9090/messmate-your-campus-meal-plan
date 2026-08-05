@@ -39,7 +39,6 @@ import {
 import { PlanBadge } from "@/components/messmate/PlanBadge";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
-import type { Member } from "@/lib/messmate/types";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
 
 export const Route = createFileRoute("/admin/")({

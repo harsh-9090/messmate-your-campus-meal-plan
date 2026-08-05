@@ -1311,6 +1311,3 @@ function EditMemberDialog({
     </Dialog>
   );
 }
-
-  );
-}
