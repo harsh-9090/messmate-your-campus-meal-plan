@@ -290,6 +290,8 @@ function MembersPage() {
                 const left = daysRemaining(m.subscription.endDate);
                 const expired = left < 0;
                 const canRenew = expired || left <= 2;
+                const startsIn = m.subscription.startDate ? daysRemaining(m.subscription.startDate) : 0;
+                const startsInFuture = startsIn > 0;
                 const planDietType = plans.find((p) => p.planId === m.subscription.planId)?.dietType;
                 return (
                   <div
@@ -351,6 +353,8 @@ function MembersPage() {
                           </div>
                         ) : expired ? (
                           <Badge variant="destructive">Expired</Badge>
+                        ) : startsInFuture ? (
+                          <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
                         ) : (
                           <Badge className="bg-success text-success-foreground">Active</Badge>
                         )}
@@ -362,12 +366,13 @@ function MembersPage() {
                         className={cn(
                           "text-xs font-medium",
                           expired && "text-destructive",
-                          !expired && left <= 3 && "text-warning",
-                          !expired && left > 3 && "text-muted-foreground"
+                          !expired && !startsInFuture && left <= 3 && "text-warning",
+                          !expired && !startsInFuture && left > 3 && "text-muted-foreground",
+                          startsInFuture && "text-blue-500"
                         )}
                       >
                         {(m.subscription.endDate || m.createdAt)
-                          ? (expired ? `Expired ${-left}d ago` : `${left}d remaining`)
+                          ? (expired ? `Expired ${-left}d ago` : startsInFuture ? `Starts in ${startsIn}d` : `${left}d remaining`)
                           : "No active plan"}
                       </div>
                       <div className="flex justify-end gap-2">
@@ -478,6 +483,8 @@ function MembersPage() {
                     const left = daysRemaining(m.subscription.endDate);
                     const expired = left < 0;
                     const canRenew = expired || left <= 2;
+                    const startsIn = m.subscription.startDate ? daysRemaining(m.subscription.startDate) : 0;
+                    const startsInFuture = startsIn > 0;
                     const planDietType = plans.find((p) => p.planId === m.subscription.planId)?.dietType;
                     return (
                       <tr
@@ -531,15 +538,17 @@ function MembersPage() {
                             "px-4 py-3 text-xs",
                             expired && "text-destructive font-semibold",
                             !expired &&
+                            !startsInFuture &&
                             left <= 3 &&
                             (m.subscription.endDate || m.createdAt) &&
                             "text-warning font-semibold",
+                            startsInFuture && "text-blue-500 font-semibold"
                           )}
                         >
                           {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
                           {(m.subscription.endDate || m.createdAt) && (
                             <div className="text-[10px] text-muted-foreground">
-                              {expired ? `${-left}d ago` : `${left}d left`}
+                              {expired ? `${-left}d ago` : startsInFuture ? `Starts in ${startsIn}d` : `${left}d left`}
                             </div>
                           )}
                         </td>
@@ -570,6 +579,8 @@ function MembersPage() {
                             </div>
                           ) : expired ? (
                             <Badge variant="destructive">Expired</Badge>
+                          ) : startsInFuture ? (
+                            <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
                           ) : (
                             <Badge className="bg-success text-success-foreground">Active</Badge>
                           )}
@@ -1605,6 +1616,8 @@ function ViewMemberDialog({
 
   const left = daysRemaining(member.subscription.endDate);
   const expired = left < 0;
+  const startsIn = member.subscription.startDate ? daysRemaining(member.subscription.startDate) : 0;
+  const startsInFuture = startsIn > 0;
   const planDietType = plans.find((p) => p.planId === member.subscription.planId)?.dietType;
 
   return (
@@ -1624,6 +1637,8 @@ function ViewMemberDialog({
               <Badge variant="destructive">Unpaid</Badge>
             ) : expired ? (
               <Badge variant="destructive">Expired</Badge>
+            ) : startsInFuture ? (
+              <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
             ) : (
               <Badge className="bg-success text-success-foreground">Active</Badge>
             )}
@@ -1681,9 +1696,9 @@ function ViewMemberDialog({
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Expiry Date</span>
                 <div className="text-right">
-                  <div className={cn("font-medium", expired && "text-destructive")}>{formatDate(member.subscription.endDate || addDaysISO(member.createdAt, 30))}</div>
+                  <div className={cn("font-medium", expired && "text-destructive", startsInFuture && "text-blue-500")}>{formatDate(member.subscription.endDate || addDaysISO(member.createdAt, 30))}</div>
                   {(member.subscription.endDate || member.createdAt) && (
-                    <div className="text-[10px] text-muted-foreground">{expired ? `${-left} days ago` : `${left} days remaining`}</div>
+                    <div className="text-[10px] text-muted-foreground">{expired ? `${-left} days ago` : startsInFuture ? `Starts in ${startsIn} days` : `${left} days remaining`}</div>
                   )}
                 </div>
               </div>
