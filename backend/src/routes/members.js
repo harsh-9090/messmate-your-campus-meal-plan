@@ -304,6 +304,7 @@ router.post("/",
       });
       
       await delByPattern("member:list");
+      await delByPattern("report:expiring");
       sseService.broadcast("member_created", { memberId: id });
       
       if (amountPaid > 0) {
@@ -415,6 +416,7 @@ router.put("/:id",
 
       await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
       await delByPattern("member:list");
+      await delByPattern("report:expiring");
       
       res.json(stripPassword(rowToMember(rows[0])));
   } catch (e) { next(e); }
@@ -426,6 +428,7 @@ router.delete("/:id", requireRole("admin"), async (req, res, next) => {
     
     await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
     await delByPattern("member:list");
+    await delByPattern("report:expiring");
     
     res.json({ ok: true });
   } catch (e) { next(e); }
@@ -590,6 +593,7 @@ router.put("/:id/payment", requireRole("admin"),
       
       await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
       await delByPattern("member:list");
+      await delByPattern("report:expiring");
 
       // Dispatch plan activation email asynchronously via queue
       if (updatedMember.email_verified === false) {

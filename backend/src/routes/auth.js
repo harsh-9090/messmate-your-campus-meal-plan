@@ -130,6 +130,7 @@ router.post("/register",
       });
       
       await delByPattern("member:list");
+      await delByPattern("report:expiring");
       sseService.broadcast("member_created", { memberId: mid });
       
       // Dispatch welcome email asynchronously via queue
@@ -344,6 +345,7 @@ router.post("/verify-email", verifyToken,
       // Delete user details cache
       await delCache([`messmate:member:${memberId}`, `messmate:member:${memberId}:subscription`]);
       await delByPattern("member:list");
+      await delByPattern("report:expiring");
 
       res.json({ ok: true, message: "Email verified successfully!" });
     } catch (e) { next(e); }
