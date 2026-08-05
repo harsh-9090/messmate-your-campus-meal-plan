@@ -5,7 +5,7 @@ const fmtDate = (d) => format(d, "yyyy-MM-dd");
 
 /**
  * Calculates member absence credits based on their current active subscription period.
- * Strict Interpretation A: If user is absent for >3 days in a row, the entire streak length is credited.
+ * Strict Interpretation A: If user is absent for >=2 days in a row, the entire streak length is credited.
  * 
  * @param {string} memberId 
  * @param {string|Date} startDate 
@@ -82,8 +82,8 @@ export async function calculateAbsenceCredits(memberId, startDate, endDate) {
       }
       consecutiveAbsent++;
     } else {
-      // Close active absent streak if it qualifies (>= 3 consecutive days)
-      if (consecutiveAbsent >= 3) {
+      // Close active absent streak if it qualifies (>= 2 consecutive days)
+      if (consecutiveAbsent >= 2) {
         const credit = consecutiveAbsent; // Interpretation A
         totalCreditDays += credit;
         streaks.push({
@@ -99,7 +99,7 @@ export async function calculateAbsenceCredits(memberId, startDate, endDate) {
   }
 
   // Handle final day streak
-  if (consecutiveAbsent >= 3) {
+  if (consecutiveAbsent >= 2) {
     const credit = consecutiveAbsent; // Interpretation A
     totalCreditDays += credit;
     streaks.push({
