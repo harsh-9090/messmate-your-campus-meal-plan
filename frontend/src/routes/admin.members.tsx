@@ -1620,6 +1620,12 @@ function ViewMemberDialog({
   const startsInFuture = startsIn > 0;
   const planDietType = plans.find((p) => p.planId === member.subscription.planId)?.dietType;
 
+  const creditsQ = useQuery({
+    queryKey: ["members", member.memberId, "absence-credits"],
+    queryFn: () => membersApi.getAbsenceCredits(member.memberId),
+    enabled: !!member,
+  });
+
   return (
     <Dialog open={!!member} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md w-[95vw] rounded-2xl overflow-hidden p-0 gap-0">
@@ -1702,6 +1708,40 @@ function ViewMemberDialog({
                   )}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Leave History */}
+          <div>
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Leave History (Current Plan)</h4>
+            <div className="grid gap-3 text-sm">
+              {creditsQ.isLoading ? (
+                <div className="text-center py-2 text-muted-foreground text-xs flex items-center justify-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Loading records...
+                </div>
+              ) : creditsQ.data && creditsQ.data.streaks.length > 0 ? (
+                creditsQ.data.streaks.map((streak: any, idx: number) => (
+                  <div key={idx} className="flex justify-between items-center p-2 rounded-lg bg-muted/10 border border-muted/50">
+                    <div>
+                      <div className="font-medium text-xs">{formatDate(streak.start)} - {formatDate(streak.end)}</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{streak.length} consecutive days</div>
+                    </div>
+                    {streak.credit > 0 ? (
+                      <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200/50 shadow-none font-semibold text-[10px] px-1.5 py-0">
+                        +{streak.credit} days credit
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground/70 bg-muted/20 border-dashed font-medium text-[10px] px-1.5 py-0">
+                        No credit
+                      </Badge>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-5 text-muted-foreground text-xs italic bg-muted/10 rounded-lg border border-dashed">
+                  No leaves recorded during this plan.
+                </div>
+              )}
             </div>
           </div>
 
