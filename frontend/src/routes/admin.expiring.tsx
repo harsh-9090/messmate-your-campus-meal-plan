@@ -29,7 +29,7 @@ function ExpiringPage() {
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [renewingMember, setRenewingMember] = useState<Member | null>(null);
 
-  const expiringQ = useQuery({ queryKey: ["reports", "expiring"], queryFn: () => reportsApi.getExpiring(7) });
+  const expiringQ = useQuery({ queryKey: ["reports", "expiring"], queryFn: () => reportsApi.expiring(7) });
   const plansQ = useQuery({ queryKey: ["plans"], queryFn: () => configApi.listPlans() });
 
   const remindMutation = useMutation({
