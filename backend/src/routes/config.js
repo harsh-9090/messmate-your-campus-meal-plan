@@ -3,6 +3,15 @@ import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
 import { query, withTx } from "../db/index.js";
 import { getCache, setCache, delCache } from "../db/redis.js";
 import { body, param, validationResult } from "express-validator";
+import { v2 as cloudinary } from "cloudinary";
+
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({ 
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+    api_key: process.env.CLOUDINARY_API_KEY, 
+    api_secret: process.env.CLOUDINARY_API_SECRET 
+  });
+}
 
 const router = Router();
 
@@ -287,9 +296,30 @@ router.put("/windows/:meal", requireRole("admin"), windowUpdateSchema, async (re
 // --- Factory Reset ---
 router.post("/factory-reset", requireRole("admin"), async (req, res, next) => {
   try {
+    const { hardReset } = req.body;
+    
+    // Fetch all non-admin members with photos to delete them from Cloudinary
+    if (process.env.CLOUDINARY_CLOUD_NAME) {
+      const { rows: membersWithPhotos } = await query(
+        `SELECT photo_url FROM members WHERE role != 'admin' AND photo_url IS NOT NULL`
+      );
+      
+      const publicIds = membersWithPhotos.map(m => {
+        const matches = m.photo_url.match(/\/v\d+\/messmate\/(.+?)\./);
+        return matches ? `messmate/${matches[1]}` : null;
+      }).filter(Boolean);
+
+      if (publicIds.length > 0) {
+        // Delete from Cloudinary in batches or all at once depending on limits (simplest is looping or destroy)
+        for (const pid of publicIds) {
+          try { await cloudinary.uploader.destroy(pid); } catch (e) { console.error("Cloudinary delete err:", e); }
+        }
+      }
+    }
+
     // This is extremely dangerous and should only be called if explicitly requested
     await withTx(async (client) => {
-      await client.query(`
+      let truncateSql = `
         TRUNCATE TABLE 
           meal_usage, 
           scan_logs, 
@@ -302,8 +332,16 @@ router.post("/factory-reset", requireRole("admin"), async (req, res, next) => {
           menu_item_ratings,
           subscriptions,
           renewal_requests
-        CASCADE;
-      `);
+      `;
+      
+      if (hardReset) {
+        truncateSql += `, plans, meal_windows, system_settings`;
+      }
+      
+      truncateSql += ` RESTART IDENTITY CASCADE;`;
+      
+      await client.query(truncateSql);
+      
       await client.query(`DELETE FROM members WHERE role != 'admin'`);
       await client.query(`
         UPDATE members SET 
