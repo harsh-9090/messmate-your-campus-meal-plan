@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
+import { ImageUploadDialog } from "@/components/messmate/ImageUploadDialog";
+import { Camera } from "lucide-react";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
@@ -49,9 +51,11 @@ function RegisterPage() {
     confirmPassword: "",
     planId: "",
     startDate: "",
+    photoUrl: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showPhotoDialog, setShowPhotoDialog] = useState(false);
 
   const checks = {
     length: formData.password.length >= 8,
@@ -69,6 +73,10 @@ function RegisterPage() {
 
   const handleNext = () => {
     if (step === 1) {
+      if (!formData.photoUrl) {
+        toast.error("A clear profile photo is mandatory for your mess ID.");
+        return;
+      }
       if (!formData.name.trim() || !formData.email.trim() || !formData.mobile.trim() || !formData.college.trim() || !formData.dob.trim()) {
         toast.error("Please fill in all personal details");
         return;
@@ -287,6 +295,27 @@ function RegisterPage() {
             <div className="grid gap-4 overflow-hidden relative min-h-[300px]">
               {step === 1 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-300">
+                  <div className="flex flex-col items-center justify-center gap-3 pb-2">
+                    <div className="relative group cursor-pointer" onClick={() => setShowPhotoDialog(true)}>
+                      <div className="h-24 w-24 rounded-full bg-muted border-2 border-dashed flex items-center justify-center overflow-hidden shadow-sm transition-all group-hover:border-primary/50">
+                        {formData.photoUrl ? (
+                          <img src={formData.photoUrl} alt="Profile" className="h-full w-full object-cover" />
+                        ) : (
+                          <Camera className="h-8 w-8 text-muted-foreground/50 group-hover:text-primary/50 transition-colors" />
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Camera className="h-6 w-6 text-white" />
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[11px] font-bold uppercase tracking-widest text-primary">
+                        Profile Photo <span className="text-destructive">*</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Required for ID Verification</p>
+                    </div>
+                  </div>
+
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="name"
@@ -568,6 +597,17 @@ function RegisterPage() {
           </div>
         </motion.div>
       </div>
+
+      {showPhotoDialog && (
+        <ImageUploadDialog
+          title="Upload Profile Photo"
+          onClose={() => setShowPhotoDialog(false)}
+          onUploadSuccess={(url) => {
+            setFormData(prev => ({ ...prev, photoUrl: url }));
+            setShowPhotoDialog(false);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -76,6 +76,7 @@ router.post("/register",
   body("college").isString().trim().notEmpty(),
   body("dob").isString().trim().notEmpty(),
   body("startDate").optional().isString().trim(),
+  body("photoUrl").isURL().withMessage("Profile photo is required"),
   body("password")
     .isString()
     .isLength({ min: 8 })
@@ -87,7 +88,7 @@ router.post("/register",
       const errs = validationResult(req);
       if (!errs.isEmpty()) return res.status(400).json({ error: "Invalid input", details: errs.array() });
       
-      const { name, email, mobile, password, planId, college, dob, startDate } = req.body;
+      const { name, email, mobile, password, planId, college, dob, startDate, photoUrl } = req.body;
       
       const mid = await nextMemberId();
       
@@ -113,10 +114,10 @@ router.post("/register",
           `INSERT INTO members (
             member_id, name, email, mobile, college, dob, password_hash, role, is_active, 
             sub_plan_id, sub_plan_label, sub_meals, sub_price_per_month, sub_is_paid,
-            sub_start_date, sub_end_date, sub_diet_type
+            sub_start_date, sub_end_date, sub_diet_type, photo_url
           ) 
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'member', FALSE, $8, $9, $10, $11, FALSE, $12, $13, $14)`,
-          [mid, name, email, mobile, college, dob, hash, p.plan_id, p.label, p.meals, p.price_per_month, fmtDate(start), fmtDate(end), p.diet_type || 'Veg']
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'member', FALSE, $8, $9, $10, $11, FALSE, $12, $13, $14, $15)`,
+          [mid, name, email, mobile, college, dob, hash, p.plan_id, p.label, p.meals, p.price_per_month, fmtDate(start), fmtDate(end), p.diet_type || 'Veg', photoUrl]
         );
 
         await client.query(
