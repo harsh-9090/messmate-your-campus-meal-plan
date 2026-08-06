@@ -1,6 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
-import { addDays, format, differenceInDays } from "date-fns";
+import { format, differenceInDays, startOfDay, isBefore, addDays, differenceInMonths, endOfMonth, min } from "date-fns";
 import { body, validationResult } from "express-validator";
 import { query, rowToMember, stripPassword, withTx } from "../db/index.js";
 import { verifyToken, requireRole } from "../middleware/authMiddleware.js";
@@ -9,6 +9,15 @@ import { nextMemberId } from "../services/memberIdService.js";
 import { queueEmailJob } from "../queues/notificationQueue.js";
 import { calculateAbsenceCredits } from "../services/absenceService.js";
 import { sseService } from "../services/sseService.js";
+import { v2 as cloudinary } from "cloudinary";
+
+if (process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary.config({ 
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
+    api_key: process.env.CLOUDINARY_API_KEY, 
+    api_secret: process.env.CLOUDINARY_API_SECRET 
+  });
+}
 
 const router = Router();
 router.use(verifyToken);
@@ -424,6 +433,20 @@ router.put("/:id",
 
 router.delete("/:id", requireRole("admin"), async (req, res, next) => {
   try {
+    const { rows } = await query(`SELECT photo_url FROM members WHERE member_id = $1`, [req.params.id]);
+    const member = rows[0];
+
+    if (member && member.photo_url && process.env.CLOUDINARY_CLOUD_NAME) {
+      try {
+        const matches = member.photo_url.match(/\/v\d+\/(.+)\.[a-z]+$/i);
+        if (matches && matches[1]) {
+          await cloudinary.uploader.destroy(matches[1]);
+        }
+      } catch (err) {
+        console.error("Failed to delete image from Cloudinary:", err);
+      }
+    }
+
     await query(`DELETE FROM members WHERE member_id = $1`, [req.params.id]);
     
     await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
