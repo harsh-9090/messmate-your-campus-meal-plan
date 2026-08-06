@@ -300,10 +300,21 @@ router.post("/factory-reset", requireRole("admin"), async (req, res, next) => {
           menus,
           meal_skips,
           menu_item_ratings,
-          subscriptions
+          subscriptions,
+          renewal_requests
         CASCADE;
       `);
       await client.query(`DELETE FROM members WHERE role != 'admin'`);
+      await client.query(`
+        UPDATE members SET 
+          sub_plan_id = NULL, 
+          sub_start_date = NULL, 
+          sub_end_date = NULL, 
+          sub_meals = NULL, 
+          sub_is_paid = FALSE, 
+          sub_diet_type = 'Veg' 
+        WHERE role = 'admin'
+      `);
     });
     
     // Clear entire Redis cache to prevent stale data
