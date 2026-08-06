@@ -152,15 +152,25 @@ router.post("/vacation", requireRole("member"), async (req, res, next) => {
 
     // Verify member has active subscription
     const memRes = await query(
-      `SELECT sub_meals FROM members WHERE member_id = $1 AND is_active = TRUE`,
+      `SELECT sub_meals, sub_end_date FROM members WHERE member_id = $1 AND is_active = TRUE`,
       [memberId]
     );
     if (memRes.rows.length === 0) {
       return res.status(404).json({ error: "Active member subscription not found" });
     }
-    const subMeals = memRes.rows[0].sub_meals || [];
+    const { sub_meals: subMeals = [], sub_end_date: subEndDate } = memRes.rows[0];
     if (subMeals.length === 0) {
       return res.status(400).json({ error: "No subscribed meals found for your account" });
+    }
+
+    if (!subEndDate) {
+      return res.status(400).json({ error: "Plan expiry date not found" });
+    }
+
+    const planEndStr = formatDate(new Date(subEndDate));
+    const endStr = formatDate(end);
+    if (endStr > planEndStr) {
+      return res.status(400).json({ error: "Vacations cannot be scheduled beyond your current plan validity" });
     }
 
     // Generate date range

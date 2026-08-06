@@ -642,6 +642,7 @@ function MemberPortal() {
   }
 
   const sub = me.subscription;
+  const planEndStr = sub.endDate ? sub.endDate.split("T")[0] : undefined;
 
   // Calculate if plan is in the future
   const startsIn = daysRemaining(sub.startDate);
@@ -1309,6 +1310,7 @@ function MemberPortal() {
                   <Input 
                     type="date"
                     min={tomorrowStr}
+                    max={planEndStr}
                     value={vacationStart}
                     onChange={(e) => setVacationStart(e.target.value)}
                   />
@@ -1318,6 +1320,7 @@ function MemberPortal() {
                   <Input 
                     type="date"
                     min={vacationStart || tomorrowStr}
+                    max={planEndStr}
                     value={vacationEnd}
                     onChange={(e) => setVacationEnd(e.target.value)}
                   />
