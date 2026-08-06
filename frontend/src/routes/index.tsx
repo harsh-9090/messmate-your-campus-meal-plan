@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { configApi } from "@/lib/messmate/api";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import {
   UtensilsCrossed,
   ChevronRight,
@@ -58,7 +58,7 @@ function LandingPage() {
     instagramUrl: "#"
   };
 
-  const staggerContainer = {
+  const staggerContainer: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -68,7 +68,7 @@ function LandingPage() {
     },
   };
 
-  const fadeInUp = {
+  const fadeInUp: Variants = {
     hidden: { opacity: 0, y: 40 },
     show: { 
       opacity: 1, 
@@ -77,7 +77,7 @@ function LandingPage() {
     },
   };
 
-  const fadeInLeft = {
+  const fadeInLeft: Variants = {
     hidden: { opacity: 0, x: -40 },
     show: { 
       opacity: 1, 
@@ -86,7 +86,7 @@ function LandingPage() {
     },
   };
 
-  const fadeInRight = {
+  const fadeInRight: Variants = {
     hidden: { opacity: 0, x: 40 },
     show: { 
       opacity: 1, 
