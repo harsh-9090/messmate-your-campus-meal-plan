@@ -255,22 +255,32 @@ function AdminDashboard() {
             </p>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-lg border bg-destructive/10 p-2 text-center">
-                  <div className="text-xs font-semibold text-destructive uppercase">🔴 Today</div>
-                  <div className="text-lg font-bold text-destructive">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                <div className="rounded-lg border bg-destructive/10 p-2 flex flex-col items-center justify-center">
+                  <div className="text-[10px] sm:text-xs font-semibold text-destructive uppercase tracking-tighter sm:tracking-normal flex flex-col items-center gap-0.5">
+                    <span className="text-xs sm:text-sm">🔴</span>
+                    <span>Today</span>
+                  </div>
+                  <div className="text-lg font-bold text-destructive leading-none mt-1">
                     {expiringSoon.filter(m => daysRemaining(m.subscription.endDate) === 0).length}
                   </div>
                 </div>
-                <div className="rounded-lg border bg-orange-500/10 p-2 text-center">
-                  <div className="text-xs font-semibold text-orange-600 uppercase">🟠 Tomorrow</div>
-                  <div className="text-lg font-bold text-orange-600">
+                <div className="rounded-lg border bg-orange-500/10 p-2 flex flex-col items-center justify-center">
+                  <div className="text-[10px] sm:text-xs font-semibold text-orange-600 uppercase tracking-tighter sm:tracking-normal flex flex-col items-center gap-0.5">
+                    <span className="text-xs sm:text-sm">🟠</span>
+                    <span className="hidden sm:inline">Tomorrow</span>
+                    <span className="inline sm:hidden">Tmrw</span>
+                  </div>
+                  <div className="text-lg font-bold text-orange-600 leading-none mt-1">
                     {expiringSoon.filter(m => daysRemaining(m.subscription.endDate) === 1).length}
                   </div>
                 </div>
-                <div className="rounded-lg border bg-yellow-500/10 p-2 text-center">
-                  <div className="text-xs font-semibold text-yellow-600 uppercase">🟡 2+ Days</div>
-                  <div className="text-lg font-bold text-yellow-600">
+                <div className="rounded-lg border bg-yellow-500/10 p-2 flex flex-col items-center justify-center">
+                  <div className="text-[10px] sm:text-xs font-semibold text-yellow-600 uppercase tracking-tighter sm:tracking-normal flex flex-col items-center gap-0.5">
+                    <span className="text-xs sm:text-sm">🟡</span>
+                    <span className="whitespace-nowrap">2+ Days</span>
+                  </div>
+                  <div className="text-lg font-bold text-yellow-600 leading-none mt-1">
                     {expiringSoon.filter(m => daysRemaining(m.subscription.endDate) >= 2).length}
                   </div>
                 </div>
