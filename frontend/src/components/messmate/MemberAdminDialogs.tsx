@@ -17,6 +17,7 @@ import { daysRemaining, formatDate, addDaysISO, todayISO } from "@/lib/messmate/
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
 import type { Member, Plan } from "@/lib/messmate/types";
 import { ImageUploadDialog } from "./ImageUploadDialog";
+import { ImagePreview } from "./ImagePreview";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function RenewMemberDialog({
@@ -352,19 +353,20 @@ export function ViewMemberDialog({
     <Dialog open={!!member} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md w-[95vw] rounded-2xl overflow-hidden p-0 gap-0">
         <div className="bg-muted/30 p-6 border-b flex flex-col items-center justify-center text-center">
-          <div className="relative group mb-3">
-            <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/10 text-xl font-bold text-primary overflow-hidden shadow-sm">
+          <div className="relative mb-3">
+            <div className="grid h-24 w-24 place-items-center rounded-full bg-primary/10 text-2xl font-bold text-primary overflow-hidden shadow-sm border-4 border-background">
               {member.photoUrl ? (
-                <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+                <ImagePreview src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
               ) : (
                 (member.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")
               )}
             </div>
             <button
               onClick={() => setIsUploadingPhoto(true)}
-              className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              className="absolute bottom-0 right-0 p-2 bg-primary rounded-full text-primary-foreground shadow-md hover:scale-110 transition-transform"
+              title="Update Photo"
             >
-              <Camera className="h-5 w-5 text-white" />
+              <Camera className="h-4 w-4" />
             </button>
           </div>
           <DialogTitle className="text-xl mb-1">{member.name}</DialogTitle>

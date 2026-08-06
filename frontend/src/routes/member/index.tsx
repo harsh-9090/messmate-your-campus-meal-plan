@@ -17,21 +17,45 @@ import { MealChip } from "@/components/messmate/MealChip";
 import { PlanBadge } from "@/components/messmate/PlanBadge";
 import { toast } from "sonner";
 import {
+  CalendarDays,
+  Coffee,
+  CheckCircle2,
   Lock,
-  AlertTriangle,
+  ChevronRight,
+  TrendingUp,
+  MapPin,
+  Clock,
   History,
+  Info,
   LogOut,
+  Bell,
+  Sun,
+  Moon,
+  Star,
+  Award,
+  Sparkles,
+  QrCode,
+  Calendar,
+  AlertCircle,
+  FileBarChart2,
+  MoreVertical,
+  Activity,
+  Flame,
+  Droplet,
+  Smartphone,
+  ShieldCheck,
+  Check,
+  AlertTriangle,
   UtensilsCrossed,
   CreditCard,
-  QrCode,
   Mail,
   ArrowRight,
   Loader2,
-  Calendar,
   TrendingDown,
-  Star,
   ChevronDown,
 } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ImagePreview } from "@/components/messmate/ImagePreview";
 import {
   daysRemaining,
   formatINR,
@@ -673,7 +697,7 @@ function MemberPortal() {
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-primary text-sm font-bold text-white overflow-hidden shadow-sm">
               {me.photoUrl ? (
-                <img src={me.photoUrl} alt={me.name} className="w-full h-full object-cover" />
+                <ImagePreview src={me.photoUrl} alt={me.name} className="w-full h-full object-cover" />
               ) : (
                 me.name
                   .split(" ")

@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImagePreview } from "./ImagePreview";
 
 const codeMeta: Record<string, { icon: React.ReactNode; hint: string }> = {
   UNPAID: {
@@ -164,7 +165,7 @@ export function ScanResultScreen({
             <div className="flex flex-col items-center justify-center mb-4">
               <div className="grid h-16 w-16 place-items-center rounded-full bg-white/20 text-xl font-bold text-white overflow-hidden shadow-sm mb-2">
                 {result.member.photoUrl ? (
-                  <img src={result.member.photoUrl} alt={result.member.name} className="w-full h-full object-cover" />
+                  <ImagePreview src={result.member.photoUrl} alt={result.member.name} className="w-full h-full object-cover" />
                 ) : (
                   (result.member.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")
                 )}
