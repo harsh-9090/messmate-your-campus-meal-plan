@@ -226,7 +226,13 @@ function LandingPage() {
 
         {/* About Section */}
         <section id="about" className="py-24 bg-muted/30">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+          >
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <div className="space-y-6">
                 <h2 className="text-primary font-bold uppercase tracking-widest text-sm">
@@ -306,12 +312,18 @@ function LandingPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* How it Works */}
         <section id="how-it-works" className="py-24">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-16"
+          >
             <div className="space-y-4">
               <h2 className="text-primary font-bold uppercase tracking-widest text-sm">
                 Onboarding
@@ -351,12 +363,18 @@ function LandingPage() {
                 Register as a New Member
               </Button>
             </Link>
-          </div>
+          </motion.div>
         </section>
 
         {/* Menu Section */}
         <section id="menu" className="py-24 bg-muted/30">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+          >
             <div className="rounded-[2rem] sm:rounded-[3rem] bg-card p-8 sm:p-16 overflow-hidden relative border shadow-xl">
               {/* Decorative Background Blobs */}
               <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
@@ -487,12 +505,18 @@ function LandingPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
       </main>
 
       <footer className="bg-muted/50 border-t border-border pt-16 pb-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+        >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
             {/* Brand & Tagline */}
             <div className="space-y-4">
@@ -583,7 +607,7 @@ function LandingPage() {
               <Link to="/refunds" className="hover:text-primary transition-colors">Refund Policy</Link>
             </div>
           </div>
-        </div>
+        </motion.div>
       </footer>
     </div>
   );
