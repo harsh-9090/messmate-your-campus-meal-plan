@@ -58,17 +58,41 @@ function LandingPage() {
     instagramUrl: "#"
   };
 
-  const container = {
+  const staggerContainer = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 },
+      transition: {
+        staggerChildren: 0.12,
+      },
     },
   };
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 },
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 40 },
+    show: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.7, ease: "easeOut" }
+    },
+  };
+
+  const fadeInLeft = {
+    hidden: { opacity: 0, x: -40 },
+    show: { 
+      opacity: 1, 
+      x: 0,
+      transition: { duration: 0.7, ease: "easeOut" }
+    },
+  };
+
+  const fadeInRight = {
+    hidden: { opacity: 0, x: 40 },
+    show: { 
+      opacity: 1, 
+      x: 0,
+      transition: { duration: 0.7, ease: "easeOut" }
+    },
   };
 
   return (
@@ -132,14 +156,14 @@ function LandingPage() {
         {/* Hero Section */}
         <section className="relative overflow-hidden pt-32 pb-20 lg:pt-48 lg:pb-32">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-                className="space-y-8"
-              >
-                <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="show"
+              className="grid lg:grid-cols-2 gap-12 items-center"
+            >
+              <div className="space-y-8">
+                <motion.div variants={fadeInUp} className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary">
                   <Badge variant="secondary" className="mr-2 bg-primary text-primary-foreground">
                     STATUS
                   </Badge>
@@ -148,36 +172,40 @@ function LandingPage() {
                       ? `Kitchen is currently serving ${activeMeal}!`
                       : "Kitchen is closed now. See timings below."}
                   </span>
-                </div>
-                <h1 className="font-display text-5xl font-extrabold tracking-tight sm:text-7xl">
+                </motion.div>
+                <motion.h1 variants={fadeInUp} className="font-display text-5xl font-extrabold tracking-tight sm:text-7xl">
                   Healthy meals for a <br />
                   <span className="text-primary">Better Life.</span>
-                </h1>
-                <p className="max-w-lg text-lg text-muted-foreground sm:text-xl">
+                </motion.h1>
+                <motion.p variants={fadeInUp} className="max-w-lg text-lg text-muted-foreground sm:text-xl">
                   Welcome to <span className="font-bold">Mom's Kitchen</span>. Enjoy nutritious,
                   hygienic, and delicious meals served daily.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                </motion.p>
+                <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row gap-4 pt-4">
                   <Link to="/register">
-                    <Button
-                      size="lg"
-                      className="h-14 rounded-full px-8 text-lg shadow-xl shadow-primary/25"
-                    >
-                      Register as Member <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        size="lg"
+                        className="h-14 w-full sm:w-auto rounded-full px-8 text-lg shadow-xl shadow-primary/25"
+                      >
+                        Register as Member <ArrowRight className="ml-2 h-5 w-5" />
+                      </Button>
+                    </motion.div>
                   </Link>
                   <a href="#menu">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="h-14 rounded-full px-8 text-lg border-2 group transition-all hover:bg-primary/5"
-                    >
-                      <Clock className="mr-2 h-5 w-5 text-primary transition-transform group-hover:rotate-12" />
-                      View Meal Timings
-                    </Button>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="h-14 w-full sm:w-auto rounded-full px-8 text-lg border-2 group transition-all hover:bg-primary/5"
+                      >
+                        <Clock className="mr-2 h-5 w-5 text-primary transition-transform group-hover:rotate-12" />
+                        View Meal Timings
+                      </Button>
+                    </motion.div>
                   </a>
-                </div>
-                <div className="flex items-center gap-6 pt-4 text-muted-foreground border-t border-border mt-8">
+                </motion.div>
+                <motion.div variants={fadeInUp} className="flex items-center gap-6 pt-4 text-muted-foreground border-t border-border mt-8">
                   <div className="flex flex-col">
                     <span className="text-foreground font-bold text-2xl">500+</span>
                     <span className="text-xs uppercase tracking-wider">Active Students</span>
@@ -192,21 +220,22 @@ function LandingPage() {
                     <span className="text-foreground font-bold text-2xl">Fresh</span>
                     <span className="text-xs uppercase tracking-wider">Daily Preparation</span>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
 
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8 }}
+                variants={fadeInRight}
                 className="relative"
               >
                 <div className="absolute -inset-4 bg-primary/10 rounded-[3rem] blur-3xl" />
-                <div className="relative aspect-square overflow-hidden rounded-[2.5rem] border-8 border-background shadow-2xl shadow-primary/30">
+                <motion.div 
+                  whileHover={{ y: -5, boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)" }}
+                  className="relative aspect-square overflow-hidden rounded-[2.5rem] border-8 border-background shadow-2xl shadow-primary/30 transition-shadow duration-300"
+                >
                   <img
                     src="/images/hero_thali.png"
                     alt="Delicious Indian Thali"
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                   <div className="absolute bottom-8 left-8 right-8 flex items-center justify-between rounded-2xl bg-white/10 backdrop-blur-md p-4 border border-white/20">
@@ -218,23 +247,23 @@ function LandingPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </motion.div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* About Section */}
         <section id="about" className="py-24 bg-muted/30">
           <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
             className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
           >
             <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-6">
+              <motion.div variants={fadeInLeft} className="space-y-6">
                 <h2 className="text-primary font-bold uppercase tracking-widest text-sm">
                   About Our Mess
                 </h2>
@@ -261,8 +290,8 @@ function LandingPage() {
                     </li>
                   ))}
                 </ul>
-              </div>
-              <div className="relative">
+              </motion.div>
+              <motion.div variants={fadeInRight} className="relative">
                 <div className="absolute -inset-4 bg-primary/5 rounded-[3rem] blur-2xl" />
                 <div className="grid grid-cols-2 gap-4 sm:gap-6 relative">
                   <div className="space-y-4 sm:space-y-6">
@@ -310,7 +339,7 @@ function LandingPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         </section>
@@ -318,19 +347,19 @@ function LandingPage() {
         {/* How it Works */}
         <section id="how-it-works" className="py-24">
           <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
             className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-16"
           >
-            <div className="space-y-4">
+            <motion.div variants={fadeInUp} className="space-y-4">
               <h2 className="text-primary font-bold uppercase tracking-widest text-sm">
                 Onboarding
               </h2>
               <h3 className="text-4xl font-extrabold tracking-tight">How to join the mess?</h3>
-            </div>
-            <div className="grid md:grid-cols-3 gap-12 relative">
+            </motion.div>
+            <motion.div variants={staggerContainer} className="grid md:grid-cols-3 gap-12 relative">
               <div className="hidden md:block absolute top-12 left-1/4 right-1/4 h-px border-t-2 border-dashed border-border" />
               {[
                 {
@@ -349,30 +378,37 @@ function LandingPage() {
                   desc: "Get your digital QR code and enjoy your meals instantly!",
                 },
               ].map((s, i) => (
-                <div key={i} className="relative space-y-4">
-                  <div className="h-24 w-24 rounded-full bg-background border-4 border-primary text-primary text-3xl font-bold flex items-center justify-center mx-auto shadow-xl relative z-10">
+                <motion.div key={i} variants={fadeInUp} className="relative space-y-4 group">
+                  <motion.div 
+                    whileHover={{ scale: 1.1, boxShadow: "0 0 20px rgba(var(--primary), 0.4)" }}
+                    className="h-24 w-24 rounded-full bg-background border-4 border-primary text-primary text-3xl font-bold flex items-center justify-center mx-auto shadow-xl relative z-10 transition-colors group-hover:bg-primary group-hover:text-primary-foreground"
+                  >
                     {s.step}
-                  </div>
+                  </motion.div>
                   <h4 className="text-xl font-bold">{s.title}</h4>
                   <p className="text-muted-foreground">{s.desc}</p>
-                </div>
+                </motion.div>
               ))}
-            </div>
-            <Link to="/register">
-              <Button size="lg" className="rounded-full px-12">
-                Register as a New Member
-              </Button>
-            </Link>
+            </motion.div>
+            <motion.div variants={fadeInUp}>
+              <Link to="/register">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="inline-block">
+                  <Button size="lg" className="rounded-full px-12">
+                    Register as a New Member
+                  </Button>
+                </motion.div>
+              </Link>
+            </motion.div>
           </motion.div>
         </section>
 
         {/* Menu Section */}
         <section id="menu" className="py-24 bg-muted/30">
           <motion.div 
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            variants={staggerContainer}
+            initial="hidden"
+            whileInView="show"
             viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
             className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
           >
             <div className="rounded-[2rem] sm:rounded-[3rem] bg-card p-8 sm:p-16 overflow-hidden relative border shadow-xl">
@@ -381,7 +417,7 @@ function LandingPage() {
               <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
 
               <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center relative z-10">
-                <div className="space-y-8">
+                <motion.div variants={fadeInLeft} className="space-y-8">
                   <div className="space-y-4">
                     <h2 className="text-primary font-bold uppercase tracking-widest text-xs sm:text-sm">
                       Meal Times
@@ -428,8 +464,10 @@ function LandingPage() {
                       const isLive = activeMeal === m.meal;
 
                       return (
-                        <div
+                        <motion.div
                           key={i}
+                          variants={fadeInUp}
+                          whileHover={{ y: -4, scale: 1.01, boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
                           className={cn(
                             "group relative rounded-2xl border transition-all overflow-hidden p-6",
                             isLive
@@ -477,12 +515,12 @@ function LandingPage() {
                               </p>
                             </div>
                           </div>
-                        </div>
+                        </motion.div>
                       );
                     })}
                   </div>
-                </div>
-                <div className="relative">
+                </motion.div>
+                <motion.div variants={fadeInRight} className="relative">
                   <div className="absolute -inset-10 bg-primary/20 rounded-full blur-[100px]" />
                   <Card className="relative overflow-hidden border-border bg-background shadow-2xl p-0">
                     <div className="p-8 space-y-6">
@@ -502,7 +540,7 @@ function LandingPage() {
                       </Link>
                     </div>
                   </Card>
-                </div>
+                </motion.div>
               </div>
             </div>
           </motion.div>
@@ -511,13 +549,13 @@ function LandingPage() {
 
       <footer className="bg-muted/50 border-t border-border pt-16 pb-8">
         <motion.div 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="show"
           viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
           className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
+          <motion.div variants={fadeInUp} className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-16">
             {/* Brand & Tagline */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
@@ -594,10 +632,10 @@ function LandingPage() {
                 <li><Link to="/register" className="hover:text-primary transition-colors">Register as Member</Link></li>
               </ul>
             </div>
-          </div>
+          </motion.div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+          <motion.div variants={fadeInUp} className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-muted-foreground text-sm text-center md:text-left">
               © {new Date().getFullYear()} Official Mom's Kitchen. Served with care.
             </p>
@@ -606,7 +644,7 @@ function LandingPage() {
               <Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
               <Link to="/refunds" className="hover:text-primary transition-colors">Refund Policy</Link>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       </footer>
     </div>
