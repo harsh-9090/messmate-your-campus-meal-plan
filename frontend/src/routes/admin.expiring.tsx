@@ -102,7 +102,85 @@ function ExpiringPage() {
           </div>
         )}
 
-        <Card className="rounded-xl shadow-sm border overflow-hidden">
+        {/* MOBILE VIEW: Card Layout */}
+        <div className="md:hidden space-y-4">
+          <div className="flex items-center gap-2 px-1 mb-2">
+            <Checkbox
+              id="selectAllMobile"
+              checked={members.length > 0 && selectedIds.size === members.length}
+              onCheckedChange={toggleAll}
+            />
+            <label htmlFor="selectAllMobile" className="text-sm font-medium">
+              Select All ({members.length})
+            </label>
+          </div>
+          {members.length === 0 ? (
+             <div className="text-center p-6 text-muted-foreground border rounded-xl bg-card shadow-sm">
+               No members expiring soon.
+             </div>
+          ) : (
+            members.map((m) => {
+              const days = daysRemaining(m.subscription.endDate);
+              const isChecked = selectedIds.has(m.memberId);
+              return (
+                <div 
+                  key={m.memberId} 
+                  className={`border rounded-xl p-4 bg-card shadow-sm flex flex-col gap-3 transition-colors ${isChecked ? 'border-primary/50 bg-primary/5' : ''}`}
+                  onClick={(e) => {
+                     const target = e.target as HTMLElement;
+                     if (target.closest("button") || target.closest("[role='checkbox']")) return;
+                     setViewingMember(m);
+                  }}
+                >
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        className="mt-1 shrink-0"
+                        checked={isChecked}
+                        onCheckedChange={(c) => toggleOne(m.memberId, !!c)}
+                      />
+                      <div>
+                        <div className="font-bold text-base leading-tight text-foreground">{m.name}</div>
+                        <div className="text-xs text-muted-foreground font-mono mt-0.5">{m.memberId}</div>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={days === 0 ? "destructive" : days === 1 ? "default" : "secondary"}
+                      className={days === 1 ? "bg-orange-500 hover:bg-orange-600 text-white shrink-0" : "shrink-0"}
+                    >
+                      {days === 0 ? "Today" : days === 1 ? "Tomorrow" : `${days} days`}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-sm bg-muted/30 p-2.5 rounded-lg mt-1">
+                    <PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} />
+                    <span className="text-xs text-muted-foreground font-medium">
+                      Ends {formatDate(m.subscription.endDate)}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2 mt-1">
+                    <Button size="sm" variant="outline" className="flex-1 h-9" onClick={(e) => {
+                      e.stopPropagation();
+                      setViewingMember(m);
+                    }}>
+                      View
+                    </Button>
+                    <Button size="sm" className="flex-1 h-9" onClick={(e) => {
+                      e.stopPropagation();
+                      setRenewingMember(m);
+                    }}>
+                      Renew
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* DESKTOP VIEW: Table Layout */}
+        <Card className="hidden md:block rounded-xl shadow-sm border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 border-b">
