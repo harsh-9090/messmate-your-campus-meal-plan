@@ -8,15 +8,23 @@ import { query } from "../db/index.js";
 // Initialize Firebase Admin SDK
 let firebaseApp = null;
 try {
-  const serviceAccountPath = path.resolve(process.cwd(), "firebase-adminsdk.json");
-  if (fs.existsSync(serviceAccountPath)) {
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+  if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+    const serviceAccount = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('ascii'));
     firebaseApp = initializeApp({
       credential: cert(serviceAccount)
     });
-    console.log("[PUSH] Firebase Admin SDK initialized successfully");
+    console.log("[PUSH] Firebase Admin SDK initialized successfully via Environment Variable");
   } else {
-    console.warn("⚠️ [PUSH] firebase-adminsdk.json not found. Android native push will not function.");
+    const serviceAccountPath = path.resolve(process.cwd(), "firebase-adminsdk.json");
+    if (fs.existsSync(serviceAccountPath)) {
+      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+      firebaseApp = initializeApp({
+        credential: cert(serviceAccount)
+      });
+      console.log("[PUSH] Firebase Admin SDK initialized successfully via local JSON file");
+    } else {
+      console.warn("⚠️ [PUSH] FIREBASE_SERVICE_ACCOUNT_BASE64 env var or firebase-adminsdk.json not found. Android native push will not function.");
+    }
   }
 } catch (err) {
   console.error("❌ CRITICAL: Failed to initialize Firebase Admin SDK", err);
