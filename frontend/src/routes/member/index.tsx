@@ -1303,7 +1303,7 @@ function MemberPortal() {
                 Going out of town? Plan your absence to pause your meals and save your credits. Vacations must be at least 2 days long and can only be planned starting from tomorrow.
               </p>
               
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Start Date</Label>
                   <Input 
