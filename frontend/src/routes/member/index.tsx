@@ -648,6 +648,12 @@ function MemberPortal() {
   const startsIn = daysRemaining(sub.startDate);
   const isFuturePlan = startsIn > 0;
 
+  const todaysSkips = skipsQ.data
+    ? skipsQ.data.filter((s) => s.date === todayStr).map((s) => s.meal)
+    : [];
+  const isFullySkippedToday =
+    sub.meals.length > 0 && sub.meals.every((m) => todaysSkips.includes(m));
+
   // Calculate grace period: 3 days from start
   const daysSinceStart = Math.max(0, startsIn * -1);
   const gracePeriod = 3;
@@ -966,7 +972,17 @@ function MemberPortal() {
                           Grace Period: {gracePeriod - daysSinceStart} days left to pay
                         </Badge>
                       )}
-                      <QRCanvas meals={sub.meals} />
+                      {isFullySkippedToday ? (
+                        <div className="p-8 text-center bg-muted/40 rounded-2xl border border-dashed flex flex-col items-center max-w-[250px]">
+                          <div className="text-4xl mb-2">🏖️</div>
+                          <h3 className="font-bold text-lg text-foreground">On Vacation</h3>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Your meals are paused for today. No QR code needed.
+                          </p>
+                        </div>
+                      ) : (
+                        <QRCanvas meals={sub.meals} />
+                      )}
                     </div>
                   )}
                 </div>
