@@ -161,10 +161,19 @@ export function ScanResultScreen({
 
         {result.member ? (
           <div className="w-full max-w-md space-y-1 rounded-2xl bg-white/10 p-4 backdrop-blur">
-            <div className="text-xl font-semibold">{result.member.name}</div>
-            <div className="text-xs opacity-70">
-              {result.member.memberId}
-              {result.member.mobile && <> · 📞 {result.member.mobile}</>}
+            <div className="flex flex-col items-center justify-center mb-4">
+              <div className="grid h-16 w-16 place-items-center rounded-full bg-white/20 text-xl font-bold text-white overflow-hidden shadow-sm mb-2">
+                {result.member.photoUrl ? (
+                  <img src={result.member.photoUrl} alt={result.member.name} className="w-full h-full object-cover" />
+                ) : (
+                  (result.member.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")
+                )}
+              </div>
+              <div className="text-xl font-semibold">{result.member.name}</div>
+              <div className="text-xs opacity-70">
+                {result.member.memberId}
+                {result.member.mobile && <> · 📞 {result.member.mobile}</>}
+              </div>
             </div>
             {allowed ? (
               <div className="mt-3 grid grid-cols-3 gap-3 border-t border-white/20 pt-3 text-left text-xs">

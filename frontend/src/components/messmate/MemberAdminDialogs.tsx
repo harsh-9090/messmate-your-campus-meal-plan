@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Camera } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,8 @@ import { PAYMENT_METHODS } from "@/lib/messmate/constants";
 import { daysRemaining, formatDate, addDaysISO, todayISO } from "@/lib/messmate/dateHelpers";
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
 import type { Member, Plan } from "@/lib/messmate/types";
+import { ImageUploadDialog } from "./ImageUploadDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function RenewMemberDialog({
   member,
@@ -330,6 +332,16 @@ export function ViewMemberDialog({
   const startsInFuture = startsIn > 0;
   const planDietType = plans.find((p) => p.planId === member.subscription.planId)?.dietType;
 
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const qc = useQueryClient();
+
+  const updatePhotoM = useMutation({
+    mutationFn: (url: string) => membersApi.update(member.memberId, { photoUrl: url }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["members"] });
+    },
+  });
+
   const creditsQ = useQuery({
     queryKey: ["members", member.memberId, "absence-credits"],
     queryFn: () => membersApi.getAbsenceCredits(member.memberId),
@@ -340,8 +352,20 @@ export function ViewMemberDialog({
     <Dialog open={!!member} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md w-[95vw] rounded-2xl overflow-hidden p-0 gap-0">
         <div className="bg-muted/30 p-6 border-b flex flex-col items-center justify-center text-center">
-          <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/10 text-xl font-bold text-primary mb-3">
-            {(member.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")}
+          <div className="relative group mb-3">
+            <div className="grid h-16 w-16 place-items-center rounded-full bg-primary/10 text-xl font-bold text-primary overflow-hidden shadow-sm">
+              {member.photoUrl ? (
+                <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+              ) : (
+                (member.name || "U").split(" ").map((n) => n[0]).slice(0, 2).join("")
+              )}
+            </div>
+            <button
+              onClick={() => setIsUploadingPhoto(true)}
+              className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <Camera className="h-5 w-5 text-white" />
+            </button>
           </div>
           <DialogTitle className="text-xl mb-1">{member.name}</DialogTitle>
           <div className="text-sm text-muted-foreground font-medium mb-3">{member.memberId}</div>
@@ -476,6 +500,13 @@ export function ViewMemberDialog({
           <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Close</Button>
         </DialogFooter>
       </DialogContent>
+
+      {isUploadingPhoto && (
+        <ImageUploadDialog
+          onClose={() => setIsUploadingPhoto(false)}
+          onUploadSuccess={(url) => updatePhotoM.mutate(url)}
+        />
+      )}
     </Dialog>
   );
 }

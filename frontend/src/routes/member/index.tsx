@@ -671,12 +671,16 @@ function MemberPortal() {
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-2xl md:max-w-5xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-primary text-sm font-bold text-white">
-              {me.name
-                .split(" ")
-                .map((n) => n[0])
-                .slice(0, 2)
-                .join("")}
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-primary text-sm font-bold text-white overflow-hidden shadow-sm">
+              {me.photoUrl ? (
+                <img src={me.photoUrl} alt={me.name} className="w-full h-full object-cover" />
+              ) : (
+                me.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("")
+              )}
             </div>
             <div>
               <div className="text-sm font-semibold">{me.name}</div>

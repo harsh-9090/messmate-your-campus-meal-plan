@@ -286,11 +286,15 @@ function AdminDashboard() {
                       onClick={() => setViewingMember(m as Member)}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
-                          {m.name
-                            .split(" ")
-                            .map((n: string) => n[0])
-                            .join("")}
+                        <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground overflow-hidden">
+                          {m.photoUrl ? (
+                            <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" />
+                          ) : (
+                            m.name
+                              .split(" ")
+                              .map((n: string) => n[0])
+                              .join("")
+                          )}
                         </div>
                         <div>
                           <div className="font-medium">

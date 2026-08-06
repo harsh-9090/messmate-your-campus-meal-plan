@@ -147,8 +147,23 @@ function ExpiringPage() {
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <div className="font-medium text-foreground">{m.name}</div>
-                          <div className="text-xs text-muted-foreground font-mono">{m.memberId}</div>
+                          <div className="flex items-center gap-3">
+                            <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground overflow-hidden shrink-0">
+                              {m.photoUrl ? (
+                                <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" />
+                              ) : (
+                                (m.name || "U")
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .slice(0, 2)
+                                  .join("")
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium text-foreground leading-tight">{m.name}</div>
+                              <div className="text-xs text-muted-foreground font-mono">{m.memberId}</div>
+                            </div>
+                          </div>
                         </td>
                         <td className="px-4 py-3 hidden md:table-cell">
                           <PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} />

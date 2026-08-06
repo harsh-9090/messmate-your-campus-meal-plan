@@ -306,12 +306,16 @@ function MembersPage() {
                   >
                     <div className="flex items-start justify-between gap-2 border-b pb-3">
                       <div className="flex items-center gap-3">
-                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
-                          {(m.name || "U")
-                            .split(" ")
-                            .map((n) => n[0])
-                            .slice(0, 2)
-                            .join("")}
+                        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground overflow-hidden">
+                          {m.photoUrl ? (
+                            <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" />
+                          ) : (
+                            (m.name || "U")
+                              .split(" ")
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join("")
+                          )}
                         </div>
                         <div>
                           <div className="font-semibold leading-tight">{m.name}</div>
@@ -499,12 +503,16 @@ function MembersPage() {
                       >
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground">
-                              {(m.name || "U")
-                                .split(" ")
-                                .map((n) => n[0])
-                                .slice(0, 2)
-                                .join("")}
+                            <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground overflow-hidden">
+                              {m.photoUrl ? (
+                                <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" />
+                              ) : (
+                                (m.name || "U")
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .slice(0, 2)
+                                  .join("")
+                              )}
                             </div>
                             <div>
                               <div className="font-medium leading-tight">{m.name}</div>
