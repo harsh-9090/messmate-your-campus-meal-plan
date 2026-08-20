@@ -1057,6 +1057,9 @@ function EditMemberDialog({
   const [dob, setDob] = useState(member.dob ?? "2000-01-01");
   const [planId, setPlanId] = useState(member.subscription.planId);
   const [meals, setMeals] = useState<Meal[]>(member.subscription.meals);
+  const [startDate, setStartDate] = useState(
+    member.subscription.startDate ? member.subscription.startDate.split('T')[0] : ""
+  );
 
   const historyQ = useQuery({
     queryKey: ["member-history", member.memberId],
@@ -1086,7 +1089,7 @@ function EditMemberDialog({
         dob,
         otp: emailChanged ? otp : undefined
       });
-      await membersApi.changePlan(member.memberId, { planId, meals });
+      await membersApi.changePlan(member.memberId, { planId, meals, startDate });
     },
     onSuccess: () => {
       toast.success("Member updated");
@@ -1149,35 +1152,41 @@ function EditMemberDialog({
                 <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
               </div>
             </div>
-            <div>
-              <Label>Plan</Label>
-              <Select
-                value={planId}
-                onValueChange={(v) => {
-                  setPlanId(v);
-                  const p = plans.find((x) => x.planId === v);
-                  if (p) setMeals(p.meals);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {plans.map((p) => (
-                    <SelectItem key={p.planId} value={p.planId}>
-                      <div className="flex items-center gap-2">
-                        <span>{p.label}</span>
-                        <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
-                          p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
-                            "text-green-600 bg-green-500/10 border-green-600/20"
-                          }`}>
-                          {p.dietType || "Veg"}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Plan</Label>
+                <Select
+                  value={planId}
+                  onValueChange={(v) => {
+                    setPlanId(v);
+                    const p = plans.find((x) => x.planId === v);
+                    if (p) setMeals(p.meals);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.map((p) => (
+                      <SelectItem key={p.planId} value={p.planId}>
+                        <div className="flex items-center gap-2">
+                          <span>{p.label}</span>
+                          <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-sm border ${p.dietType === "Non-Veg" ? "text-destructive bg-destructive/10 border-destructive/20" :
+                            p.dietType === "Both" ? "text-muted-foreground bg-muted border-border/50" :
+                              "text-green-600 bg-green-500/10 border-green-600/20"
+                            }`}>
+                            {p.dietType || "Veg"}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Start Date</Label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
             </div>
             <div className="flex gap-3">
               {MEALS.map((m) => (
