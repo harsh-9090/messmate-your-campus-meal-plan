@@ -24,33 +24,55 @@ import { getActiveMeal, formatTime12h } from "@/lib/messmate/dateHelpers";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Mom's Kitchen - Best Mess in Pune" },
-      {
-        name: "description",
-        content: "Best mess in Pune, Serving delicious and hygienic food to students.",
-      },
-    ],
-  }),
+  loader: async () => {
+    try {
+      const [windows, brand] = await Promise.all([
+        configApi.listWindows(),
+        configApi.getBrandConfig(),
+      ]);
+      return { windows, brand };
+    } catch (e) {
+      return { windows: [], brand: null };
+    }
+  },
+  head: ({ loaderData }) => {
+    const fallbackDesc = "Best mess in Pune, Serving delicious and hygienic food to students.";
+    const desc = loaderData?.brand 
+      ? `Serving delicious and hygienic food to students. ${loaderData.brand.address?.replace(/\n/g, ', ')} ${loaderData.brand.contactNumber} ${loaderData.brand.openingHours}`
+      : fallbackDesc;
+
+    return {
+      meta: [
+        { title: "Mom's Kitchen - Best Mess in Pune" },
+        {
+          name: "description",
+          content: desc,
+        },
+      ],
+    };
+  },
   component: LandingPage,
 });
 
 function LandingPage() {
+  const { windows, brand: serverBrand } = Route.useLoaderData();
+
   const windowsQ = useQuery({
     queryKey: ["windows"],
     queryFn: () => configApi.listWindows(),
+    initialData: windows,
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const brandQ = useQuery({
     queryKey: ["brandConfig"],
     queryFn: () => configApi.getBrandConfig(),
+    initialData: serverBrand || undefined,
     staleTime: 1000 * 60 * 60, // 1 hour
   });
 
   const activeMeal = windowsQ.data ? getActiveMeal(windowsQ.data) : null;
-  const brand = brandQ.data || {
+  const brand = brandQ.data || serverBrand || {
     contactNumber: "+91 98765 43210",
     address: "123 Campus Road, Near Engineering Block,\nPune, Maharashtra 411001",
     openingHours: "Mon-Sun: 8:00 AM - 11:30 PM",
