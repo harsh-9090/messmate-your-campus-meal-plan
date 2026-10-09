@@ -26,7 +26,7 @@ export const Route = createFileRoute("/admin/analytics")({
 function AdminAnalytics() {
   const membersQ = useQuery({
     queryKey: ["members", "all"],
-    queryFn: () => membersApi.list({ limit: 500 }),
+    queryFn: () => membersApi.list({ limit: 10000 }),
   });
   
   const summaryQ = useQuery({

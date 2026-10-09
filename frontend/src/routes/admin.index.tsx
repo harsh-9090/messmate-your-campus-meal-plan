@@ -52,7 +52,7 @@ function AdminDashboard() {
   const qc = useQueryClient();
   const membersQ = useQuery({
     queryKey: ["members", "all"],
-    queryFn: () => membersApi.list({ limit: 500 }),
+    queryFn: () => membersApi.list({ limit: 10000 }),
   });
   const windowsQ = useQuery({ queryKey: ["windows"], queryFn: () => configApi.listWindows() });
   const summaryQ = useQuery({

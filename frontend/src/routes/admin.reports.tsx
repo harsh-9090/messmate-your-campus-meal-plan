@@ -44,7 +44,7 @@ function ReportsPage() {
   const weeklyQ = useQuery({ queryKey: ["reports", "weekly"], queryFn: () => reportsApi.weekly() });
   const membersQ = useQuery({
     queryKey: ["members", "all"],
-    queryFn: () => membersApi.list({ limit: 500 }),
+    queryFn: () => membersApi.list({ limit: 10000 }),
   });
 
   const dailyStatsQ = useQuery({
