@@ -251,7 +251,7 @@ function ScannerPage() {
 
   useEffect(() => {
     if (!_hasHydrated) return;
-    if (!authUser || authUser.role !== "staff") navigate({ to: "/login" });
+    if (!authUser || (authUser.role !== "staff" && authUser.role !== "admin")) navigate({ to: "/login" });
   }, [_hasHydrated, authUser, navigate]);
 
   if (!_hasHydrated || !authUser) return null;

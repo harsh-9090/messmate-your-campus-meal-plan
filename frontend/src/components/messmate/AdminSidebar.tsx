@@ -35,6 +35,7 @@ const groups = [
       { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
       { to: "/admin/menu", label: "Menu Planner", icon: UtensilsCrossed },
       { to: "/admin/headcount", label: "Kitchen Forecast", icon: ChefHat },
+      { to: "/staff/scanner", label: "QR Scanner", icon: ScanLine },
       { to: "/admin/scan-logs", label: "Scan Logs", icon: ScanLine },
     ],
   },
