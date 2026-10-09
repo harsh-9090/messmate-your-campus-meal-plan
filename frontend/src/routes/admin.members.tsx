@@ -335,15 +335,16 @@ function MembersPage() {
                           </div>
                         </div>
                       </div>
-                      <div>
-                        {!m.isActive ? (
+                      <div className="flex flex-col items-end gap-1">
+                        {!m.isActive && (
                           <Badge
                             variant="outline"
                             className="border-amber-500 text-amber-500 bg-amber-50"
                           >
                             Pending
                           </Badge>
-                        ) : !m.subscription.isPaid ? (
+                        )}
+                        {m.isActive && !m.subscription.isPaid && (
                           <div className="text-right">
                             <Badge
                               variant="destructive"
@@ -360,11 +361,14 @@ function MembersPage() {
                               </div>
                             )}
                           </div>
-                        ) : expired ? (
+                        )}
+                        {m.isActive && expired && (
                           <Badge variant="destructive">Expired</Badge>
-                        ) : startsInFuture ? (
+                        )}
+                        {m.isActive && startsInFuture && (
                           <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
-                        ) : (
+                        )}
+                        {m.isActive && m.subscription.isPaid && !expired && !startsInFuture && (
                           <Badge className="bg-success text-success-foreground">Active</Badge>
                         )}
                       </div>
@@ -566,37 +570,43 @@ function MembersPage() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          {!m.isActive ? (
-                            <Badge
-                              variant="outline"
-                              className="border-amber-500 text-amber-500 bg-amber-50"
-                            >
-                              Pending
-                            </Badge>
-                          ) : !m.subscription.isPaid ? (
-                            <div>
+                          <div className="flex flex-col items-start gap-1">
+                            {!m.isActive && (
                               <Badge
-                                variant="destructive"
-                                className={cn(
-                                  m.subscription.amountPaid > 0 &&
-                                  "bg-orange-500 hover:bg-orange-600 border-orange-500",
-                                )}
+                                variant="outline"
+                                className="border-amber-500 text-amber-500 bg-amber-50"
                               >
-                                {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                                Pending
                               </Badge>
-                              {m.subscription.dueAmount > 0 && (
-                                <div className="mt-1 text-[10px] font-medium text-destructive">
-                                  Due: ₹{m.subscription.dueAmount}
-                                </div>
-                              )}
-                            </div>
-                          ) : expired ? (
-                            <Badge variant="destructive">Expired</Badge>
-                          ) : startsInFuture ? (
-                            <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
-                          ) : (
-                            <Badge className="bg-success text-success-foreground">Active</Badge>
-                          )}
+                            )}
+                            {m.isActive && !m.subscription.isPaid && (
+                              <div>
+                                <Badge
+                                  variant="destructive"
+                                  className={cn(
+                                    m.subscription.amountPaid > 0 &&
+                                    "bg-orange-500 hover:bg-orange-600 border-orange-500",
+                                  )}
+                                >
+                                  {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                                </Badge>
+                                {m.subscription.dueAmount > 0 && (
+                                  <div className="mt-1 text-[10px] font-medium text-destructive">
+                                    Due: ₹{m.subscription.dueAmount}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {m.isActive && expired && (
+                              <Badge variant="destructive">Expired</Badge>
+                            )}
+                            {m.isActive && startsInFuture && (
+                              <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
+                            )}
+                            {m.isActive && m.subscription.isPaid && !expired && !startsInFuture && (
+                              <Badge className="bg-success text-success-foreground">Active</Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-1">
