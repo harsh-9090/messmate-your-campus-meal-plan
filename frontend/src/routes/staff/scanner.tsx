@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
 import { offlineSync } from "@/lib/messmate/offlineSync";
+import { AdminSidebar, MobileAdminNav } from "@/components/messmate/AdminSidebar";
 
 export const Route = createFileRoute("/staff/scanner")({
   head: () => ({
@@ -267,8 +268,8 @@ function ScannerPage() {
 
   if (result) return <ScanResultScreen result={result} onNext={handleNext} onRetry={handleRetry} />;
 
-  return (
-    <div className="min-h-screen bg-background pb-12">
+  const content = (
+    <div className={cn("bg-background pb-12", authUser.role === "admin" ? "min-w-0 flex-1 h-screen overflow-y-auto" : "min-h-screen")}>
       <header className="sticky top-0 z-10 border-b bg-sidebar text-sidebar-foreground shadow-sm">
         <div className="mx-auto flex max-w-xl md:max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
@@ -646,6 +647,18 @@ function ScannerPage() {
       </main>
     </div>
   );
+
+  if (authUser.role === "admin") {
+    return (
+      <div className="flex min-h-screen w-full flex-col md:flex-row">
+        <MobileAdminNav />
+        <AdminSidebar />
+        {content}
+      </div>
+    );
+  }
+
+  return content;
 }
 
 // ---- Camera component (html5-qrcode) ----
