@@ -61,7 +61,7 @@ function MembersPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "expired" | "unpaid" | "pending">("all");
   const [planFilter, setPlanFilter] = useState("all");
-  const [sortBy, setSortBy] = useState<"created_at" | "member_id">("created_at");
+  const [sortBy, setSortBy] = useState<"created_at" | "member_id" | "expiry_date">("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);
@@ -98,6 +98,13 @@ function MembersPage() {
   };
   const handleStatus = (v: any) => {
     setStatus(v);
+    if (v === "expired") {
+      setSortBy("expiry_date");
+      setSortOrder("desc");
+    } else if (sortBy === "expiry_date") {
+      setSortBy("created_at");
+      setSortOrder("desc");
+    }
     setPage(1);
   };
   const handlePlanFilter = (v: string) => {
@@ -248,6 +255,8 @@ function MembersPage() {
                   <SelectItem value="created_at-asc">Oldest Joined</SelectItem>
                   <SelectItem value="member_id-asc">Member ID: Low to High</SelectItem>
                   <SelectItem value="member_id-desc">Member ID: High to Low</SelectItem>
+                  <SelectItem value="expiry_date-desc">Recently Expired (1d, 2d...)</SelectItem>
+                  <SelectItem value="expiry_date-asc">Longest Expired</SelectItem>
                 </SelectContent>
               </Select>
             </div>

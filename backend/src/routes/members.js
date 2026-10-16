@@ -87,6 +87,9 @@ router.get("/", requireRole("admin"), async (req, res, next) => {
     if (sortBy === "member_id") {
       const order = sortOrder === "desc" ? "DESC" : "ASC";
       orderSql = `ORDER BY member_id ${order}`;
+    } else if (sortBy === "expiry_date" || sortBy === "sub_end_date") {
+      const order = sortOrder === "asc" ? "ASC" : "DESC";
+      orderSql = `ORDER BY sub_end_date ${order} NULLS LAST, member_id DESC`;
     } else if (sortBy === "created_at") {
       const order = sortOrder === "asc" ? "ASC" : "DESC";
       orderSql = `ORDER BY created_at ${order}`;
