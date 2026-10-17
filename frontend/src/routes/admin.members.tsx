@@ -24,7 +24,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download, CreditCard, Gift } from "lucide-react";
+import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download, CreditCard, Gift, FileText } from "lucide-react";
+import { exportDuesPdf } from "@/lib/messmate/exportDuesPdf";
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
 import {
   todayISO,
@@ -115,6 +116,20 @@ function MembersPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["members"] });
 
   const [exporting, setExporting] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const handleExportDuesPDF = async () => {
+    setExportingPdf(true);
+    try {
+      const res = await membersApi.list({ limit: 10000 });
+      exportDuesPdf(res.items || []);
+      toast.success("Expired & Dues PDF downloaded successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to export Dues PDF");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const handleExportCSV = async () => {
     setExporting(true);
@@ -163,7 +178,15 @@ function MembersPage() {
             {membersQ.isLoading ? "Loading…" : `${total} member${total === 1 ? "" : "s"}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={handleExportDuesPDF} disabled={exportingPdf}>
+            {exportingPdf ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="mr-1 h-4 w-4 text-destructive" />
+            )}
+            Export Dues PDF
+          </Button>
           <Button variant="outline" onClick={handleExportCSV} disabled={exporting}>
             {exporting ? (
               <Loader2 className="mr-1 h-4 w-4 animate-spin" />

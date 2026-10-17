@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { reportsApi } from "@/lib/messmate/api";
+import { reportsApi, membersApi } from "@/lib/messmate/api";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/messmate/StatCard";
 import {
   BarChart,
@@ -26,12 +27,15 @@ import {
   PieChart as PieChartIcon,
   Repeat,
   Activity,
+  FileText,
 } from "lucide-react";
 import { formatINR } from "@/lib/messmate/dateHelpers";
 import React, { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
+import { exportDuesPdf } from "@/lib/messmate/exportDuesPdf";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/finance")({
   head: () => ({ meta: [{ title: "Finance & Analytics - Mom's Kitchen Admin" }] }),
@@ -43,6 +47,20 @@ function FinancePage() {
   const [dateValue, setDateValue] = useState(format(new Date(), "yyyy-MM-dd"));
   const [monthValue, setMonthValue] = useState(format(new Date(), "yyyy-MM"));
   const [yearValue, setYearValue] = useState(format(new Date(), "yyyy"));
+  const [exportingPdf, setExportingPdf] = useState(false);
+
+  const handleExportDuesPDF = async () => {
+    setExportingPdf(true);
+    try {
+      const res = await membersApi.list({ limit: 10000 });
+      exportDuesPdf(res.items || []);
+      toast.success("Expired & Dues PDF downloaded successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to export Dues PDF");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   const getQueryDate = () => {
     if (period === "day") return dateValue;
@@ -91,9 +109,23 @@ function FinancePage() {
             Revenue tracking and business growth insights
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleExportDuesPDF}
+            disabled={exportingPdf}
+            className="h-9 gap-1.5 shadow-sm cursor-pointer"
+          >
+            {exportingPdf ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="h-4 w-4 text-destructive" />
+            )}
+            <span>Export Dues PDF</span>
+          </Button>
 
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-2 shadow-sm">
-          <Tabs value={period} onValueChange={(v: any) => setPeriod(v)}>
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-2 shadow-sm">
+            <Tabs value={period} onValueChange={(v: any) => setPeriod(v)}>
             <TabsList className="h-9">
               <TabsTrigger value="all" className="text-xs">
                 All Time
@@ -136,6 +168,7 @@ function FinancePage() {
               onChange={(e) => setYearValue(e.target.value)}
             />
           )}
+          </div>
         </div>
       </header>
 
