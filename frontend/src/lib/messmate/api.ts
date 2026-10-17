@@ -217,6 +217,13 @@ export const membersApi = {
     }>,
   ) => request<Member>(`/members/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   remove: (id: string) => request<{ ok: true }>(`/members/${id}`, { method: "DELETE" }),
+  markLeft: (id: string, data?: { reason?: string }) =>
+    request<Member>(`/members/${id}/left`, {
+      method: "PUT",
+      body: JSON.stringify(data || {}),
+    }),
+  reactivate: (id: string) =>
+    request<Member>(`/members/${id}/reactivate`, { method: "PUT" }),
   renew: (
     id: string,
     data: {

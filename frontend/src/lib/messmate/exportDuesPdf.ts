@@ -5,8 +5,9 @@ import { daysRemaining } from "./dateHelpers";
 import { format } from "date-fns";
 
 export function exportDuesPdf(members: Member[]) {
-  // Filter students who are expired OR have pending dues
+  // Filter students who are expired OR have pending dues (excluding discontinued/left members)
   const targetMembers = members.filter((m) => {
+    if (m.isLeft) return false;
     const expired = daysRemaining(m.subscription?.endDate) < 0;
     const hasDues = (m.subscription?.dueAmount ?? 0) > 0 || !m.subscription?.isPaid;
     return expired || hasDues;

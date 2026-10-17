@@ -47,6 +47,9 @@ export interface Member {
   photoUrl?: string;
   role: Role;
   isActive: boolean;
+  isLeft?: boolean;
+  leftAt?: string | null;
+  leftReason?: string | null;
   emailVerified: boolean;
   subscription: Subscription;
   createdAt: string;

@@ -47,6 +47,7 @@ export function rowToMember(r) {
   if (!r) return null;
   const {
     member_id, name, email, mobile, college, dob, photo_url, role, is_active,
+    is_left, left_at, left_reason,
     sub_plan_id, sub_plan_label, sub_meals, sub_start_date, sub_end_date,
     sub_is_paid, sub_paid_at, sub_price_per_month, sub_amount_paid, sub_renewed_at, sub_renewal_count,
     sub_diet_type, password_hash, created_at, updated_at,
@@ -60,6 +61,9 @@ export function rowToMember(r) {
     photoUrl: photo_url,
     role,
     isActive: is_active,
+    isLeft: Boolean(is_left),
+    leftAt: left_at || null,
+    leftReason: left_reason || null,
     emailVerified: email_verified,
     passwordHash: password_hash, // callers strip when needed
     subscription: {

@@ -24,7 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download, CreditCard, Gift, FileText } from "lucide-react";
+import { Search, Plus, RefreshCw, Trash2, Edit3, Loader2, Download, CreditCard, Gift, FileText, UserX, UserCheck, AlertTriangle } from "lucide-react";
 import { exportDuesPdf } from "@/lib/messmate/exportDuesPdf";
 import { PlanBadge, PlanIcons } from "@/components/messmate/PlanBadge";
 import {
@@ -60,7 +60,7 @@ function MembersPage() {
   const isMobile = useIsMobile();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<"all" | "active" | "expired" | "unpaid" | "pending">("all");
+  const [status, setStatus] = useState<"all" | "active" | "expired" | "unpaid" | "pending" | "left">("all");
   const [planFilter, setPlanFilter] = useState("all");
   const [sortBy, setSortBy] = useState<"created_at" | "member_id" | "expiry_date">("created_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -69,6 +69,9 @@ function MembersPage() {
   const [renewing, setRenewing] = useState<Member | null>(null);
   const [paying, setPaying] = useState<Member | null>(null);
   const [deletingMember, setDeletingMember] = useState<Member | null>(null);
+  const [leavingMember, setLeavingMember] = useState<Member | null>(null);
+  const [leaveReason, setLeaveReason] = useState("");
+  const [reactivatingMember, setReactivatingMember] = useState<Member | null>(null);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
 
@@ -166,6 +169,30 @@ function MembersPage() {
       invalidate();
     },
   });
+  const markLeftM = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+      membersApi.markLeft(id, { reason }),
+    onSuccess: () => {
+      toast.success("Member marked as left mess");
+      setLeavingMember(null);
+      setLeaveReason("");
+      invalidate();
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to mark member as left");
+    },
+  });
+  const reactivateM = useMutation({
+    mutationFn: (id: string) => membersApi.reactivate(id),
+    onSuccess: () => {
+      toast.success("Member reactivated successfully");
+      setReactivatingMember(null);
+      invalidate();
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to reactivate member");
+    },
+  });
 
   const birthdays = birthdaysQ.data ?? [];
 
@@ -259,6 +286,7 @@ function MembersPage() {
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="expired">Expired</SelectItem>
                 <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="left">Left Mess</SelectItem>
               </SelectContent>
             </Select>
 
@@ -384,40 +412,51 @@ function MembersPage() {
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
-                        {!m.isActive && (
+                        {m.isLeft ? (
                           <Badge
                             variant="outline"
-                            className="border-amber-500 text-amber-500 bg-amber-50"
+                            className="border-zinc-500 text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800"
                           >
-                            Pending
+                            Left Mess
                           </Badge>
-                        )}
-                        {m.isActive && !m.subscription.isPaid && (
-                          <div className="text-right">
-                            <Badge
-                              variant="destructive"
-                              className={cn(
-                                m.subscription.amountPaid > 0 &&
-                                "bg-orange-500 hover:bg-orange-600 border-orange-500",
-                              )}
-                            >
-                              {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
-                            </Badge>
-                            {m.subscription.dueAmount > 0 && (
-                              <div className="mt-1 text-[10px] font-medium text-destructive">
-                                Due: ₹{m.subscription.dueAmount}
+                        ) : (
+                          <>
+                            {!m.isActive && (
+                              <Badge
+                                variant="outline"
+                                className="border-amber-500 text-amber-500 bg-amber-50"
+                              >
+                                Pending
+                              </Badge>
+                            )}
+                            {m.isActive && !m.subscription.isPaid && (
+                              <div className="text-right">
+                                <Badge
+                                  variant="destructive"
+                                  className={cn(
+                                    m.subscription.amountPaid > 0 &&
+                                    "bg-orange-500 hover:bg-orange-600 border-orange-500",
+                                  )}
+                                >
+                                  {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                                </Badge>
+                                {m.subscription.dueAmount > 0 && (
+                                  <div className="mt-1 text-[10px] font-medium text-destructive">
+                                    Due: ₹{m.subscription.dueAmount}
+                                  </div>
+                                )}
                               </div>
                             )}
-                          </div>
-                        )}
-                        {m.isActive && expired && (
-                          <Badge variant="destructive">Expired</Badge>
-                        )}
-                        {m.isActive && startsInFuture && (
-                          <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
-                        )}
-                        {m.isActive && m.subscription.isPaid && !expired && !startsInFuture && (
-                          <Badge className="bg-success text-success-foreground">Active</Badge>
+                            {m.isActive && expired && (
+                              <Badge variant="destructive">Expired</Badge>
+                            )}
+                            {m.isActive && startsInFuture && (
+                              <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
+                            )}
+                            {m.isActive && m.subscription.isPaid && !expired && !startsInFuture && (
+                              <Badge className="bg-success text-success-foreground">Active</Badge>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>
@@ -426,23 +465,27 @@ function MembersPage() {
                       <div
                         className={cn(
                           "text-xs font-medium",
-                          expired && "text-destructive",
-                          !expired && !startsInFuture && left <= 3 && "text-warning",
-                          !expired && !startsInFuture && left > 3 && "text-muted-foreground",
-                          startsInFuture && "text-blue-500"
+                          m.isLeft && "text-muted-foreground",
+                          !m.isLeft && expired && "text-destructive",
+                          !m.isLeft && !expired && !startsInFuture && left <= 3 && "text-warning",
+                          !m.isLeft && !expired && !startsInFuture && left > 3 && "text-muted-foreground",
+                          !m.isLeft && startsInFuture && "text-blue-500"
                         )}
                       >
-                        {(m.subscription.endDate || m.createdAt)
+                        {m.isLeft
+                          ? (m.leftAt ? `Left on ${formatDate(m.leftAt)}` : "Left Mess")
+                          : (m.subscription.endDate || m.createdAt)
                           ? (expired ? `Expired ${-left}d ago` : startsInFuture ? `Starts in ${startsIn}d` : `${left}d remaining`)
                           : "No active plan"}
                       </div>
                       <div className="flex justify-end gap-2">
-                        {!m.subscription.isPaid && (
+                        {!m.isLeft && !m.subscription.isPaid && (
                           <Button
                             size="sm"
                             variant="outline"
                             className="h-8 w-8 p-0 border-primary text-primary hover:bg-primary/10"
                             onClick={(e) => { e.stopPropagation(); setPaying(m); }}
+                            title="Record Payment"
                           >
                             <CreditCard className="h-4 w-4" />
                           </Button>
@@ -452,25 +495,51 @@ function MembersPage() {
                           variant="outline"
                           className="h-8 w-8 p-0"
                           onClick={(e) => { e.stopPropagation(); setEditing(m); }}
+                          title="Edit"
                         >
                           <Edit3 className="h-4 w-4" />
                         </Button>
-                        <div title={!canRenew ? "Can only renew when expired or within 2 days of expiration" : undefined}>
+                        {!m.isLeft && (
+                          <div title={!canRenew ? "Can only renew when expired or within 2 days of expiration" : undefined}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => { e.stopPropagation(); setRenewing(m); }}
+                              disabled={!canRenew}
+                              title="Renew"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        {m.isLeft ? (
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 w-8 p-0"
-                            onClick={(e) => { e.stopPropagation(); setRenewing(m); }}
-                            disabled={!canRenew}
+                            className="h-8 w-8 p-0 border-emerald-500 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                            onClick={(e) => { e.stopPropagation(); setReactivatingMember(m); }}
+                            title="Reactivate Member"
                           >
-                            <RefreshCw className="h-4 w-4" />
+                            <UserCheck className="h-4 w-4" />
                           </Button>
-                        </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 p-0 border-amber-500/60 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                            onClick={(e) => { e.stopPropagation(); setLeavingMember(m); setLeaveReason(""); }}
+                            title="Discontinue / Left Mess"
+                          >
+                            <UserX className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 p-0 border-destructive text-destructive hover:bg-destructive/10"
                           onClick={(e) => { e.stopPropagation(); setDeletingMember(m); }}
+                          title="Delete Permanently"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -601,64 +670,87 @@ function MembersPage() {
                         <td
                           className={cn(
                             "px-4 py-3 text-xs",
-                            expired && "text-destructive font-semibold",
-                            !expired &&
+                            m.isLeft && "text-muted-foreground",
+                            !m.isLeft && expired && "text-destructive font-semibold",
+                            !m.isLeft &&
                             !startsInFuture &&
                             left <= 3 &&
                             (m.subscription.endDate || m.createdAt) &&
                             "text-warning font-semibold",
-                            startsInFuture && "text-blue-500 font-semibold"
+                            !m.isLeft && startsInFuture && "text-blue-500 font-semibold"
                           )}
                         >
-                          {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
-                          {(m.subscription.endDate || m.createdAt) && (
-                            <div className="text-[10px] text-muted-foreground">
-                              {expired ? `${-left}d ago` : startsInFuture ? `Starts in ${startsIn}d` : `${left}d left`}
+                          {m.isLeft ? (
+                            <div>
+                              <div className="font-medium text-foreground">{m.leftAt ? formatDate(m.leftAt) : "Left Mess"}</div>
+                              <div className="text-[10px] text-muted-foreground truncate max-w-[120px]" title={m.leftReason || undefined}>
+                                {m.leftReason || "Discontinued"}
+                              </div>
                             </div>
+                          ) : (
+                            <>
+                              {formatDate(m.subscription.endDate || addDaysISO(m.createdAt, 30))}
+                              {(m.subscription.endDate || m.createdAt) && (
+                                <div className="text-[10px] text-muted-foreground">
+                                  {expired ? `${-left}d ago` : startsInFuture ? `Starts in ${startsIn}d` : `${left}d left`}
+                                </div>
+                              )}
+                            </>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col items-start gap-1">
-                            {!m.isActive && (
+                            {m.isLeft ? (
                               <Badge
                                 variant="outline"
-                                className="border-amber-500 text-amber-500 bg-amber-50"
+                                className="border-zinc-500 text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800"
                               >
-                                Pending
+                                Left Mess
                               </Badge>
-                            )}
-                            {m.isActive && !m.subscription.isPaid && (
-                              <div>
-                                <Badge
-                                  variant="destructive"
-                                  className={cn(
-                                    m.subscription.amountPaid > 0 &&
-                                    "bg-orange-500 hover:bg-orange-600 border-orange-500",
-                                  )}
-                                >
-                                  {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
-                                </Badge>
-                                {m.subscription.dueAmount > 0 && (
-                                  <div className="mt-1 text-[10px] font-medium text-destructive">
-                                    Due: ₹{m.subscription.dueAmount}
+                            ) : (
+                              <>
+                                {!m.isActive && (
+                                  <Badge
+                                    variant="outline"
+                                    className="border-amber-500 text-amber-500 bg-amber-50"
+                                  >
+                                    Pending
+                                  </Badge>
+                                )}
+                                {m.isActive && !m.subscription.isPaid && (
+                                  <div>
+                                    <Badge
+                                      variant="destructive"
+                                      className={cn(
+                                        m.subscription.amountPaid > 0 &&
+                                        "bg-orange-500 hover:bg-orange-600 border-orange-500",
+                                      )}
+                                    >
+                                      {m.subscription.amountPaid > 0 ? "Partial" : "Unpaid"}
+                                    </Badge>
+                                    {m.subscription.dueAmount > 0 && (
+                                      <div className="mt-1 text-[10px] font-medium text-destructive">
+                                        Due: ₹{m.subscription.dueAmount}
+                                      </div>
+                                    )}
                                   </div>
                                 )}
-                              </div>
-                            )}
-                            {m.isActive && expired && (
-                              <Badge variant="destructive">Expired</Badge>
-                            )}
-                            {m.isActive && startsInFuture && (
-                              <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
-                            )}
-                            {m.isActive && m.subscription.isPaid && !expired && !startsInFuture && (
-                              <Badge className="bg-success text-success-foreground">Active</Badge>
+                                {m.isActive && expired && (
+                                  <Badge variant="destructive">Expired</Badge>
+                                )}
+                                {m.isActive && startsInFuture && (
+                                  <Badge className="bg-blue-500 hover:bg-blue-600 text-white border-blue-500">Starts Soon</Badge>
+                                )}
+                                {m.isActive && m.subscription.isPaid && !expired && !startsInFuture && (
+                                  <Badge className="bg-success text-success-foreground">Active</Badge>
+                                )}
+                              </>
                             )}
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-1">
-                            {!m.subscription.isPaid && (
+                            {!m.isLeft && !m.subscription.isPaid && (
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -669,18 +761,42 @@ function MembersPage() {
                                 <CreditCard className="h-3.5 w-3.5" />
                               </Button>
                             )}
-                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditing(m); }}>
+                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditing(m); }} title="Edit">
                               <Edit3 className="h-3.5 w-3.5" />
                             </Button>
-                            <div title={!canRenew ? "Can only renew when expired or within 2 days of expiration" : undefined}>
-                              <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setRenewing(m); }} disabled={!canRenew}>
-                                <RefreshCw className="h-3.5 w-3.5" />
+                            {!m.isLeft && (
+                              <div title={!canRenew ? "Can only renew when expired or within 2 days of expiration" : undefined}>
+                                <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setRenewing(m); }} disabled={!canRenew} title="Renew">
+                                  <RefreshCw className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            )}
+                            {m.isLeft ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                                onClick={(e) => { e.stopPropagation(); setReactivatingMember(m); }}
+                                title="Reactivate Member"
+                              >
+                                <UserCheck className="h-3.5 w-3.5" />
                               </Button>
-                            </div>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                onClick={(e) => { e.stopPropagation(); setLeavingMember(m); setLeaveReason(""); }}
+                                title="Discontinue / Left Mess"
+                              >
+                                <UserX className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={(e) => { e.stopPropagation(); setDeletingMember(m); }}
+                              title="Delete Permanently"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -798,6 +914,93 @@ function MembersPage() {
         description={`Are you sure you want to delete ${deletingMember?.name}? This action cannot be undone and will permanently remove their records.`}
         confirmText="Delete"
         isPending={deleteM.isPending}
+      />
+
+      {/* Discontinue / Left Mess Dialog */}
+      <Dialog open={leavingMember !== null} onOpenChange={(open) => !open && setLeavingMember(null)}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
+              <UserX className="h-5 w-5" />
+              Mark Member as Left Mess
+            </DialogTitle>
+          </DialogHeader>
+          {leavingMember && (
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to mark <span className="font-semibold text-foreground">{leavingMember.name}</span> ({leavingMember.memberId}) as having left the mess?
+              </p>
+
+              <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+                <p className="font-medium text-foreground">What this does:</p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  <li>Removes student from daily active and expired renewal lists.</li>
+                  <li>Keeps their complete profile, attendance, and payment history safe.</li>
+                  <li>Allows 1-click reactivation anytime if the student rejoins.</li>
+                </ul>
+              </div>
+
+              {(leavingMember.subscription.dueAmount > 0 || !leavingMember.subscription.isPaid) && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs flex items-start gap-2 text-amber-700 dark:text-amber-300">
+                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold">Notice: Pending Dues</span>
+                    <p className="mt-0.5">
+                      This member has pending dues of ₹{leavingMember.subscription.dueAmount || Math.max(0, (leavingMember.subscription.pricePerMonth || 0) - (leavingMember.subscription.amountPaid || 0))}.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="leave-reason" className="text-xs font-semibold">
+                  Reason for Leaving (Optional)
+                </Label>
+                <Input
+                  id="leave-reason"
+                  placeholder="e.g. Semester ended, graduated, relocated..."
+                  value={leaveReason}
+                  onChange={(e) => setLeaveReason(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setLeavingMember(null)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={() => {
+                if (leavingMember) {
+                  markLeftM.mutate({ id: leavingMember.memberId, reason: leaveReason });
+                }
+              }}
+              disabled={markLeftM.isPending}
+            >
+              {markLeftM.isPending ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <UserX className="mr-1.5 h-4 w-4" />
+              )}
+              Confirm Left Mess
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        isOpen={reactivatingMember !== null}
+        onClose={() => setReactivatingMember(null)}
+        onConfirm={() => {
+          if (reactivatingMember) {
+            reactivateM.mutate(reactivatingMember.memberId);
+          }
+        }}
+        title="Reactivate Member?"
+        description={`Reactivate ${reactivatingMember?.name}? They will be restored to your active members list so you can renew or update their meal plan.`}
+        confirmText="Reactivate"
+        isPending={reactivateM.isPending}
       />
 
       <ViewMemberDialog

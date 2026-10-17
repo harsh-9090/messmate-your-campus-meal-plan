@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Camera } from "lucide-react";
+import { Loader2, Camera, UserX } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -373,7 +373,9 @@ export function ViewMemberDialog({
           <div className="text-sm text-muted-foreground font-medium mb-3">{member.memberId}</div>
 
           <div className="flex gap-2">
-            {!member.isActive ? (
+            {member.isLeft ? (
+              <Badge variant="outline" className="border-zinc-500 text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800">Left Mess</Badge>
+            ) : !member.isActive ? (
               <Badge variant="outline" className="border-amber-500 text-amber-500 bg-amber-50">Pending</Badge>
             ) : !member.subscription.isPaid ? (
               <Badge variant="destructive">Unpaid</Badge>
@@ -388,6 +390,25 @@ export function ViewMemberDialog({
         </div>
 
         <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
+          {member.isLeft && (
+            <div className="rounded-xl bg-zinc-100 dark:bg-zinc-800/80 p-3.5 border border-zinc-200 dark:border-zinc-700 text-xs space-y-1.5">
+              <div className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-1.5">
+                <UserX className="h-4 w-4 text-zinc-600 dark:text-zinc-400" />
+                <span>Member Discontinued / Left Mess</span>
+              </div>
+              {member.leftAt && (
+                <div className="text-muted-foreground">
+                  Date Left: <span className="font-medium text-foreground">{formatDate(member.leftAt)}</span>
+                </div>
+              )}
+              {member.leftReason && (
+                <div className="text-muted-foreground">
+                  Reason: <span className="font-medium text-foreground">{member.leftReason}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Contact */}
           <div>
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Contact Information</h4>

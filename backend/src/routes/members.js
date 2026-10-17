@@ -55,12 +55,15 @@ router.get("/", requireRole("admin"), async (req, res, next) => {
 
     const where = [`role = 'member'`];
     if (status === "pending") {
-      where.push(`is_active = FALSE`);
+      where.push(`is_active = FALSE AND (is_left IS FALSE OR is_left IS NULL)`);
+    } else if (status === "left") {
+      where.push(`is_left = TRUE`);
     } else if (!status || status === "all") {
-      // Show all members (both active and pending)
+      // Show all current members (both active and pending), excluding members who have left mess
+      where.push(`(is_left IS FALSE OR is_left IS NULL)`);
     } else {
-      // Default: show only active members for other filters (expired, unpaid, etc)
-      where.push(`is_active = TRUE`);
+      // Default: show only active current members for other filters (expired, unpaid, etc)
+      where.push(`is_active = TRUE AND (is_left IS FALSE OR is_left IS NULL)`);
     }
 
     const params = [];
@@ -130,7 +133,7 @@ router.get("/export", requireRole("admin"), async (req, res, next) => {
 
     for (const r of rows) {
       const m = rowToMember(r);
-      const status = m.isActive ? "Active" : "Inactive";
+      const status = m.isLeft ? "Left Mess" : (m.isActive ? "Active" : "Inactive");
       const mealsStr = m.subscription.meals.join(" & ");
       
       const startDate = m.subscription.startDate ? format(new Date(m.subscription.startDate), "yyyy-MM-dd") : "N/A";
@@ -457,6 +460,45 @@ router.delete("/:id", requireRole("admin"), async (req, res, next) => {
     await delByPattern("report:expiring");
     
     res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+router.put("/:id/left", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { reason = "" } = req.body || {};
+    const { rows } = await query(
+      `UPDATE members
+       SET is_left = TRUE, left_at = CURRENT_TIMESTAMP, left_reason = $2, is_active = FALSE, updated_at = CURRENT_TIMESTAMP
+       WHERE member_id = $1
+       RETURNING *`,
+      [req.params.id, reason]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Member not found" });
+
+    await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
+    await delByPattern("member:list");
+    await delByPattern("report:expiring");
+
+    res.json(stripPassword(rowToMember(rows[0])));
+  } catch (e) { next(e); }
+});
+
+router.put("/:id/reactivate", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { rows } = await query(
+      `UPDATE members
+       SET is_left = FALSE, left_at = NULL, left_reason = NULL, is_active = TRUE, updated_at = CURRENT_TIMESTAMP
+       WHERE member_id = $1
+       RETURNING *`,
+      [req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Member not found" });
+
+    await delCache([`messmate:member:${req.params.id}`, `messmate:member:${req.params.id}:subscription`]);
+    await delByPattern("member:list");
+    await delByPattern("report:expiring");
+
+    res.json(stripPassword(rowToMember(rows[0])));
   } catch (e) { next(e); }
 });
 
