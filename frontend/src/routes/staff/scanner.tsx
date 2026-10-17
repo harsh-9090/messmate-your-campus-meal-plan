@@ -269,49 +269,75 @@ function ScannerPage() {
   if (result) return <ScanResultScreen result={result} onNext={handleNext} onRetry={handleRetry} />;
 
   const content = (
-    <div className={cn("bg-background pb-12", authUser.role === "admin" ? "min-w-0 flex-1 h-screen overflow-y-auto" : "min-h-screen")}>
-      <header className="sticky top-0 z-10 border-b bg-sidebar text-sidebar-foreground shadow-sm">
-        <div className="mx-auto flex max-w-xl md:max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <img
-              src="/apple-touch-icon.png"
-              alt="Mom's Kitchen Logo"
-              className="h-9 w-9 rounded-full border border-primary/20 object-cover shadow-sm bg-primary/10"
-            />
-            <div>
-              <div className="font-display text-base font-bold leading-none">Mess Scanner</div>
-              <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 mt-0.5">
-                {authUser.name}
+    <div className={cn("bg-background pb-12", authUser.role === "admin" ? "min-w-0 flex-1" : "min-h-screen")}>
+      {authUser.role !== "admin" ? (
+        <header className="sticky top-0 z-10 border-b bg-sidebar text-sidebar-foreground shadow-sm">
+          <div className="mx-auto flex max-w-xl md:max-w-5xl items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-2">
+              <img
+                src="/apple-touch-icon.png"
+                alt="Mom's Kitchen Logo"
+                className="h-9 w-9 rounded-full border border-primary/20 object-cover shadow-sm bg-primary/10"
+              />
+              <div>
+                <div className="font-display text-base font-bold leading-none">Mess Scanner</div>
+                <div className="text-[10px] uppercase tracking-wider text-sidebar-foreground/50 mt-0.5">
+                  {authUser.name}
+                </div>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="border-success/40 bg-success/10 text-success font-bold"
+              >
+                <CheckCircle2 className="mr-1 h-3 w-3" /> {allowedCount}
+              </Badge>
+              <Badge
+                variant="outline"
+                className="border-destructive/40 bg-destructive/10 text-destructive font-bold"
+              >
+                <XCircle className="mr-1 h-3 w-3" /> {deniedCount}
+              </Badge>
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer"
+              >
+                <Link to="/login" onClick={() => logout()}>
+                  <LogOut className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className="border-success/40 bg-success/10 text-success font-bold"
-            >
-              <CheckCircle2 className="mr-1 h-3 w-3" /> {allowedCount}
-            </Badge>
-            <Badge
-              variant="outline"
-              className="border-destructive/40 bg-destructive/10 text-destructive font-bold"
-            >
-              <XCircle className="mr-1 h-3 w-3" /> {deniedCount}
-            </Badge>
-            <ThemeToggle />
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              className="text-sidebar-foreground hover:bg-sidebar-accent cursor-pointer"
-            >
-              <Link to="/login" onClick={() => logout()}>
-                <LogOut className="h-4 w-4" />
-              </Link>
-            </Button>
+        </header>
+      ) : (
+        /* Admin View: Compact shift status bar without duplicate logo, user name, theme toggle, or logout */
+        <div className="border-b bg-sidebar/50 backdrop-blur-sm text-sidebar-foreground px-4 py-2.5">
+          <div className="mx-auto flex max-w-xl md:max-w-5xl items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ScanLine className="h-4 w-4 text-primary" />
+              <span className="font-display text-xs md:text-sm font-bold">Live Scan Session</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant="outline"
+                className="border-success/40 bg-success/10 text-success font-bold text-xs"
+              >
+                <CheckCircle2 className="mr-1 h-3 w-3" /> {allowedCount} Allowed
+              </Badge>
+              <Badge
+                variant="outline"
+                className="border-destructive/40 bg-destructive/10 text-destructive font-bold text-xs"
+              >
+                <XCircle className="mr-1 h-3 w-3" /> {deniedCount} Denied
+              </Badge>
+            </div>
           </div>
         </div>
-      </header>
+      )}
 
       {/* Sync Status Banner */}
       {(!isOnline || pendingSyncCount > 0) && (
@@ -335,7 +361,7 @@ function ScannerPage() {
       )}
 
       {/* Tactile Mobile Tab Selector (Hidden on md and up) */}
-      <div className="md:hidden flex border-b bg-background sticky top-[61px] z-10 p-1 bg-slate-50 dark:bg-slate-900 border-b">
+      <div className={cn("md:hidden flex border-b bg-background sticky z-10 p-1 bg-slate-50 dark:bg-slate-900 border-b", authUser.role === "admin" ? "top-0" : "top-[61px]")}>
         <button
           onClick={() => setActiveTab("scan")}
           className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-bold transition-all rounded-lg cursor-pointer ${
