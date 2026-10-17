@@ -222,6 +222,11 @@ export const membersApi = {
       method: "PUT",
       body: JSON.stringify(data || {}),
     }),
+  bulkMarkLeft: (memberIds: string[], data?: { reason?: string }) =>
+    request<{ ok: boolean; count: number; affectedIds: string[] }>(`/members/bulk-left`, {
+      method: "PUT",
+      body: JSON.stringify({ memberIds, ...data }),
+    }),
   reactivate: (id: string) =>
     request<Member>(`/members/${id}/reactivate`, { method: "PUT" }),
   renew: (

@@ -75,6 +75,11 @@ function MembersPage() {
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [page, setPage] = useState(1);
 
+  // Bulk selection for expired members
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLeavingOpen, setBulkLeavingOpen] = useState(false);
+  const [bulkLeaveReason, setBulkLeaveReason] = useState("");
+
   const membersQ = useQuery({
     queryKey: ["members", { search, status, planFilter, sortBy, sortOrder, page }],
     queryFn: () =>
@@ -96,12 +101,50 @@ function MembersPage() {
   const total = membersQ.data?.total ?? 0;
   const totalPages = Math.ceil(total / 50);
 
+  // Only expired members can be selected for left mess
+  const expiredMembersOnPage = useMemo(() => {
+    return members.filter((m) => daysRemaining(m.subscription?.endDate) < 0 && !m.isLeft);
+  }, [members]);
+
+  const toggleOne = (id: string, checked: boolean) => {
+    const next = new Set(selectedIds);
+    if (checked) next.add(id);
+    else next.delete(id);
+    setSelectedIds(next);
+  };
+
+  const toggleAllExpired = (checked: boolean) => {
+    const next = new Set(selectedIds);
+    if (checked) {
+      expiredMembersOnPage.forEach((m) => next.add(m.memberId));
+    } else {
+      expiredMembersOnPage.forEach((m) => next.delete(m.memberId));
+    }
+    setSelectedIds(next);
+  };
+
+  const selectedMemberList = useMemo(() => {
+    return members.filter((m) => selectedIds.has(m.memberId));
+  }, [members, selectedIds]);
+
+  const totalSelectedDue = useMemo(() => {
+    return selectedMemberList.reduce((sum, m) => sum + (m.subscription?.dueAmount || 0), 0);
+  }, [selectedMemberList]);
+
+  const selectedWithDuesCount = useMemo(() => {
+    return selectedMemberList.filter(
+      (m) => (m.subscription?.dueAmount || 0) > 0 || !m.subscription?.isPaid,
+    ).length;
+  }, [selectedMemberList]);
+
   const handleSearch = (v: string) => {
     setSearch(v);
+    setSelectedIds(new Set());
     setPage(1);
   };
   const handleStatus = (v: any) => {
     setStatus(v);
+    setSelectedIds(new Set());
     if (v === "expired") {
       setSortBy("expiry_date");
       setSortOrder("desc");
@@ -113,6 +156,7 @@ function MembersPage() {
   };
   const handlePlanFilter = (v: string) => {
     setPlanFilter(v);
+    setSelectedIds(new Set());
     setPage(1);
   };
 
@@ -191,6 +235,20 @@ function MembersPage() {
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to reactivate member");
+    },
+  });
+  const bulkMarkLeftM = useMutation({
+    mutationFn: ({ ids, reason }: { ids: string[]; reason?: string }) =>
+      membersApi.bulkMarkLeft(ids, { reason }),
+    onSuccess: (data) => {
+      toast.success(`${data.count || selectedIds.size} member(s) marked as left mess`);
+      setSelectedIds(new Set());
+      setBulkLeavingOpen(false);
+      setBulkLeaveReason("");
+      invalidate();
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to mark selected members as left mess");
     },
   });
 
@@ -331,6 +389,46 @@ function MembersPage() {
         </div>
       </Card>
 
+      {/* Floating Sticky Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="sticky top-4 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/40 bg-card/95 backdrop-blur-md p-4 shadow-lg animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-600 text-xs font-bold text-white shadow-sm">
+              {selectedIds.size}
+            </span>
+            <div>
+              <div className="text-sm font-semibold text-foreground">
+                {selectedIds.size} Expired Member{selectedIds.size > 1 ? "s" : ""} Selected
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Only expired members can be marked as left mess
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+              className="h-9 text-xs"
+            >
+              Clear Selection
+            </Button>
+            <Button
+              size="sm"
+              className="h-9 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs shadow-sm flex-1 sm:flex-initial"
+              onClick={() => {
+                setBulkLeaveReason("");
+                setBulkLeavingOpen(true);
+              }}
+            >
+              <UserX className="mr-1.5 h-4 w-4" />
+              Mark as Left Mess ({selectedIds.size})
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Card className="overflow-hidden">
         {isMobile ? (
           /* Mobile Card View */
@@ -365,6 +463,25 @@ function MembersPage() {
             {!membersQ.isLoading && !membersQ.isError && members.length === 0 && (
               <div className="py-8 text-center text-sm text-muted-foreground">No members found</div>
             )}
+            {!membersQ.isLoading && !membersQ.isError && expiredMembersOnPage.length > 0 && (
+              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-muted/40 border text-xs">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="selectAllExpiredMobile"
+                    checked={expiredMembersOnPage.every((m) => selectedIds.has(m.memberId))}
+                    onCheckedChange={(checked) => toggleAllExpired(!!checked)}
+                  />
+                  <label htmlFor="selectAllExpiredMobile" className="font-medium cursor-pointer text-foreground select-none">
+                    Select All Expired ({expiredMembersOnPage.length})
+                  </label>
+                </div>
+                {selectedIds.size > 0 && (
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">
+                    {selectedIds.size} selected
+                  </span>
+                )}
+              </div>
+            )}
             {!membersQ.isLoading &&
               !membersQ.isError &&
               members.map((m) => {
@@ -377,11 +494,31 @@ function MembersPage() {
                 return (
                   <div
                     key={m.memberId}
-                    className="flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm cursor-pointer hover:border-primary/50 transition-colors"
+                    className={cn(
+                      "flex flex-col gap-3 rounded-xl border bg-card p-4 shadow-sm cursor-pointer hover:border-primary/50 transition-colors",
+                      selectedIds.has(m.memberId) && "border-amber-500/60 bg-amber-500/5",
+                    )}
                     onClick={() => setViewingMember(m)}
                   >
                     <div className="flex items-start justify-between gap-2 border-b pb-3">
                       <div className="flex items-center gap-3">
+                        {expired && !m.isLeft ? (
+                          <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
+                            <Checkbox
+                              checked={selectedIds.has(m.memberId)}
+                              onCheckedChange={(c) => toggleOne(m.memberId, !!c)}
+                              aria-label={`Select ${m.name}`}
+                              className="shrink-0"
+                            />
+                          </div>
+                        ) : (
+                          <div onClick={(e) => e.stopPropagation()} className="pt-0.5" title={m.isLeft ? "Already left mess" : "Only expired members can be selected"}>
+                            <Checkbox
+                              disabled
+                              className="shrink-0 opacity-25 cursor-not-allowed"
+                            />
+                          </div>
+                        )}
                         <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-foreground overflow-hidden">
                           {m.photoUrl ? (
                             <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" />
@@ -558,6 +695,19 @@ function MembersPage() {
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
+                  <th className="w-10 px-4 py-3 text-left">
+                    <div title={expiredMembersOnPage.length === 0 ? "No expired members to select on this page" : "Select all expired members on page"}>
+                      <Checkbox
+                        checked={
+                          expiredMembersOnPage.length > 0 &&
+                          expiredMembersOnPage.every((m) => selectedIds.has(m.memberId))
+                        }
+                        onCheckedChange={(checked) => toggleAllExpired(!!checked)}
+                        disabled={expiredMembersOnPage.length === 0}
+                        aria-label="Select all expired members"
+                      />
+                    </div>
+                  </th>
                   <th className="px-4 py-3 text-left">Member</th>
                   <th className="px-4 py-3 text-left">Plan</th>
                   <th className="px-4 py-3 text-left">Meals</th>
@@ -572,6 +722,9 @@ function MembersPage() {
                   <>
                     {[1, 2, 3, 4, 5].map((n) => (
                       <tr key={n} className="border-t animate-pulse">
+                        <td className="w-10 px-4 py-4">
+                          <div className="h-4 w-4 rounded bg-emerald-950/10 dark:bg-emerald-950/20" />
+                        </td>
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-emerald-950/10 dark:bg-emerald-950/20" />
@@ -605,7 +758,7 @@ function MembersPage() {
                 )}
                 {membersQ.isError && (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-destructive font-medium">
+                    <td colSpan={8} className="py-10 text-center text-destructive font-medium">
                       Failed to load members. Please try again.
                     </td>
                   </tr>
@@ -622,9 +775,29 @@ function MembersPage() {
                     return (
                       <tr
                         key={m.memberId}
-                        className="border-t hover:bg-muted/30 transition-colors cursor-pointer"
+                        className={cn(
+                          "border-t hover:bg-muted/30 transition-colors cursor-pointer",
+                          selectedIds.has(m.memberId) && "bg-amber-500/5 hover:bg-amber-500/10",
+                        )}
                         onClick={() => setViewingMember(m)}
                       >
+                        <td className="w-10 px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                          {expired && !m.isLeft ? (
+                            <Checkbox
+                              checked={selectedIds.has(m.memberId)}
+                              onCheckedChange={(checked) => toggleOne(m.memberId, !!checked)}
+                              aria-label={`Select ${m.name}`}
+                            />
+                          ) : (
+                            <div title={m.isLeft ? "Member has already left mess" : "Only expired members can be selected"}>
+                              <Checkbox
+                                disabled
+                                className="opacity-25 cursor-not-allowed"
+                                aria-label="Cannot select active or already left member"
+                              />
+                            </div>
+                          )}
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <div className="grid h-8 w-8 place-items-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground overflow-hidden">
@@ -813,7 +986,7 @@ function MembersPage() {
                   })}
                 {!membersQ.isLoading && members.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    <td colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                       No members found
                     </td>
                   </tr>
@@ -990,6 +1163,90 @@ function MembersPage() {
                 <UserX className="mr-1.5 h-4 w-4" />
               )}
               Confirm Left Mess
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Discontinue / Left Mess Dialog */}
+      <Dialog open={bulkLeavingOpen} onOpenChange={(open) => !open && setBulkLeavingOpen(false)}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
+              <UserX className="h-5 w-5" />
+              Mark {selectedIds.size} Expired Member{selectedIds.size > 1 ? "s" : ""} as Left Mess
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to mark <span className="font-semibold text-foreground">{selectedIds.size} expired member{selectedIds.size > 1 ? "s" : ""}</span> as having left the mess?
+            </p>
+
+            <div className="rounded-xl bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+              <p className="font-medium text-foreground">What this does:</p>
+              <ul className="list-disc pl-4 space-y-0.5">
+                <li>Removes selected students from daily active and expired renewal lists.</li>
+                <li>All historical attendance, transactions, and records remain completely safe.</li>
+                <li>You can reactivate any profile individually if a student returns.</li>
+              </ul>
+            </div>
+
+            {selectedWithDuesCount > 0 && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs flex items-start gap-2 text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold">Notice: Pending Dues</span>
+                  <p className="mt-0.5">
+                    {selectedWithDuesCount} of the selected members have pending dues (Total: ₹{totalSelectedDue}). These records will remain saved.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* List preview of selected students */}
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Selected Members ({selectedMemberList.length})</Label>
+              <div className="max-h-28 overflow-y-auto rounded-lg border bg-muted/20 p-2 flex flex-wrap gap-1.5 text-xs">
+                {selectedMemberList.map((m) => (
+                  <Badge key={m.memberId} variant="secondary" className="text-[11px] font-normal py-0.5">
+                    {m.name} ({m.memberId})
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="bulk-leave-reason" className="text-xs font-semibold">
+                Reason for Leaving (Optional)
+              </Label>
+              <Input
+                id="bulk-leave-reason"
+                placeholder="e.g. End of semester, graduation, batch completed..."
+                value={bulkLeaveReason}
+                onChange={(e) => setBulkLeaveReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setBulkLeavingOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              onClick={() => {
+                bulkMarkLeftM.mutate({
+                  ids: Array.from(selectedIds),
+                  reason: bulkLeaveReason,
+                });
+              }}
+              disabled={bulkMarkLeftM.isPending}
+            >
+              {bulkMarkLeftM.isPending ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <UserX className="mr-1.5 h-4 w-4" />
+              )}
+              Confirm ({selectedIds.size}) Left Mess
             </Button>
           </DialogFooter>
         </DialogContent>

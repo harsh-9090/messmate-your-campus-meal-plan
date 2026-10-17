@@ -463,6 +463,45 @@ router.delete("/:id", requireRole("admin"), async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.put("/bulk-left", requireRole("admin"), async (req, res, next) => {
+  try {
+    const { memberIds = [], reason = "" } = req.body || {};
+    if (!Array.isArray(memberIds) || memberIds.length === 0) {
+      return res.status(400).json({ error: "memberIds must be a non-empty array" });
+    }
+
+    const today = fmtDate(getISTDate());
+
+    // Update only members whose meal plan has expired and who have not already left
+    const { rows } = await query(
+      `UPDATE members
+       SET is_left = TRUE, left_at = CURRENT_TIMESTAMP, left_reason = $2, is_active = FALSE, updated_at = CURRENT_TIMESTAMP
+       WHERE member_id = ANY($1::text[])
+         AND (sub_end_date IS NULL OR sub_end_date < $3::date)
+         AND (is_left IS FALSE OR is_left IS NULL)
+       RETURNING member_id`,
+      [memberIds, reason, today]
+    );
+
+    const affectedIds = rows.map((r) => r.member_id);
+
+    if (affectedIds.length > 0) {
+      const keysToDel = [];
+      for (const id of affectedIds) {
+        keysToDel.push(`messmate:member:${id}`);
+        keysToDel.push(`messmate:member:${id}:subscription`);
+      }
+      await delCache(keysToDel);
+      await delByPattern("member:list");
+      await delByPattern("report:expiring");
+    }
+
+    res.json({ ok: true, count: affectedIds.length, affectedIds });
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.put("/:id/left", requireRole("admin"), async (req, res, next) => {
   try {
     const { reason = "" } = req.body || {};
