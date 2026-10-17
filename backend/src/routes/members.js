@@ -466,6 +466,15 @@ router.delete("/:id", requireRole("admin"), async (req, res, next) => {
 router.put("/:id/left", requireRole("admin"), async (req, res, next) => {
   try {
     const { reason = "" } = req.body || {};
+    const check = await query(`SELECT sub_end_date FROM members WHERE member_id = $1`, [req.params.id]);
+    if (!check.rows[0]) return res.status(404).json({ error: "Member not found" });
+
+    const today = fmtDate(getISTDate());
+    const endDate = check.rows[0].sub_end_date ? fmtDate(new Date(check.rows[0].sub_end_date)) : null;
+    if (endDate && endDate >= today) {
+      return res.status(400).json({ error: "Cannot mark member as left while their plan is still active. Only expired members can be marked as left mess." });
+    }
+
     const { rows } = await query(
       `UPDATE members
        SET is_left = TRUE, left_at = CURRENT_TIMESTAMP, left_reason = $2, is_active = FALSE, updated_at = CURRENT_TIMESTAMP

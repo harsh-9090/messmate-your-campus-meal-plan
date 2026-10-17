@@ -524,15 +524,18 @@ function MembersPage() {
                             <UserCheck className="h-4 w-4" />
                           </Button>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-8 p-0 border-amber-500/60 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                            onClick={(e) => { e.stopPropagation(); setLeavingMember(m); setLeaveReason(""); }}
-                            title="Discontinue / Left Mess"
-                          >
-                            <UserX className="h-4 w-4" />
-                          </Button>
+                          <div title={!expired ? "Member must be expired before marking as left mess" : undefined}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0 border-amber-500/60 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                              onClick={(e) => { e.stopPropagation(); setLeavingMember(m); setLeaveReason(""); }}
+                              disabled={!expired}
+                              title={expired ? "Discontinue / Left Mess" : undefined}
+                            >
+                              <UserX className="h-4 w-4" />
+                            </Button>
+                          </div>
                         )}
                         <Button
                           size="sm"
@@ -782,15 +785,18 @@ function MembersPage() {
                                 <UserCheck className="h-3.5 w-3.5" />
                               </Button>
                             ) : (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                                onClick={(e) => { e.stopPropagation(); setLeavingMember(m); setLeaveReason(""); }}
-                                title="Discontinue / Left Mess"
-                              >
-                                <UserX className="h-3.5 w-3.5" />
-                              </Button>
+                              <div title={!expired ? "Member must be expired before marking as left mess" : undefined}>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-muted-foreground hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                                  onClick={(e) => { e.stopPropagation(); setLeavingMember(m); setLeaveReason(""); }}
+                                  disabled={!expired}
+                                  title={expired ? "Discontinue / Left Mess" : undefined}
+                                >
+                                  <UserX className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             )}
                             <Button
                               size="sm"
