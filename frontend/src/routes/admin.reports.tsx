@@ -73,13 +73,13 @@ function ReportsPage() {
   }));
 
   const active = members.filter(
-    (m) => m.subscription.isPaid && daysRemaining(m.subscription.endDate) >= 0,
+    (m) => !m.isLeft && m.subscription.isPaid && daysRemaining(m.subscription.endDate) >= 0,
   );
   const totalRev =
     weeklyQ.data?.estimatedMonthlyRevenue ??
     active.reduce((s, m) => s + m.subscription.pricePerMonth, 0);
   const unpaidDues = members
-    .filter((m) => !m.subscription.isPaid)
+    .filter((m) => !m.isLeft && !m.subscription.isPaid)
     .reduce((s, m) => s + m.subscription.pricePerMonth, 0);
   const totalMealsWeek = weekly.reduce((s, d) => s + d.meals, 0);
   const avgPerDay = (totalMealsWeek / 7).toFixed(1);

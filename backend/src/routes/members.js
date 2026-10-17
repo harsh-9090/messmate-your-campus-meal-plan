@@ -59,8 +59,7 @@ router.get("/", requireRole("admin"), async (req, res, next) => {
     } else if (status === "left") {
       where.push(`is_left = TRUE`);
     } else if (!status || status === "all") {
-      // Show all current members (both active and pending), excluding members who have left mess
-      where.push(`(is_left IS FALSE OR is_left IS NULL)`);
+      // "all" status: show all members, including members who have left the mess
     } else {
       // Default: show only active current members for other filters (expired, unpaid, etc)
       where.push(`is_active = TRUE AND (is_left IS FALSE OR is_left IS NULL)`);

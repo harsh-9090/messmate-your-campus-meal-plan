@@ -45,14 +45,16 @@ function AdminAnalytics() {
   const trendData = trendQ.data ?? [];
 
   const active = members.filter(
-    (m) => m.subscription.isPaid && daysRemaining(m.subscription.endDate) >= 0,
+    (m) => !m.isLeft && m.subscription.isPaid && daysRemaining(m.subscription.endDate) >= 0,
   );
-  const expired = members.filter((m) => daysRemaining(m.subscription.endDate) < 0);
+  const expired = members.filter((m) => !m.isLeft && daysRemaining(m.subscription.endDate) < 0);
   const revenue = active.reduce((s, m) => s + m.subscription.pricePerMonth, 0);
 
   const planCounts: Record<string, number> = {};
   members.forEach((m) => {
-    planCounts[m.subscription.planLabel] = (planCounts[m.subscription.planLabel] || 0) + 1;
+    if (!m.isLeft) {
+      planCounts[m.subscription.planLabel] = (planCounts[m.subscription.planLabel] || 0) + 1;
+    }
   });
   const planChart = Object.entries(planCounts).map(([name, value]) => ({ name, value }));
   const COLORS = [

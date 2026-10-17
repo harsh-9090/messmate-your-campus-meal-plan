@@ -122,7 +122,7 @@ function PlanConfigPage() {
         <h3 className="mb-4 font-display text-lg font-bold">Subscription Plans</h3>
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
           {plans.map((p) => {
-            const count = members.filter((m) => m.subscription.planId === p.planId).length;
+            const count = members.filter((m) => !m.isLeft && m.subscription.planId === p.planId).length;
             return (
               <div
                 key={p.planId}
