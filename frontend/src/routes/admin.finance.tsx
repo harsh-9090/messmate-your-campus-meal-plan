@@ -102,19 +102,19 @@ function FinancePage() {
 
   return (
     <div className="space-y-6 p-6 md:p-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold">Finance & Analytics</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold">Finance & Analytics</h1>
           <p className="text-sm text-muted-foreground">
             Revenue tracking and business growth insights
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={handleExportDuesPDF}
             disabled={exportingPdf}
-            className="h-9 gap-1.5 shadow-sm cursor-pointer"
+            className="h-9 gap-1.5 shadow-sm cursor-pointer w-full sm:w-auto justify-center"
           >
             {exportingPdf ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -124,7 +124,7 @@ function FinancePage() {
             <span>Export Dues PDF</span>
           </Button>
 
-          <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-2 shadow-sm">
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-2 shadow-sm w-full sm:w-auto justify-between sm:justify-start">
             <Tabs value={period} onValueChange={(v: any) => setPeriod(v)}>
             <TabsList className="h-9">
               <TabsTrigger value="all" className="text-xs">

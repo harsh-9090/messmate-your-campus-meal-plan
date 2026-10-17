@@ -171,32 +171,48 @@ function MembersPage() {
 
   return (
     <div className="space-y-5 p-6 md:p-8">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-bold">Members</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold">Members</h1>
           <p className="text-sm text-muted-foreground">
             {membersQ.isLoading ? "Loading…" : `${total} member${total === 1 ? "" : "s"}`}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleExportDuesPDF} disabled={exportingPdf}>
-            {exportingPdf ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-            ) : (
-              <FileText className="mr-1 h-4 w-4 text-destructive" />
-            )}
-            Export Dues PDF
-          </Button>
-          <Button variant="outline" onClick={handleExportCSV} disabled={exporting}>
-            {exporting ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="mr-1 h-4 w-4" />
-            )}
-            Export CSV
-          </Button>
-          <Button onClick={() => setAdding(true)} disabled={!plans.length}>
-            <Plus className="mr-1 h-4 w-4" /> Add Member
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={handleExportDuesPDF}
+              disabled={exportingPdf}
+              className="h-9 justify-center text-xs sm:text-sm shadow-sm"
+            >
+              {exportingPdf ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileText className="mr-1.5 h-3.5 w-3.5 text-destructive" />
+              )}
+              <span>Dues PDF</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleExportCSV}
+              disabled={exporting}
+              className="h-9 justify-center text-xs sm:text-sm shadow-sm"
+            >
+              {exporting ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              <span>Export CSV</span>
+            </Button>
+          </div>
+          <Button
+            onClick={() => setAdding(true)}
+            disabled={!plans.length}
+            className="h-9 justify-center font-semibold shadow-sm w-full sm:w-auto"
+          >
+            <Plus className="mr-1.5 h-4 w-4" /> Add Member
           </Button>
         </div>
       </header>
