@@ -125,11 +125,22 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6 p-6 md:p-8">
-      <header className="flex flex-wrap items-end justify-between gap-3">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">{formatDate(today)} · Live overview</p>
         </div>
+        <Button asChild className="gap-2 shadow-sm font-semibold">
+          <Link to="/admin/members">
+            <Users className="h-4 w-4" />
+            <span>All Members</span>
+            {membersQ.data?.total ? (
+              <span className="ml-0.5 rounded-full bg-primary-foreground/20 px-2 py-0.5 text-xs">
+                {membersQ.data.total}
+              </span>
+            ) : null}
+          </Link>
+        </Button>
       </header>
 
       {/* Enable Push Notifications Banner (User-gesture permission request) */}

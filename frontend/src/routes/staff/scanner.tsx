@@ -36,7 +36,7 @@ import { toast } from "sonner";
 import { ThemeToggle } from "@/components/messmate/ThemeToggle";
 import { GhostLoader } from "@/components/messmate/GhostLoader";
 import { offlineSync } from "@/lib/messmate/offlineSync";
-import { AdminSidebar, MobileAdminNav } from "@/components/messmate/AdminSidebar";
+import { AdminSidebar, MobileAdminNav, MobileBottomNav } from "@/components/messmate/AdminSidebar";
 
 export const Route = createFileRoute("/staff/scanner")({
   head: () => ({
@@ -653,7 +653,10 @@ function ScannerPage() {
       <div className="flex min-h-screen w-full flex-col md:flex-row">
         <MobileAdminNav />
         <AdminSidebar />
-        {content}
+        <div className="min-w-0 flex-1 pb-24 md:pb-0">
+          {content}
+        </div>
+        <MobileBottomNav />
       </div>
     );
   }

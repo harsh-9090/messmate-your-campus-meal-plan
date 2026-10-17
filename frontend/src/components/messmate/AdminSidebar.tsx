@@ -199,3 +199,121 @@ export function MobileAdminNav() {
     </div>
   );
 }
+
+export function MobileBottomNav() {
+  const path = useRouterState({ select: (r) => r.location.pathname });
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const pendingCountQ = useQuery({
+    queryKey: ["admin-pending-renewals-count"],
+    queryFn: () => renewalsApi.getPendingCount(),
+    refetchInterval: 60000,
+  });
+  const pendingCount = pendingCountQ.data?.count || 0;
+
+  const isScanner = path === "/staff/scanner";
+  const isHome = path === "/admin";
+  const isMembers = path.startsWith("/admin/members");
+  const isRenewals = path.startsWith("/admin/renewals");
+
+  return (
+    <>
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <SheetContent side="left" className="p-0 w-64">
+          <SidebarContent onNavItemClick={() => setMoreOpen(false)} />
+        </SheetContent>
+      </Sheet>
+
+      <nav
+        aria-label="Mobile Navigation"
+        className="fixed bottom-0 left-0 right-0 z-40 border-t border-border/80 bg-background/95 backdrop-blur-lg pb-[env(safe-area-inset-bottom,0px)] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.35)]"
+      >
+        <div className="flex h-16 items-center justify-around px-1 relative">
+          {/* Home */}
+          <Link
+            to="/admin"
+            className={cn(
+              "flex flex-1 flex-col items-center justify-center py-1 transition-colors select-none",
+              isHome ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <div className={cn("p-1 rounded-full transition-transform", isHome && "scale-110")}>
+              <LayoutDashboard className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5">Home</span>
+          </Link>
+
+          {/* Members */}
+          <Link
+            to="/admin/members"
+            className={cn(
+              "flex flex-1 flex-col items-center justify-center py-1 transition-colors select-none",
+              isMembers ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <div className={cn("p-1 rounded-full transition-transform", isMembers && "scale-110")}>
+              <Users className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5">Members</span>
+          </Link>
+
+          {/* Center PhonePe-Style QR Scanner Button */}
+          <div className="flex-1 flex flex-col items-center justify-center -mt-5 relative z-10">
+            <Link
+              to="/staff/scanner"
+              aria-label="Scan QR Code"
+              className={cn(
+                "group flex h-14 w-14 items-center justify-center rounded-full shadow-lg transition-all duration-200 active:scale-90",
+                isScanner
+                  ? "bg-primary text-primary-foreground ring-4 ring-primary/30 shadow-primary/40 scale-105"
+                  : "bg-primary text-primary-foreground ring-4 ring-background shadow-primary/30 hover:scale-105"
+              )}
+            >
+              <ScanLine className="h-7 w-7 transition-transform group-hover:scale-110" />
+            </Link>
+            <span
+              className={cn(
+                "text-[10px] tracking-tight mt-1 font-semibold",
+                isScanner ? "text-primary font-bold" : "text-muted-foreground"
+              )}
+            >
+              Scan QR
+            </span>
+          </div>
+
+          {/* Renewals */}
+          <Link
+            to="/admin/renewals"
+            className={cn(
+              "relative flex flex-1 flex-col items-center justify-center py-1 transition-colors select-none",
+              isRenewals ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <div className={cn("relative p-1 rounded-full transition-transform", isRenewals && "scale-110")}>
+              <RefreshCw className="h-5 w-5" />
+              {pendingCount > 0 && (
+                <span className="absolute -top-0.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground animate-pulse">
+                  {pendingCount > 9 ? "9+" : pendingCount}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5">Renewals</span>
+          </Link>
+
+          {/* More Menu */}
+          <button
+            type="button"
+            onClick={() => setMoreOpen(true)}
+            className="flex flex-1 flex-col items-center justify-center py-1 text-muted-foreground hover:text-foreground transition-colors select-none cursor-pointer"
+          >
+            <div className="p-1 rounded-full">
+              <Menu className="h-5 w-5" />
+            </div>
+            <span className="text-[10px] tracking-tight mt-0.5">More</span>
+          </button>
+        </div>
+      </nav>
+    </>
+  );
+}
+
