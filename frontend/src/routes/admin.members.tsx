@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -1103,6 +1104,9 @@ function MembersPage() {
               <UserX className="h-5 w-5" />
               Mark Member as Left Mess
             </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Confirm marking this student as discontinued from the mess.
+            </DialogDescription>
           </DialogHeader>
           {leavingMember && (
             <div className="space-y-4 py-2">
@@ -1176,6 +1180,9 @@ function MembersPage() {
               <UserX className="h-5 w-5" />
               Mark {selectedIds.size} Expired Member{selectedIds.size > 1 ? "s" : ""} as Left Mess
             </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Discontinue multiple expired members at once.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <p className="text-sm text-muted-foreground">
