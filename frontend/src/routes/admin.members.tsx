@@ -934,7 +934,7 @@ function AddMemberDialog({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <Label>Email <span className="text-destructive">*</span></Label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@college.edu" />
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email Address" />
                 </div>
                 <div>
                   <Label>Mobile</Label>

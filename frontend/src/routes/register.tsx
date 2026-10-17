@@ -366,7 +366,7 @@ function RegisterPage() {
                         id="email"
                         type="email"
                         required
-                        placeholder="student@college.edu"
+                        placeholder="Email Address"
                         className="h-12 px-4 bg-muted/40 border-border/50 focus:bg-background focus:ring-2 focus:ring-primary/20 rounded-2xl transition-all text-base"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
