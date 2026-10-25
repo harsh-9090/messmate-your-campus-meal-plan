@@ -56,6 +56,56 @@ export const Route = createFileRoute("/admin/members")({
   component: MembersPage,
 });
 
+function BirthdayCard({ birthdays }: { birthdays: Member[] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const namesText = expanded
+    ? birthdays.map((m) => m.name).join(", ")
+    : birthdays.length > 3
+      ? `${birthdays.slice(0, 3).map((m) => m.name).join(", ")} `
+      : birthdays.map((m) => m.name).join(", ");
+
+  return (
+    <Card className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 border-pink-500/20 p-4 animate-in fade-in slide-in-from-top-4">
+      <div className="flex items-start gap-4">
+        <div className="h-10 w-10 rounded-full bg-pink-500/20 flex items-center justify-center shrink-0">
+          <Gift className="h-5 w-5 text-pink-600" />
+        </div>
+        <div>
+          <h3 className="font-semibold text-pink-800 dark:text-pink-300">Today's Birthdays 🎂</h3>
+          <p className="text-sm text-pink-700/80 dark:text-pink-400/80 mt-1">
+            Wish a happy birthday to:{" "}
+            <span className="font-medium text-pink-900 dark:text-pink-200">
+              {namesText}
+            </span>
+            {birthdays.length > 3 && !expanded && (
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                className="font-semibold text-pink-600 dark:text-pink-300 hover:underline active:opacity-70 transition-opacity"
+              >
+                and {birthdays.length - 3} others
+              </button>
+            )}
+            {birthdays.length > 3 && expanded && (
+              <>
+                {" "}
+                <button
+                  type="button"
+                  onClick={() => setExpanded(false)}
+                  className="font-semibold text-pink-600 dark:text-pink-300 hover:underline active:opacity-70 transition-opacity"
+                >
+                  (show less)
+                </button>
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function MembersPage() {
   useSSE();
   const isMobile = useIsMobile();
@@ -304,23 +354,7 @@ function MembersPage() {
       </header>
 
       {birthdays.length > 0 && (
-        <Card className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 border-pink-500/20 p-4 animate-in fade-in slide-in-from-top-4">
-          <div className="flex items-start gap-4">
-            <div className="h-10 w-10 rounded-full bg-pink-500/20 flex items-center justify-center shrink-0">
-              <Gift className="h-5 w-5 text-pink-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-pink-800 dark:text-pink-300">Today's Birthdays 🎂</h3>
-              <p className="text-sm text-pink-700/80 dark:text-pink-400/80 mt-1">
-                Wish a happy birthday to: <span className="font-medium text-pink-900 dark:text-pink-200 cursor-help" title={birthdays.map(m => m.name).join(", ")}>
-                  {birthdays.length > 3 
-                    ? `${birthdays.slice(0, 3).map(m => m.name).join(", ")} and ${birthdays.length - 3} others`
-                    : birthdays.map(m => m.name).join(", ")}
-                </span>
-              </p>
-            </div>
-          </div>
-        </Card>
+        <BirthdayCard birthdays={birthdays} />
       )}
 
       <Card className="p-4 md:p-5">
