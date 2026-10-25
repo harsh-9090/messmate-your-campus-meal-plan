@@ -79,7 +79,7 @@ function ScanLogsPage() {
     });
 
   return (
-    <div className="space-y-5 p-4 sm:p-6 md:p-8 overflow-x-hidden">
+    <div className="space-y-5 p-4 sm:p-6 md:p-8">
       <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-bold">Scan Logs</h1>
@@ -351,7 +351,7 @@ function ScanLogsPage() {
           </div>
 
           {/* Mobile Card View */}
-          <div className="grid grid-cols-1 gap-3 p-4 md:hidden max-h-[600px] overflow-y-auto">
+          <div className="grid grid-cols-1 gap-3 p-4 md:hidden">
             {allQ.isLoading && (
               <div className="py-10 text-center">
                 <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
