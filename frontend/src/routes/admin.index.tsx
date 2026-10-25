@@ -465,9 +465,9 @@ function StatsDetailDialog({
               {members.slice(0, 100).map((m) => (
                 <div
                   key={m.memberId}
-                  className="flex items-center justify-between gap-4 rounded-xl border bg-accent/30 p-3 transition-colors hover:bg-accent/50"
+                  className="flex items-center gap-3 rounded-xl border bg-accent/30 p-3 transition-colors hover:bg-accent/50 overflow-hidden"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-background text-sm font-bold text-primary shadow-sm border">
                       {m.name
                         .split(" ")
@@ -482,9 +482,9 @@ function StatsDetailDialog({
                       </div>
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-right shrink-0 max-w-[40%]">
                     <PlanBadge planId={m.subscription.planId} label={m.subscription.planLabel} />
-                    <div className="mt-1 text-[10px] font-medium text-muted-foreground">
+                    <div className="mt-1 text-[10px] font-medium text-muted-foreground whitespace-nowrap">
                       Ends {formatDate(m.subscription.endDate)}
                     </div>
                   </div>
