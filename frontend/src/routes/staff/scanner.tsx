@@ -461,7 +461,7 @@ function ScannerPage() {
 
               {/* Overlay viewfinder reticle */}
               {cameraOn && !scanM.isPending && (
-                <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                   <div className="relative h-56 w-56">
                     <span className="absolute left-0 top-0 h-8 w-8 border-l-4 border-t-4 border-primary rounded-tl-lg" />
                     <span className="absolute right-0 top-0 h-8 w-8 border-r-4 border-t-4 border-primary rounded-tr-lg" />
@@ -469,6 +469,9 @@ function ScannerPage() {
                     <span className="absolute bottom-0 right-0 h-8 w-8 border-b-4 border-r-4 border-primary rounded-br-lg" />
                     <div className="absolute inset-x-2 top-0 h-0.5 animate-[scanline_2s_ease-in-out_infinite] bg-primary/80 shadow-[0_0_12px_2px_id(var(--primary))]" />
                   </div>
+                  <span className="mt-4 text-[11px] font-medium text-white/90 bg-black/60 px-3 py-1 rounded-full backdrop-blur-xs shadow-sm">
+                    Hold QR ~15–20 cm away
+                  </span>
                 </div>
               )}
 
@@ -712,28 +715,72 @@ function CameraScanner({
     let cancelled = false;
     (async () => {
       try {
-        const { Html5Qrcode } = await import("html5-qrcode");
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
         if (cancelled) return;
-        const scanner = new Html5Qrcode(containerId);
-        scannerRef.current = scanner;
-        await scanner.start(
-          { facingMode: "environment" },
-          { fps: 12, qrbox: { width: 240, height: 240 }, aspectRatio: 1.3333 },
-          (decoded: string) => {
-            if (pausedRef.current) return;
-            const now = Date.now();
-            if (
-              lastRef.current &&
-              lastRef.current.token === decoded &&
-              now - lastRef.current.at < 2500
-            )
-              return;
-            lastRef.current = { token: decoded, at: now };
-            onDetect(decoded);
+
+        // Enable hardware BarcodeDetector acceleration and restrict format to QR_CODE only for maximum speed
+        const scanner = new Html5Qrcode(containerId, {
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+          verbose: false,
+          useBarCodeDetectorIfSupported: true,
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true,
           },
-          () => {},
-        );
+        } as any);
+        scannerRef.current = scanner;
+
+        const handleSuccess = (decoded: string) => {
+          if (pausedRef.current) return;
+          const now = Date.now();
+          if (
+            lastRef.current &&
+            lastRef.current.token === decoded &&
+            now - lastRef.current.at < 2500
+          )
+            return;
+          lastRef.current = { token: decoded, at: now };
+          onDetect(decoded);
+        };
+
+        // 720p resolution is optimal for iOS and Android: sharp modules, no memory/CPU bottlenecks
+        const primaryConfig = {
+          fps: 10,
+          videoConstraints: {
+            facingMode: "environment",
+            width: { ideal: 1280, max: 1920 },
+            height: { ideal: 720, max: 1080 },
+          },
+        };
+
+        try {
+          await scanner.start(
+            { facingMode: "environment" },
+            primaryConfig,
+            handleSuccess,
+            () => {},
+          );
+        } catch {
+          if (cancelled) return;
+          // Fallback to minimal constraints if device rejects ideal resolution
+          await scanner.start(
+            { facingMode: "environment" },
+            { fps: 10 },
+            handleSuccess,
+            () => {},
+          );
+        }
+
+        // Request continuous autofocus if supported by device camera track
+        try {
+          const track = (scanner as any).getRunningTrackCapabilities?.();
+          if (track?.focusMode && track.focusMode.includes("continuous")) {
+            await scanner.applyVideoConstraints({
+              advanced: [{ focusMode: "continuous" } as any],
+            });
+          }
+        } catch {}
       } catch (e: any) {
+        if (cancelled) return;
         const msg = e?.message || "Unable to access camera. Check permissions.";
         onError(msg);
       }
@@ -755,7 +802,7 @@ function CameraScanner({
   return (
     <div
       id={containerId}
-      className="w-full bg-black [&_video]:!w-full [&_video]:!h-auto"
+      className="w-full bg-black overflow-hidden rounded-xl relative [&_video]:max-w-full [&_video]:mx-auto"
       style={{ minHeight: 320 }}
     />
   );
